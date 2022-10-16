@@ -21,20 +21,35 @@
 #include "window.h"
 #include "graphics.h"
 
+void get_triangle_data(B_Vertex *buffer)
+{
+	B_Vertex vertices[] = { { {-1.0, -1.0, 0.0}, { 0.0, 0.0, -1.0}, { 0.0, 0.0, 0.0} },
+		 	      	{ {1.0, -1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} },
+			      	{ {0.0, 1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} } };
+	buffer = memcpy(buffer, vertices, TRIANGLE_SIZE);
+}
+
 B_Model B_create_triangle()
 {
-	B_Model triangle;
+	B_Vertex *triangle_data = malloc(TRIANGLE_SIZE);
+	memset(triangle_data, 0, TRIANGLE_SIZE);
+	get_triangle_data(triangle_data);
+	B_Model model = B_create_model(triangle_data, 3);
+	return model;
+}
+
+B_Model B_create_model(B_Vertex *vertices, unsigned int num_vertices)
+{
+	B_Model model;
 	B_Mesh mesh;
-	memset(triangle.meshes, 0, sizeof(B_Mesh)*MAX_MESHES);
+	memset(model.meshes, 0, sizeof(B_Mesh)*MAX_MESHES);
 	for (int i = 0; i < MAX_MESHES; ++i)
 	{
-		triangle.meshes[i].active = 0;
+		model.meshes[i].active = 0;
 	}
-	B_Vertex vertices[] = { { {-1.0, -1.0, 0.0}, { 0.0, 0.0, -1.0}, { 0.0, 0.0, 0.0} },
-		 	      { {1.0, -1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} },
-			      { {0.0, 1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} } };
+
 	mesh.active = 1;
-	mesh.num_vertices = 3;
+	mesh.num_vertices = num_vertices;
 	mesh.vertices = malloc(mesh.num_vertices * sizeof(B_Vertex));
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
 	glGenVertexArrays(1, &mesh.vao);
@@ -48,8 +63,10 @@ B_Model B_create_triangle()
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
-	triangle.meshes[0] = mesh;
-	return triangle;
+	model.meshes[0] = mesh;
+	glm_mat4_identity(model.local_space);
+	glm_mat4_identity(model.world_space);
+	return model;
 }
 /*
 B_Model B_create_cube()
@@ -114,6 +131,8 @@ void B_blit_model(B_Model model, B_Shader shader)
 			glUseProgram(shader);
 			vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
 			B_set_uniform_vec4(shader, "color", color);
+			B_set_uniform_mat4(shader, "local_space", model.local_space);
+			B_set_uniform_mat4(shader, "world_space", model.world_space);
 			glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].num_vertices);
 		}
 	}
@@ -136,6 +155,11 @@ void B_free_model(B_Model model)
 	}
 }
 
+void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value)
+{
+	glUseProgram(shader);
+	glUniformMatrix4fv(glGetUniformLocation(shader, name), 1, GL_FALSE, value[0]);
+}
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value)
 {
 	glUseProgram(shader);

@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
 #include "window.h"
@@ -120,6 +121,7 @@ void game_loop(B_Window window)
 	while (running)
 	{
 		B_update_command_state_ui(&player.command_state, player.command_config);
+		glm_rotate(triangle.local_space,  0.0174532925*(sin((float)SDL_GetTicks() / 1000)), (vec3){0.0, 1.0, 0.0});
 		if (player.command_state.quit)
 		{
 			running = 0;
