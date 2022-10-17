@@ -36,8 +36,10 @@ typedef struct
 typedef struct
 {
 	B_Vertex 	*vertices;
+	unsigned int	*faces;
 	int		active;
 	int 		num_vertices;
+	int		num_faces;	
 	unsigned int 	vao;
 	unsigned int	vbo;
 	unsigned int	ebo;
@@ -54,7 +56,8 @@ typedef struct
 
 
 B_Model B_create_triangle();
-B_Model B_create_model(B_Vertex *vertices, unsigned int num_vertices);
+//B_Model B_create_model(B_Vertex *vertices, unsigned int num_vertices);
+B_Model B_create_model(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
 void get_triangle_data(B_Vertex *buffer);
 B_Model B_create_cube();
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
