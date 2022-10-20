@@ -45,20 +45,8 @@ B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_v
 	B_Mesh mesh;
 	memset(&mesh, 0, sizeof(mesh));
 	mesh.active = 1;
-	fprintf(stderr, "%i\n", num_vertices);
-	for (int i = 0; i < num_vertices; ++i)
-	{
-		fprintf(stderr, "%f\n", vertices[i].position[0]);
-		fprintf(stderr, "%f\n", vertices[i].position[1]);
-		fprintf(stderr, "%f\n", vertices[i].position[2]);
-		fprintf(stderr, "\n");
-	}
 	mesh.num_vertices = num_vertices;
 	mesh.num_faces = num_faces;
-	for (int i = 0; i < num_faces; ++i)
-	{
-		fprintf(stderr, "%i\n", faces[i]);
-	}
 	mesh.vertices = malloc(mesh.num_vertices * sizeof(B_Vertex));
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
 	mesh.faces = malloc(sizeof(unsigned int) * num_faces);
@@ -152,8 +140,10 @@ B_Model load_model_from_file(const char *filename)
 	B_Mesh meshes[num_meshes];
 	for (int i = 0; i < num_meshes; ++i)
 	{
-		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], vertex_sizes[i]/sizeof(B_Vertex), face_sizes[i]/sizeof(unsigned int));
-	//	meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], 35, 35);
+		uint16_t j = 0;
+		uint32_t k = 0;
+		uint64_t l = 0;
+		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], vertex_sizes[i] / sizeof(B_Vertex), face_sizes[i]/sizeof(unsigned int));
 	}
 	model = B_create_model(meshes, num_meshes);
 	free(vertex_sizes);

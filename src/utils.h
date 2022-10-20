@@ -20,7 +20,7 @@ unsigned int length_between(char *haystack,
  *
  * !! Caller is responsible for freeing the returned pointer and each of its elements !! 
  * !! Element sizes does not need to be allocated before calling. Caller is also responsible for freeing element_sizes !! */
-uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_length, unsigned int *number_of_elements, unsigned int *element_sizes);
+uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_length, unsigned int *number_of_elements, unsigned int **element_sizes);
 
 /* Very similar to get_data_after, but with an "end key" -- Data past the earliest instance of the end key won't be searched or returned
  * So if the search key is "FOO" and the end key is "END_FOO" ... 

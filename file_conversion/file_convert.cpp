@@ -1,4 +1,4 @@
-#include <glm/glm.hpp>
+//#include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -47,11 +47,6 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 		fprintf(stderr, "%i\n\n", mesh->mNumVertices);
 		for (int j = 0; j < mesh->mNumVertices; ++j)
 		{
-			fprintf(stderr, "%i\n", j);
-			fprintf(stderr, "%f\n", mesh->mVertices[j].x);
-			fprintf(stderr, "%f\n", mesh->mVertices[j].y);
-			fprintf(stderr, "%f\n", mesh->mVertices[j].z);
-			fprintf(stderr, "\n");
 			fwrite(&mesh->mVertices[j].x, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].y, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].z, sizeof(float), 1, fp);
@@ -77,9 +72,12 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 		}
 	}
 
-	char mesh_end_header[512] = {0};
-	sprintf(mesh_end_header, "END_MESHES");
-	fwrite(mesh_end_header, strlen(mesh_end_header), 1, fp);
+	if (node->mNumMeshes > 0)
+	{
+		char mesh_end_header[512] = {0};
+		sprintf(mesh_end_header, "END_MESHES");
+		fwrite(mesh_end_header, strlen(mesh_end_header), 1, fp);
+	}
 	for (int i = 0; i < node->mNumMeshes; ++i)
 	{
 		aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
@@ -99,9 +97,13 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 			}
 		}
 	}
-	char face_end_header[512] = {0};
-	sprintf(face_end_header, "END_FACES");
-	fwrite(face_end_header, strlen(face_end_header), 1, fp);
+
+	if (node->mNumMeshes > 0)
+	{
+		char face_end_header[512] = {0};
+		sprintf(face_end_header, "END_FACES");
+		fwrite(face_end_header, strlen(face_end_header), 1, fp);
+	}
 
     	for(int i = 0; i < node->mNumChildren; ++i)
     	{
