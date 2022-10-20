@@ -40,12 +40,18 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 	{
 		unsigned int local_bytes = 0;
 		char mesh_header[512] = {0};
-		sprintf(mesh_header, "MESH %u:\n", i);
+		sprintf(mesh_header, "B_MESH:");
 		fwrite(mesh_header, strlen(mesh_header), 1, fp);
 		aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
 		/* Should go { pos.x, pos.y, pos.z, norm.x, norm.y, norm.z, tex.x, tex.y, tex.z } */
+		fprintf(stderr, "%i\n\n", mesh->mNumVertices);
 		for (int j = 0; j < mesh->mNumVertices; ++j)
 		{
+			fprintf(stderr, "%i\n", j);
+			fprintf(stderr, "%f\n", mesh->mVertices[j].x);
+			fprintf(stderr, "%f\n", mesh->mVertices[j].y);
+			fprintf(stderr, "%f\n", mesh->mVertices[j].z);
+			fprintf(stderr, "\n");
 			fwrite(&mesh->mVertices[j].x, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].y, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].z, sizeof(float), 1, fp);
@@ -53,15 +59,33 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 			fwrite(&mesh->mNormals[j].x, sizeof(float), 1, fp);
 			fwrite(&mesh->mNormals[j].y, sizeof(float), 1, fp);
 			fwrite(&mesh->mNormals[j].z, sizeof(float), 1, fp);
-			total_bytes += sizeof(float)*6;
-			local_bytes += sizeof(float)*6;
+			float z_coord = 0;
+			if (mesh->mTextureCoords[0])
+			{
+    				fwrite(&mesh->mTextureCoords[0][j].x, sizeof(float), 1, fp);
+    				fwrite(&mesh->mTextureCoords[0][j].y, sizeof(float), 1, fp);
+				fwrite(&z_coord, sizeof(float), 1, fp);
+			}
+			else
+			{
+				fwrite(&z_coord, sizeof(float), 1, fp);
+				fwrite(&z_coord, sizeof(float), 1, fp);
+				fwrite(&z_coord, sizeof(float), 1, fp);
+			}
+			total_bytes += sizeof(float)*9;
+			local_bytes += sizeof(float)*9;
 		}
-		char num_bytes_header[512] = {0};
-		sprintf(num_bytes_header, "BYTES_MESH %u:%u\n", i, local_bytes);
-		fwrite(num_bytes_header, strlen(num_bytes_header), 1, fp);
+	}
 
+	char mesh_end_header[512] = {0};
+	sprintf(mesh_end_header, "END_MESHES");
+	fwrite(mesh_end_header, strlen(mesh_end_header), 1, fp);
+	for (int i = 0; i < node->mNumMeshes; ++i)
+	{
+		aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
+		unsigned int local_bytes = 0;
 		char face_header[512] = {0};
-		sprintf(face_header, "FACES:\n");
+		sprintf(face_header, "B_FACES:");
 		fwrite(face_header, strlen(face_header), 1, fp);
 		local_bytes = 0;
 		for (int j = 0; j < mesh->mNumFaces; ++j)
@@ -71,14 +95,15 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 			{
 				fwrite(&face.mIndices[k], sizeof(unsigned int), 1, fp);
 				total_bytes += sizeof(unsigned int);
-				local_bytes += sizeof(unsigned int);
+				//local_bytes += sizeof(unsigned int);
 			}
 		}
-		char face_bytes_header[512] = {0};
-		sprintf(face_bytes_header, "BYTES_FACES %u:%u\n", i, local_bytes);
-		fwrite(face_bytes_header, strlen(face_bytes_header), 1, fp);
 	}
-    	for(int i = 0; i < node->mNumChildren; i++)
+	char face_end_header[512] = {0};
+	sprintf(face_end_header, "END_FACES");
+	fwrite(face_end_header, strlen(face_end_header), 1, fp);
+
+    	for(int i = 0; i < node->mNumChildren; ++i)
     	{
     	    total_bytes += write_meshes(fp, scene, node->mChildren[i]);
     	}
