@@ -25,37 +25,9 @@
 #include "graphics.h"
 #include "actor.h"
 #include "input.h"
+#include "utils.h"
 
-// UP NEXT: Take the boilerplatey stuff from B_create_triangle and make it more general.
-
-int B_load_file(const char *filename, char *buff, int size)
-{
-	FILE *fp = fopen(filename, "r");
-	if (!fp)
-	{
-		fprintf(stderr, "Error: could not read file %s\n", filename);
-		return -1;
-	}
-	fseek(fp, 0L, SEEK_END);
-	int length = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
-	length++;
-	int read_size = 0;
-	if (length <= size)
-	{
-		read_size = length;
-	}
-	else
-	{
-		read_size = size;
-	}
-	memset(buff, 0, size);
-	fread(buff, read_size, 1, fp);
-
-	fclose(fp);
-	return 0;
-}
-
+// UP NEXT: Change the B_create_model. It can only create single-mesh models!
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -117,6 +89,7 @@ void game_loop(B_Window window)
 	int running = 1;
 	Actor player = create_player();
 	B_Model triangle = B_create_triangle();
+	B_Model monkey = load_model_from_file("assets/monkey.bgm");
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 	while (running)
 	{

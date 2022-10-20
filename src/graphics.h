@@ -56,10 +56,18 @@ typedef struct
 
 
 B_Model B_create_triangle();
-//B_Model B_create_model(B_Vertex *vertices, unsigned int num_vertices);
-B_Model B_create_model(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
 void get_triangle_data(B_Vertex *buffer);
+
+/* Creates a simple, single-mesh model from vertex and face data */
+B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
+
+/* Creates a model from existing meshes. Usually called in conjunction with B_create_mesh */
+B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
+
+B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
+
 B_Model B_create_cube();
+B_Model load_model_from_file(const char *filename);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
