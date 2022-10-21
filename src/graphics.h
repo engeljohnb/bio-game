@@ -21,6 +21,7 @@
 #define MAX_MESHES 16
 #include <cglm/cglm.h>
 #include <glad/glad.h>
+#include "camera.h"
 #include "window.h"
 
 #define TRIANGLE_SIZE sizeof(float)*27
@@ -71,7 +72,8 @@ B_Model load_model_from_file(const char *filename);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
-void B_blit_model(B_Model model, B_Shader shader);
+//void B_blit_model(B_Model model, B_Shader shader);
+void B_blit_model(B_Model model, Camera camera, B_Shader shader);
 void B_free_model(B_Model model);
 
 #endif

@@ -22,12 +22,18 @@
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
 #include "window.h"
+#include "camera.h"
 #include "graphics.h"
 #include "actor.h"
 #include "input.h"
+#include "time.h"
 #include "utils.h"
 
-// UP NEXT: THE MODEL LOADING WORKS! WHOOPEE!! Now just find out why the number of vertices is always overshooting.
+// UP NEXT: Make it so the direction commands ADDS an axis instead of just setting an axis.
+// 	Then work on looking around -- How to do a third person game with a keyboard and mouse?
+// 	Then work on lighting.
+
+extern float delta_t;
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -88,24 +94,23 @@ void game_loop(B_Window window)
 {
 	int running = 1;
 	Actor player = create_player();
-	//B_Model triangle = B_create_triangle();
+	Camera camera = create_camera(VEC3(0.0, 0.0, -5.0), VEC3_Z_UP, VEC3_Y_UP);
 	B_Model monkey = load_model_from_file("assets/monkey.bgm");
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 	while (running)
 	{
 		B_update_command_state_ui(&player.command_state, player.command_config);
-		glm_rotate(monkey.local_space,  0.0174532925*(sin((float)SDL_GetTicks() / 1000)), (vec3){0.0, 1.0, 0.0});
+		glm_rotate(monkey.local_space, 0.0174532925*(sin((float)SDL_GetTicks() / 1000)), VEC3_Y_UP);
 		if (player.command_state.quit)
 		{
 			running = 0;
 		}
+		update_camera(&camera, player.command_state);
 		B_clear_window(window);
-		//B_blit_model(triangle, shader);
-		B_blit_model(monkey, shader);
+		B_blit_model(monkey, camera, shader);
 		B_flip_window(window);
-		SDL_Delay(10);
+		B_keep_time(FPS_30);
 	}
-	//B_free_model(triangle);
 	B_free_model(monkey);
 }
 

@@ -1,6 +1,16 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 #include <stdint.h>
+
+#define VEC3(x, y, z) (vec3){x, y, z}
+#define RAD(a) a*0.0174532925
+#define VEC3_ZERO (vec3){0.0, 0.0, 0.0}
+#define VEC3_X_UP (vec3){1.0, 0.0, 0.0}
+#define VEC3_Y_UP (vec3){0.0, 1.0, 0.0}
+#define VEC3_Z_UP (vec3){0.0, 0.0, 1.0}
+#define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
+#define VEC3_X_DOWN (vec3){-1.0, 0.0, 0.0}
+
 int B_load_file(const char *filename, char *buff, int size);
 int maxi(int a, int b);
 

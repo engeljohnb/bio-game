@@ -18,6 +18,7 @@
 
 #include <cglm/cglm.h>
 #include <glad/glad.h>
+#include "camera.h"
 #include "window.h"
 #include "graphics.h"
 #include "utils.h"
@@ -80,7 +81,6 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 		model.meshes[i].active = 0;
 	}
 
-	//unsigned int mesh_count = (unsigned int)maxi(num_meshes, MAX_MESHES);
 	unsigned int mesh_count = num_meshes;
 	for (int i = 0; i < mesh_count; ++i)
 	{
@@ -158,7 +158,7 @@ B_Model load_model_from_file(const char *filename)
 	return model;
 }
 
-void B_blit_model(B_Model model, B_Shader shader)
+void B_blit_model(B_Model model, Camera camera, B_Shader shader)
 {
 	for (int i = 0; i < MAX_MESHES; ++i)
 	{
@@ -168,9 +168,10 @@ void B_blit_model(B_Model model, B_Shader shader)
 			glUseProgram(shader);
 			vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
 			B_set_uniform_vec4(shader, "color", color);
+			B_set_uniform_mat4(shader, "view_space", camera.view_space);
 			B_set_uniform_mat4(shader, "local_space", model.local_space);
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
-			//glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].num_vertices);
+			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
 			glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
 		}
 	}
