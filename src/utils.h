@@ -8,8 +8,10 @@
 #define VEC3_X_UP (vec3){1.0, 0.0, 0.0}
 #define VEC3_Y_UP (vec3){0.0, 1.0, 0.0}
 #define VEC3_Z_UP (vec3){0.0, 0.0, 1.0}
-#define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
 #define VEC3_X_DOWN (vec3){-1.0, 0.0, 0.0}
+#define VEC3_Y_DONW (vec3){0.0, -1.0, 0.0}
+#define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
+
 
 int B_load_file(const char *filename, char *buff, int size);
 int maxi(int a, int b);

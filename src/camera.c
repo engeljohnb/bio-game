@@ -1,57 +1,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cglm/cglm.h>
+#include "window.h"
 #include "input.h"
 #include "utils.h"
 #include "camera.h"
 #include "time.h"
 
 extern float delta_t;
-Camera create_camera(vec3 position, vec3 front, vec3 up)
+
+Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
 {
 	Camera camera;
 	camera.speed = 0.0;
 	camera.max_speed = 0.03;
-	glm_perspective(RAD(45.0f), 800.0f/600.0f, 0.1f, 100.0f, camera.projection_space);
+	glm_perspective(RAD(45.0f), (float)window.width/(float)window.height, 0.1f, 100.0f, camera.projection_space);
 	glm_vec3_copy(position, camera.position);
 	glm_vec3_copy(front, camera.front);
 	glm_vec3_copy(up, camera.up);
+	glm_vec3_zero(camera.right);
+
+	vec3 right;
+	glm_vec3_cross(front, up, right);
+	glm_vec3_normalize(right);
+	glm_vec3_copy(right, camera.right);
 
 	vec3 frontpos;
 	glm_vec3_add(front, position, frontpos);
-	glm_lookat(position, frontpos, up, camera.view_space);
 
 	glm_vec3_copy(VEC3_ZERO, camera.move_direction);
 	glm_vec3_copy(VEC3_ZERO, camera.yaw);
 	glm_vec3_copy(VEC3_ZERO, camera.pitch);
 
+	glm_lookat(frontpos, position, up, camera.view_space);
 	return camera;
+}
+/*
+void look_at(Camera *camera, vec3 target)
+{
+	mat4 transform1 = { 	{camera->right[0],	camera->right[1],	camera->right[2],	0.0f},
+				{camera->up[0],		camera->up[1],		camera->up[2],		0.0f},
+				{camera->front[0],	camera->front[1],	camera->front[2],	0.0f},
+				{0.0f,			0.0f,			0.0f,			1.0f} };
+
+	mat4 transform2 = {	{1.0f,		0.0f,		0.0f,		-camera->position[0]},
+				{0.0f,		1.0f,		0.0f,		-camera->position[1]},
+				{0.0f,		0.0f,		1.0f,		-camera->position[2]},
+				{0.0f,		0.0f,		0.0f,		1.0f} 	};
+
+	glm_mat4_mul(transform1, transform2, camera->view_space);
+}
+*/
+void rotate_camera(Camera *camera, float x, float y)
+{
+	 glm_vec3_copy(VEC3(cos(RAD(x)) * cos(RAD(y)), 
+				 sin(RAD(y)), 
+				 sin(RAD(x))*cos(RAD(y))), 
+			camera->front);
+	 glm_normalize(camera->front);
 }
 
 void update_camera(Camera *camera, CommandState command_state)
 {
 	if (command_state.movement & M_FORWARD)
 	{
-		glm_vec3_copy(VEC3_Z_UP, camera->move_direction);
+		glm_vec3_add(camera->front, camera->move_direction, camera->move_direction);
+		glm_vec3_normalize(camera->move_direction);
 		camera->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_BACKWARD)
 	{
-		glm_vec3_copy(VEC3_Z_DOWN, camera->move_direction);
+		vec3 backward = {0.0, 0.0, 0.0};
+		glm_vec3_negate_to(camera->front, backward);
+		glm_vec3_add(backward, camera->move_direction, camera->move_direction);
+		glm_vec3_normalize(camera->move_direction);
 		camera->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_LEFT)
 	{
-		glm_vec3_copy(VEC3_X_UP, camera->move_direction);
+		vec3 left = {0.0, 0.0, 0.0};
+		glm_vec3_cross(camera->front, camera->up, left);
+		glm_vec3_normalize(left);
+		glm_vec3_negate(left);
+		glm_vec3_add(left, camera->move_direction, camera->move_direction);
 		glm_vec3_normalize(camera->move_direction);
 		camera->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_RIGHT)
 	{
-		glm_vec3_copy(VEC3_X_DOWN, camera->move_direction);
+		vec3 right = {0.0, 0.0, 0.0};
+		glm_vec3_cross(camera->front, camera->up, right);
+		glm_normalize(right);
+		glm_vec3_add(right, camera->move_direction, camera->move_direction);
 		glm_vec3_normalize(camera->move_direction);
 		camera->speed += 0.0001*delta_t;
 	}
+
+	// I have no idea why, but the player moves the opposite direction I think they should. Temporary solution until I actually figure it out.
+	glm_vec3_negate(camera->move_direction);
 
 	if (camera->speed > camera->max_speed)
 	{
@@ -62,19 +108,26 @@ void update_camera(Camera *camera, CommandState command_state)
 	{
 		camera->speed = 0;
 	}
-	// camera->position += camera->speed * camera->move_dir;
-	vec3 speed_movedir;
-	glm_vec3_scale(camera->move_direction, camera->speed, speed_movedir);
-	glm_vec3_add(camera->position, speed_movedir, camera->position);
 
-	vec3 frontpos;
-	glm_vec3_add(camera->front, camera->position, frontpos);
-	glm_lookat(camera->position, frontpos, camera->up, camera->view_space);
+	if (command_state.look_x_increment || command_state.look_y_increment)
+	{
+		camera->look_x += command_state.look_x_increment;
+		camera->look_y += command_state.look_y_increment;
+		rotate_camera(camera, camera->look_x, camera->look_y);
+	}
+	
+	// camera->position += camera->speed * camera->move_dir;
+	vec3 movement = { 0.0, 0.0, 0.0 };
+	glm_vec3_scale(camera->move_direction, camera->speed, movement);
+	glm_vec3_add(camera->position, movement, camera->position);
 
 	if (command_state.movement == 0)
 	{
+		glm_vec3_copy(VEC3_ZERO, camera->move_direction);
 		camera->speed -= 0.0001*delta_t;
-		//camera->speed = 0;
 	}
 
+	vec3 frontpos = {0.0, 0.0, 0.0};
+	glm_vec3_add(camera->position, camera->front, frontpos);
+	glm_lookat(frontpos, camera->position, camera->up, camera->view_space);
 }

@@ -32,12 +32,16 @@ typedef struct
 {
 	uint8_t		quit;
 	uint8_t 	movement;
+	float		look_x_increment;
+	float		look_y_increment;
 } CommandState;
 
 
 /* Configuration for what keys execute what commands. default_command_config returns the default setting */
 typedef struct
 {
+	int		x_inverted;
+	int		y_inverted;
 	int		left;
 	int		right;
 	int		forward;

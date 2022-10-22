@@ -31,6 +31,7 @@ typedef struct
 } B_Window;
 
 void B_init();
+void B_quit();
 B_Window B_create_window();
 B_Window B_free_window(B_Window window);
 void B_clear_window(B_Window);

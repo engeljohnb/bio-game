@@ -165,13 +165,13 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader)
 		if (model.meshes[i].active)
 		{
 			glBindVertexArray(model.meshes[i].vao);
-			glUseProgram(shader);
 			vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
 			B_set_uniform_vec4(shader, "color", color);
 			B_set_uniform_mat4(shader, "view_space", camera.view_space);
 			B_set_uniform_mat4(shader, "local_space", model.local_space);
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
 			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
+			glUseProgram(shader);
 			glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
 		}
 	}

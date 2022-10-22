@@ -29,7 +29,6 @@
 #include "time.h"
 #include "utils.h"
 
-// UP NEXT: Make it so the direction commands ADDS an axis instead of just setting an axis.
 // 	Then work on looking around -- How to do a third person game with a keyboard and mouse?
 // 	Then work on lighting.
 
@@ -94,13 +93,17 @@ void game_loop(B_Window window)
 {
 	int running = 1;
 	Actor player = create_player();
-	Camera camera = create_camera(VEC3(0.0, 0.0, -5.0), VEC3_Z_UP, VEC3_Y_UP);
+	Camera camera = create_camera(window, VEC3(0.0, 0.0, 5.0), VEC3_Z_DOWN, VEC3_Y_UP);
 	B_Model monkey = load_model_from_file("assets/monkey.bgm");
+	glm_scale(monkey.local_space, VEC3(0.5, 0.5, 0.5));
+	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
+	glm_translate(monkey.local_space, VEC3(0.0, 0.0, 0.0));
+
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 	while (running)
 	{
 		B_update_command_state_ui(&player.command_state, player.command_config);
-		glm_rotate(monkey.local_space, 0.0174532925*(sin((float)SDL_GetTicks() / 1000)), VEC3_Y_UP);
+		glm_rotate(monkey.world_space, RAD((sin((float)SDL_GetTicks() / 1000))), VEC3_Y_UP);
 		if (player.command_state.quit)
 		{
 			running = 0;
@@ -122,5 +125,6 @@ int main(void)
 	B_Window window = B_create_window();
 	game_loop(window);	
 	B_free_window(window);
+	B_quit();
 	return 0;
 }

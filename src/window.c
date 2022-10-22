@@ -30,8 +30,11 @@ void B_init()
 B_Window B_create_window()
 {
 	B_Window window;
-	int window_width = 720;
-	int window_height = 720;
+	int window_width = 0;
+	int window_height = 0;
+	SDL_Window *size_window = SDL_CreateWindow("Get-size", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	SDL_GetWindowSize(size_window, &window_width, &window_height);
+	SDL_DestroyWindow(size_window);
 	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 0, 0, window_width, window_height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	if (sdl_window == NULL)
 	{
@@ -49,6 +52,10 @@ B_Window B_create_window()
 	window.background_color[0] = 0.0f;
 	window.background_color[1] = 0.0f;
 	window.background_color[2] = 1.0f;
+
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+	SDL_WarpMouseInWindow(window.sdl_window, window_width/2, window_height/2);
+	SDL_ShowCursor(SDL_DISABLE);
 	return window;
 }
 
@@ -67,5 +74,10 @@ B_Window B_free_window(B_Window window)
 {
 	SDL_GL_DeleteContext(window.gl_context);
 	SDL_DestroyWindow(window.sdl_window);
+}
+
+void B_quit()
+{
+	SDL_Quit();
 }
 

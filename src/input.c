@@ -29,6 +29,8 @@ CommandConfig default_command_config()
 	config.right = SDLK_d;
 	config.forward = SDLK_w;
 	config.backward = SDLK_s;
+	config.x_inverted = 1;
+	config.y_inverted = 1;
 	return config;
 }
 
@@ -36,6 +38,8 @@ CommandConfig default_command_config()
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 {
 	SDL_Event event;
+	command_state->look_x_increment = 0;
+	command_state->look_y_increment = 0;
 	while (SDL_PollEvent(&event))
 	{
 		switch (event.type)
@@ -46,7 +50,6 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 			case SDL_KEYDOWN:
 			{
 				int key = event.key.keysym.sym;
-				//fprintf(stderr, "%s %s\n", SDL_GetKeyName(event.key.keysym.sym), SDL_GetKeyName(config.forward));
 				if (key == config.alt_quit)
 				{
 					command_state->quit = 1;
@@ -94,6 +97,13 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				}
 				break;
 			}
+			case SDL_MOUSEMOTION:
+			{
+				command_state->look_x_increment = (float)event.motion.xrel*0.4;
+				command_state->look_y_increment = -(float)event.motion.yrel*0.4;
+				break;
+			}
+
 		}
 	}
 	return 0;

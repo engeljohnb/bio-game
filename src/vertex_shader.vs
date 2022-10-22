@@ -13,7 +13,7 @@ uniform mat4 projection_space;
 
 void main()
 {
-	gl_Position = projection_space * view_space * local_space * vec4(v_position, 1.0);
+	gl_Position = projection_space * view_space * world_space * local_space * vec4(v_position, 1.0);
 	v_normal = normal;
 	frag_position = v_position;
 }
