@@ -29,7 +29,9 @@
 #include "time.h"
 #include "utils.h"
 
-// 	Then work on looking around -- How to do a third person game with a keyboard and mouse?
+
+//	UP NEXT: Whyyyyy areeeee theee normalsss wrongggg????
+//	Fix that weird bug with the movement jitters.
 // 	Then work on lighting.
 
 extern float delta_t;
@@ -94,10 +96,12 @@ void game_loop(B_Window window)
 	int running = 1;
 	Actor player = create_player();
 	Camera camera = create_camera(window, VEC3(0.0, 0.0, 5.0), VEC3_Z_DOWN, VEC3_Y_UP);
-	B_Model monkey = load_model_from_file("assets/monkey.bgm");
-	glm_scale(monkey.local_space, VEC3(0.5, 0.5, 0.5));
+	//B_Model monkey = load_model_from_file("assets/monkey.bgm");
+	B_Model monkey = create_cube();
+	glm_scale(monkey.world_space, VEC3(0.5, 0.5, 0.5));
 	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
-	glm_translate(monkey.local_space, VEC3(0.0, 0.0, 0.0));
+	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
+	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
 
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 	while (running)
@@ -110,15 +114,15 @@ void game_loop(B_Window window)
 		}
 		update_camera(&camera, player.command_state);
 		B_clear_window(window);
-		B_blit_model(monkey, camera, shader);
+		B_blit_model(monkey, camera, shader, point_light);
 		B_flip_window(window);
 		B_keep_time(FPS_30);
 	}
 	B_free_model(monkey);
 }
 
-/* Just sets up and dives right into the main loop */
-/* All functions and types that contain platform-specific elements are prefixed with B */
+/* Just sets up and dives right into the main loop 
+ * All functions and types that contain platform-specific elements are prefixed with B */
 int main(void)
 {
 	B_init();

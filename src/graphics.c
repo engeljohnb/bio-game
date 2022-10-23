@@ -23,6 +23,14 @@
 #include "graphics.h"
 #include "utils.h"
 
+PointLight create_point_light(vec3 position, vec3 color, float intensity)
+{
+	PointLight light = { 0 };
+	glm_vec3_copy(position, light.position);
+	glm_vec3_copy(color, light.color);
+	light.intensity = intensity;
+	return light;
+}
 void get_triangle_data(B_Vertex *buffer)
 {
 	B_Vertex vertices[] = { { {-1.0, -1.0, 0.0}, { 0.0, 0.0, -1.0}, { 0.0, 0.0, 0.0} },
@@ -50,18 +58,29 @@ B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_v
 	mesh.num_faces = num_faces;
 	mesh.vertices = malloc(mesh.num_vertices * sizeof(B_Vertex));
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
-	mesh.faces = malloc(sizeof(unsigned int) * num_faces);
-	mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
+	if (mesh.faces)
+	{
+		mesh.faces = malloc(sizeof(unsigned int) * num_faces);
+		memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
+		mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
+	}
+	else
+	{
+		mesh.faces = NULL;
+	}
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
 	glGenBuffers(1, &mesh.vbo);
-	glGenBuffers(1, &mesh.ebo);
-
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 	glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices*sizeof(B_Vertex), mesh.vertices, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
+
+	if (mesh.faces)
+	{
+		glGenBuffers(1, &mesh.ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
+	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(B_Vertex), (void*)0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(B_Vertex), (void*)sizeof(B_Vertex));
@@ -87,7 +106,6 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 
 		model.meshes[i] = meshes[i];
 	}
-	glm_mat4_identity(model.local_space);
 	glm_mat4_identity(model.world_space);
 	return model;
 }
@@ -102,9 +120,58 @@ B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned in
 	}
 	B_Mesh mesh = B_create_mesh(vertices, faces, num_vertices, num_faces);
 	model.meshes[0] = mesh;
-	glm_mat4_identity(model.local_space);
 	glm_mat4_identity(model.world_space);
 	return model;
+}
+
+B_Model create_cube()
+{
+		float _vertices_[] = {
+			    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
+			     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
+			     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
+			    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
+			    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
+			
+			    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+			
+			    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			
+			     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			
+			    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			
+			    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
+			    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f
+			};
+
+	B_Model cube = B_create_model_from((B_Vertex *)_vertices_, NULL, 36, 0);
+	return cube;
 }
 
 
@@ -140,9 +207,6 @@ B_Model load_model_from_file(const char *filename)
 	B_Mesh meshes[num_meshes];
 	for (int i = 0; i < num_meshes; ++i)
 	{
-		uint16_t j = 0;
-		uint32_t k = 0;
-		uint64_t l = 0;
 		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], vertex_sizes[i] / sizeof(B_Vertex), face_sizes[i]/sizeof(unsigned int));
 	}
 	model = B_create_model(meshes, num_meshes);
@@ -158,7 +222,7 @@ B_Model load_model_from_file(const char *filename)
 	return model;
 }
 
-void B_blit_model(B_Model model, Camera camera, B_Shader shader)
+void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight point_light)
 {
 	for (int i = 0; i < MAX_MESHES; ++i)
 	{
@@ -166,13 +230,16 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader)
 		{
 			glBindVertexArray(model.meshes[i].vao);
 			vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+			B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
+			B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
+			B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
 			B_set_uniform_vec4(shader, "color", color);
 			B_set_uniform_mat4(shader, "view_space", camera.view_space);
-			B_set_uniform_mat4(shader, "local_space", model.local_space);
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
 			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
 			glUseProgram(shader);
-			glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
+			//glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
+			glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].num_vertices);
 		}
 	}
 }
@@ -186,7 +253,10 @@ void B_free_model(B_Model model)
 			glDeleteBuffers(1, &model.meshes[i].ebo);
 			glDeleteBuffers(1, &model.meshes[i].vbo);
 			free(model.meshes[i].vertices);
-			free(model.meshes[i].faces);
+			if (model.meshes[i].faces)
+			{
+				free(model.meshes[i].faces);
+			}
 		}
 		else
 		{
@@ -205,4 +275,16 @@ void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value)
 {
 	glUseProgram(shader);
 	glUniform4f(glGetUniformLocation(shader, name), value[0], value[1], value[2], value[3]);
+}
+
+void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value)
+{
+	glUseProgram(shader);
+	glUniform3f(glGetUniformLocation(shader, name), value[0], value[1], value[2]);
+}
+
+void B_set_uniform_float(B_Shader shader, char *name, float value)
+{
+	glUseProgram(shader);
+	glUniform1f(glGetUniformLocation(shader, name), value);
 }

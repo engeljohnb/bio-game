@@ -1,37 +1,7 @@
-//#include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <string.h>
-/*
-typedef struct
-{
-	float	position[3];
-	float	normal[3];
-	float	tex_coords[3];	
-} FC_Vertex;
-
-typedef struct
-{
-	FC_Vertex 	*vertices;
-	unsigned int	*faces
-	//int		active;
-	unsigned int 	num_vertices;
-	unsigned int 	num_faces;
-	//unsigned int 	vao;
-	//unsigned int	vbo;
-	//unsigned int	ebo;
-	
-} FC_Mesh;
-
-typedef struct
-{
-	mat4	local_space;
-	mat4	world_space;
-	//mat4	view;  << This is the camear??
-	B_Mesh 	meshes[MAX_MESHES];
-} FC_Model;
-*/
 
 unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 {
@@ -50,10 +20,21 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 			fwrite(&mesh->mVertices[j].x, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].y, sizeof(float), 1, fp);
 			fwrite(&mesh->mVertices[j].z, sizeof(float), 1, fp);
-
-			fwrite(&mesh->mNormals[j].x, sizeof(float), 1, fp);
-			fwrite(&mesh->mNormals[j].y, sizeof(float), 1, fp);
-			fwrite(&mesh->mNormals[j].z, sizeof(float), 1, fp);
+	
+			if (mesh->HasNormals())
+			{
+				fwrite(&mesh->mNormals[j].x, sizeof(float), 1, fp);
+				fwrite(&mesh->mNormals[j].y, sizeof(float), 1, fp);
+				fwrite(&mesh->mNormals[j].z, sizeof(float), 1, fp);
+			}
+			else
+			{
+				float norm = 0.0;
+				fwrite(&norm, sizeof(float), 1, fp);
+				fwrite(&norm, sizeof(float), 1, fp);
+				fwrite(&norm, sizeof(float), 1, fp);
+				fprintf(stderr, "Mesh has no normals\n");
+			}
 			float z_coord = 0;
 			if (mesh->mTextureCoords[0])
 			{
@@ -142,7 +123,7 @@ int main(int argc, char **argv)
 
 
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(argv[1], aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene *scene = importer.ReadFile(argv[1], aiProcess_FlipUVs | aiProcess_Triangulate |    aiProcess_CalcTangentSpace);
 	unsigned int total_bytes = write_vertex_data(fp, scene);
 	char bytes_header[512] = {0};
 	sprintf(bytes_header, "TOTAL_BYTES: %u\n", total_bytes);
