@@ -58,33 +58,24 @@ B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_v
 	mesh.num_faces = num_faces;
 	mesh.vertices = malloc(mesh.num_vertices * sizeof(B_Vertex));
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
-	if (mesh.faces)
-	{
-		mesh.faces = malloc(sizeof(unsigned int) * num_faces);
-		memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
-		mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
-	}
-	else
-	{
-		mesh.faces = NULL;
-	}
+	mesh.faces = malloc(sizeof(unsigned int) * num_faces);
+	memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
+	mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
+
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 	glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices*sizeof(B_Vertex), mesh.vertices, GL_DYNAMIC_DRAW);
+	glGenBuffers(1, &mesh.ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
 
-	if (mesh.faces)
-	{
-		glGenBuffers(1, &mesh.ebo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
-	}
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)(sizeof(vec3)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)(sizeof(vec3)));
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(B_Vertex), (void*)0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(B_Vertex), (void*)sizeof(B_Vertex));
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(B_Vertex), (void*)(sizeof(B_Vertex)*2));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
@@ -238,8 +229,14 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight poin
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
 			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
 			glUseProgram(shader);
-			//glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
-			glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].num_vertices);
+			if (model.meshes[i].num_faces)
+			{
+				glDrawElements(GL_TRIANGLES, model.meshes[i].num_faces, GL_UNSIGNED_INT, 0);
+			}
+			else
+			{
+				glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].num_vertices);
+			}
 		}
 	}
 }

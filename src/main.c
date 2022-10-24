@@ -96,9 +96,9 @@ void game_loop(B_Window window)
 	int running = 1;
 	Actor player = create_player();
 	Camera camera = create_camera(window, VEC3(0.0, 0.0, 5.0), VEC3_Z_DOWN, VEC3_Y_UP);
-	//B_Model monkey = load_model_from_file("assets/monkey.bgm");
-	B_Model monkey = create_cube();
-	glm_scale(monkey.world_space, VEC3(0.5, 0.5, 0.5));
+	B_Model monkey = load_model_from_file("assets/monkey.bgm");
+	//B_Model monkey = create_cube();
+	//glm_scale(monkey.world_space, VEC3(0.5, 0.5, 0.5));
 	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
 	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);

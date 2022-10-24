@@ -56,9 +56,7 @@ typedef struct
 
 typedef struct
 {
-	//mat4	local_space;
 	mat4	world_space;
-	//mat4	view;  << This is the camear??
 	B_Mesh 	meshes[MAX_MESHES];
 } B_Model;
 
@@ -81,8 +79,6 @@ void B_set_uniform_float(B_Shader shader, char *name, float value);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
-//void B_blit_model(B_Model model, B_Shader shader);
-//void B_blit_model(B_Model model, Camera camera, B_Shader shader);
 void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight point_light);
 void B_free_model(B_Model model);
 

@@ -19,11 +19,8 @@ out vec4 frag_color;
 vec4 calculate_point_light(PointLight point_light)
 {
 	vec3 direction = normalize(point_light.position - frag_position);
-	float angle = dot(direction, v_normal);
+	float angle = max(dot(direction, v_normal), 0.0); 
 	return vec4(point_light.color * point_light.intensity * angle, 1.0);
-	/*vec3 norm = normalize(v_normal);
-	vec3 direction = normalize(point_light.position - frag_position);
-    	return vec4(point_light.color * point_light.intensity * max(dot(norm, direction), 0.0), 1.0);*/
 }
 
 void main()
@@ -33,5 +30,7 @@ void main()
 	{
 		result += calculate_point_light(point_lights[i]);
 	}
-	frag_color = color*result;
+	frag_color = result*color;
+//	frag_color = vec4(frag_position, 1.0);
+	
 }
