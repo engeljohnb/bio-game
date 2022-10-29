@@ -103,6 +103,8 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				command_state->look_y_increment = -(float)event.motion.yrel*0.4;
 				break;
 			}
+			default:
+				break;
 
 		}
 	}

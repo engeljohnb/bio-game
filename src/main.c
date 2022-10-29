@@ -18,9 +18,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
+#include "server.h"
+#include "client.h"
 #include "gamestate.h"
 #include "window.h"
 #include "camera.h"
@@ -120,6 +125,19 @@ void game_loop(B_Window window)
 	float frame_time = 0;
 	float delta_t = 15.0;
 	Actor player = all_actors[0];
+	int child_pid = fork();
+	if (!child_pid)
+	{
+		Message message;
+		memset(&message, 0, sizeof(Message));
+		listen_for_message(&message);
+		exit(0);
+	}
+	else
+	{
+		send_message(TEMP_SERVER_NAME);
+		waitpid(-1, NULL, 0);
+	}
 	while (state.running)
 	{
 		frame_time += B_get_frame_time();

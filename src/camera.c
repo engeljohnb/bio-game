@@ -12,6 +12,7 @@ extern float delta_t;
 Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
 {
 	Camera camera;
+	memset(&camera, 0, sizeof(Camera));
 	camera.speed = 0.0;
 	camera.max_speed = 0.03;
 	glm_perspective(RAD(45.0f), (float)window.width/(float)window.height, 0.1f, 100.0f, camera.projection_space);

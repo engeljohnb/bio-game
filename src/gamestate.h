@@ -1,3 +1,5 @@
+#ifndef __GAMESTATE_H__
+#define __GAMESTATE_H__
 #include "actor.h"
 #include "input.h"
 #include "graphics.h"
@@ -12,6 +14,7 @@ typedef struct
 	float			*forces;
 	int			num_forces;*/
 } ActorState;
+
 typedef struct ActorNode
 {
 	ActorState		actor_state;
@@ -38,3 +41,5 @@ void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer);
 void push_actor(GameState *state, ActorState actor_state);
 void pop_actor(GameState *state);
 void free_gamestate(GameState state);
+
+#endif

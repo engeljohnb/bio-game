@@ -39,6 +39,7 @@ Actor create_default_npc(unsigned int id)
 {
 	Actor actor;
 	memset(&actor, 0, sizeof(Actor));
+	memset(&actor.model, 0, sizeof(B_Model));
 	actor.id = id;
 	actor.command_config = default_command_config();
 	actor.model = load_model_from_file("assets/monkey.bgm");
