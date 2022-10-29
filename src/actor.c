@@ -21,12 +21,38 @@
 #include <SDL2/SDL.h>
 #include "actor.h"
 #include "input.h"
+#include "utils.h"
 
-Actor create_player(void)
+Actor create_player(unsigned int id)
 {
 	Actor player;
 	memset(&player, 0, sizeof(Actor));
+	memset(&player.model, 0, sizeof(B_Model));
+	player.model = load_model_from_file("assets/monkey.bgm");
+	player.id = id;
+	player.model.valid = 1;
 	player.command_config = default_command_config();
-	//player.model
 	return player;
+}
+
+Actor create_default_npc(unsigned int id)
+{
+	Actor actor;
+	memset(&actor, 0, sizeof(Actor));
+	actor.id = id;
+	actor.command_config = default_command_config();
+	actor.model = load_model_from_file("assets/monkey.bgm");
+	glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
+	glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
+	return actor;
+}
+/*
+void update_actor(Actor *actor)
+{
+		
+}
+*/
+void free_actor(Actor actor)
+{
+	B_free_model(actor.model);
 }

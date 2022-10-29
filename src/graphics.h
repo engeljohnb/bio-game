@@ -56,9 +56,18 @@ typedef struct
 
 typedef struct
 {
+	int	valid;
 	mat4	world_space;
 	B_Mesh 	meshes[MAX_MESHES];
 } B_Model;
+
+typedef struct
+{
+	Camera		camera;
+	B_Window	window;
+	B_Shader	shader;	
+	PointLight	point_light;
+} Renderer;
 
 
 B_Model B_create_triangle(void);

@@ -24,10 +24,12 @@
 
 typedef struct
 {
+	unsigned int	id;
 	CommandConfig	command_config;
-	CommandState	command_state;
 	B_Model		model;
 } Actor;
 
-Actor create_player(void);
+Actor create_player(unsigned int id);
+void free_actor(Actor actor);
+Actor create_default_npc(unsigned int id);
 #endif

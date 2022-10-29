@@ -50,7 +50,7 @@ void rotate_camera(Camera *camera, float x, float y)
 	 glm_normalize(camera->front);
 }
 
-void update_camera(Camera *camera, CommandState command_state)
+void update_camera(Camera *camera, CommandState command_state, float delta_t)
 {
 	if (command_state.movement & M_BACKWARD)
 	{

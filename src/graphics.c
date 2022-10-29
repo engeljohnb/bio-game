@@ -87,6 +87,7 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 {
 	B_Model model;
 	memset(model.meshes, 0, sizeof(B_Mesh)*MAX_MESHES);
+	model.valid = 1;
 	for (int i = 0; i < MAX_MESHES; ++i)
 	{
 		model.meshes[i].active = 0;
@@ -217,6 +218,10 @@ B_Model load_model_from_file(const char *filename)
 
 void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight point_light)
 {
+	if (!model.valid)
+	{
+		return;
+	}
 	for (int i = 0; i < MAX_MESHES; ++i)
 	{
 		if (model.meshes[i].active)

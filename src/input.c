@@ -107,4 +107,5 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 		}
 	}
 	return 0;
+
 }

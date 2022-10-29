@@ -1,7 +1,5 @@
 #include "time.h"
 
-float delta_t = 15.0;
-
 float B_get_frame_time(void)
 {
 	static unsigned int prev_time = 0;
@@ -14,6 +12,7 @@ float B_get_frame_time(void)
 void B_keep_time(int target_period)
 {
 	static unsigned int prev_time = 0;
+	static float delta_t = 15.0;
 	unsigned int current_time = SDL_GetTicks();
 	delta_t = (float)(current_time - prev_time);
 	if (delta_t < target_period)

@@ -21,6 +21,7 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
+#include "gamestate.h"
 #include "window.h"
 #include "camera.h"
 #include "graphics.h"
@@ -29,9 +30,8 @@
 #include "time.h"
 #include "utils.h"
 
+// UP NEXT: make the cameras third person. Remember: The server (and therefore the game logic) has no reason to worry about what the camera's doing. 
 
-
-extern float delta_t;
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -88,40 +88,51 @@ unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
 	return program_id;
 }
 
-void game_loop(B_Window window)
+Renderer create_default_renderer(B_Window window)
 {
-	int running = 1;
-	Actor player = create_player();
 	Camera camera = create_camera(window, VEC3(0.0, 0.0, 5.0), VEC3_Z_DOWN, VEC3_Y_UP);
-	B_Model monkey = load_model_from_file("assets/monkey.bgm");
-	//B_Model monkey = create_cube();
-	//glm_scale(monkey.world_space, VEC3(0.5, 0.5, 0.5));
-	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
-	glm_translate(monkey.world_space, VEC3(0.0, 0.0, 0.0));
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
-
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 
+	Renderer renderer;
+	renderer.camera = camera;
+	renderer.window = window;
+	renderer.shader = shader;
+	renderer.point_light = point_light;
+	return renderer;
+}
+
+void game_loop(B_Window window)
+{
+	GameState state = create_game_state();
+	unsigned int num_actors = 0;
+	// Player
+	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, -10), VEC3(0, 0, 1)));
+	// Monkey
+	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, 0), VEC3(0, 0, -1)));
+
+	Actor *all_actors = malloc(sizeof(Actor) * 2);
+	memset(all_actors, 0, sizeof(Actor) * 2);
+	all_actors[0] = create_player(0);
+	all_actors[1] = create_default_npc(1);
+
+	Renderer renderer = create_default_renderer(window);
 	float frame_time = 0;
-	while (running)
+	float delta_t = 15.0;
+	Actor player = all_actors[0];
+	while (state.running)
 	{
-		B_update_command_state_ui(&player.command_state, player.command_config);
 		frame_time += B_get_frame_time();
 		while (frame_time >= delta_t)
 		{
-			glm_rotate(monkey.world_space, RAD((sin((float)SDL_GetTicks() / 1000))), VEC3_Y_UP);
-			if (player.command_state.quit)
-			{
-				running = 0;
-			}
-			update_camera(&camera, player.command_state);
+			B_update_command_state_ui(&(state.all_actor_states->first->actor_state.command_state), player.command_config);
+			update_game_state(&state);
+			update_camera(&renderer.camera, state.all_actor_states->first->actor_state.command_state, delta_t);
 			frame_time -= delta_t;
 		}
-		B_clear_window(window);
-		B_blit_model(monkey, camera, shader, point_light);
-		B_flip_window(window);
+		render_game(all_actors, num_actors, renderer);
 	}
-	B_free_model(monkey);
+	free_gamestate(state);
 }
 
 /* Just sets up and dives right into the main loop 
