@@ -61,7 +61,7 @@ typedef struct
 } B_Model;
 
 
-B_Model B_create_triangle();
+B_Model B_create_triangle(void);
 void get_triangle_data(B_Vertex *buffer);
 
 /* Creates a simple, single-mesh model from vertex and face data */
@@ -72,7 +72,7 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
 
 B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
 
-B_Model create_cube();
+B_Model create_cube(void);
 B_Model load_model_from_file(const char *filename);
 PointLight create_point_light(vec3 position, vec3 color, float intensity);
 void B_set_uniform_float(B_Shader shader, char *name, float value);

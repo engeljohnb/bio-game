@@ -30,10 +30,10 @@ typedef struct
 
 } B_Window;
 
-void B_init();
-void B_quit();
-B_Window B_create_window();
-B_Window B_free_window(B_Window window);
+void B_init(void);
+void B_quit(void);
+B_Window B_create_window(void);
+void B_free_window(B_Window window);
 void B_clear_window(B_Window);
 void B_flip_window(B_Window);
 

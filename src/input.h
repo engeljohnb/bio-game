@@ -49,6 +49,6 @@ typedef struct
 	int		alt_quit;
 } CommandConfig;
 
-CommandConfig default_command_config();
+CommandConfig default_command_config(void);
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config);
 #endif

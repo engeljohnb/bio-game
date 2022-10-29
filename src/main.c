@@ -30,9 +30,6 @@
 #include "utils.h"
 
 
-//	UP NEXT: Whyyyyy areeeee theee normalsss wrongggg????
-//	Fix that weird bug with the movement jitters.
-// 	Then work on lighting.
 
 extern float delta_t;
 int B_check_shader(unsigned int id, const char *name, int status)

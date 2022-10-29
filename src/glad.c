@@ -18,7 +18,8 @@
     Online:
         https://glad.dav1d.de/#profile=compatibility&language=c-debug&specification=gl&loader=on&api=gl%3D3.3
 */
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6973,3 +6974,4 @@ int gladLoadGLLoader(GLADloadproc load) {
 	return GLVersion.major != 0 || GLVersion.minor != 0;
 }
 
+#pragma GCC diagnostic pop

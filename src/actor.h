@@ -29,5 +29,5 @@ typedef struct
 	B_Model		model;
 } Actor;
 
-Actor create_player();
+Actor create_player(void);
 #endif

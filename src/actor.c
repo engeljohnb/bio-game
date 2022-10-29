@@ -22,7 +22,7 @@
 #include "actor.h"
 #include "input.h"
 
-Actor create_player()
+Actor create_player(void)
 {
 	Actor player;
 	memset(&player, 0, sizeof(Actor));

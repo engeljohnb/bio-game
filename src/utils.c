@@ -42,7 +42,7 @@ unsigned int length_between(char *haystack,
 uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_key, unsigned int data_length, unsigned int *number_of_elements, unsigned int **element_sizes)
 {
 	uint8_t *data_iter = data;
-	uint8_t *data_end = memmem(data, data_length, end_key, strlen(end_key));
+	uint8_t *data_end = memmem(data, data_length, end_key, strnlen(end_key, 128));
 	uint8_t *start;
 	uint8_t *end;
 	int num_elements = 0;
@@ -52,33 +52,33 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 		fprintf(stderr, "get_data_after_punctuated error: data end key %s not found\n", end_key);
 		data_end = data+data_length;
 	}
-	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key))) != NULL; ++i)
+	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128))) != NULL; ++i)
 	{
-		start += strlen(search_key);
+		start += strnlen(search_key, 128);
 		data_iter = start;
 		num_elements++;
 	}
 
-	uint8_t **return_data = malloc(sizeof(uint8_t*)*num_elements);
+	uint8_t **return_data = (uint8_t **)malloc(sizeof(uint8_t*)*num_elements);
 	*element_sizes = malloc(sizeof(unsigned int)*num_elements);
 	data_iter = data;
 	for (int i = 0; i < num_elements; ++i)
 	{
- 		start = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key));
+ 		start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128));
 		if (start == NULL)
 		{	
 			break;
 		}
-		start += strlen(search_key);
+		start += strnlen(search_key, 128);
 		data_iter = start;
 
-		end = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key));
+		end = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128));
 		if (end == NULL)
 		{
 			end = data_end;
 		}
 		int length = end - start;
-		return_data[i] = malloc(length);
+		return_data[i] = (uint8_t *)malloc(length);
 		return_data[i] = memcpy(return_data[i], start, length);
 
 		(*element_sizes)[i] = length;
@@ -96,29 +96,29 @@ uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_leng
 	uint8_t *end;
 	int num_elements = 0;
 	/* TODO: Write an uglier for loop than this */
-	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key))) != NULL; ++i)
+	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128))) != NULL; ++i)
 	{
-		start += strlen(search_key);
+		start += strnlen(search_key, 128);
 		data_iter = start;
 		num_elements++;
 	}
 
-	uint8_t **return_data = malloc(sizeof(uint8_t*)*num_elements);
-	*element_sizes = malloc(sizeof(unsigned int)*num_elements);
+	uint8_t **return_data = (uint8_t **)malloc(sizeof(uint8_t*)*num_elements);
+	*element_sizes = (unsigned int *)malloc(sizeof(unsigned int)*num_elements);
 	data_iter = data;
 	for (int i = 0; i < num_elements; ++i)
 	{
- 		start = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key));
-		start += strlen(search_key);
+ 		start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128));
+		start += strnlen(search_key, 128);
 		data_iter = start;
 
-		end = memmem(data_iter, data_end-data_iter, search_key, strlen(search_key));
+		end = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128));
 		if (end == NULL)
 		{
 			end = data_end;
 		}
 		int length = end - start;
-		return_data[i] = malloc(length);
+		return_data[i] = (uint8_t *)malloc(length);
 		return_data[i] = memcpy(return_data[i], start, length);
 		(*element_sizes)[i] = length;
 		
@@ -157,4 +157,23 @@ int B_load_file(const char *filename, char *buff, int size)
 	return 0;
 }
 
+int valid(void *ptr)
+{
+	return (ptr != NULL);
+}
+
+int _bg_free(void *ptr, const char *filename, unsigned int line)
+{
+	if (valid(ptr))
+	{
+		free(ptr);
+		ptr = NULL;
+	}
+	else
+	{
+		fprintf(stderr, "WARNING: Attempt to free invalid pointer in file %s at line %u.\n", filename, line);
+		return -1;
+	}
+	return 0;
+}
 

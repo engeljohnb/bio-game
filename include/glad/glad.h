@@ -18,7 +18,7 @@
     Online:
         https://glad.dav1d.de/#profile=compatibility&language=c-debug&specification=gl&loader=on&api=gl%3D3.3
 */
-
+#pragma GCC system_header
 
 #ifndef __glad_h_
 #define __glad_h_

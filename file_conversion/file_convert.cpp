@@ -10,8 +10,8 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 	{
 		unsigned int local_bytes = 0;
 		char mesh_header[512] = {0};
-		sprintf(mesh_header, "B_MESH:");
-		fwrite(mesh_header, strlen(mesh_header), 1, fp);
+		snprintf(mesh_header, 512, "B_MESH:");
+		fwrite(mesh_header, strnlen(mesh_header, 512), 1, fp);
 		aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
 		/* Should go { pos.x, pos.y, pos.z, norm.x, norm.y, norm.z, tex.x, tex.y, tex.z } */
 		fprintf(stderr, "%i\n\n", mesh->mNumVertices);
@@ -56,16 +56,16 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 	if (node->mNumMeshes > 0)
 	{
 		char mesh_end_header[512] = {0};
-		sprintf(mesh_end_header, "END_MESHES");
-		fwrite(mesh_end_header, strlen(mesh_end_header), 1, fp);
+		snprintf(mesh_end_header, 512, "END_MESHES");
+		fwrite(mesh_end_header, strnlen(mesh_end_header, 512), 1, fp);
 	}
 	for (int i = 0; i < node->mNumMeshes; ++i)
 	{
 		aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
 		unsigned int local_bytes = 0;
 		char face_header[512] = {0};
-		sprintf(face_header, "B_FACES:");
-		fwrite(face_header, strlen(face_header), 1, fp);
+		snprintf(face_header, 512, "B_FACES:");
+		fwrite(face_header, strnlen(face_header, 512), 1, fp);
 		local_bytes = 0;
 		for (int j = 0; j < mesh->mNumFaces; ++j)
 		{
@@ -82,8 +82,8 @@ unsigned int write_meshes(FILE *fp, const aiScene *scene, aiNode *node)
 	if (node->mNumMeshes > 0)
 	{
 		char face_end_header[512] = {0};
-		sprintf(face_end_header, "END_FACES");
-		fwrite(face_end_header, strlen(face_end_header), 1, fp);
+		snprintf(face_end_header, 512, "END_FACES");
+		fwrite(face_end_header, strnlen(face_end_header, 512), 1, fp);
 	}
 
     	for(int i = 0; i < node->mNumChildren; ++i)
@@ -112,11 +112,11 @@ int main(int argc, char **argv)
 	char filename[512] = {0};
 	if (argc < 3)
 	{
-		strcpy(filename, "model.bgm");
+		strncpy(filename, "model.bgm", 512);
 	}
 	else
 	{
-		memcpy(filename, argv[2], strlen(argv[2]));
+		memcpy(filename, argv[2], strnlen(argv[2], 512));
 	}
 	FILE *fp = fopen(filename, "w");
 	fseek(fp, 0L, SEEK_SET);
@@ -126,8 +126,8 @@ int main(int argc, char **argv)
 	const aiScene *scene = importer.ReadFile(argv[1], aiProcess_FlipUVs | aiProcess_Triangulate |    aiProcess_CalcTangentSpace);
 	unsigned int total_bytes = write_vertex_data(fp, scene);
 	char bytes_header[512] = {0};
-	sprintf(bytes_header, "TOTAL_BYTES: %u\n", total_bytes);
-	fwrite(bytes_header, strlen(bytes_header), 1, fp);
+	snprintf(bytes_header, 512, "TOTAL_BYTES: %u\n", total_bytes);
+	fwrite(bytes_header, strnlen(bytes_header, 512), 1, fp);
 	fclose(fp);
 	return 0;
 }

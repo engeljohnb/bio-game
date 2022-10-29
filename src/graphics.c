@@ -18,6 +18,7 @@
 
 #include <cglm/cglm.h>
 #include <glad/glad.h>
+#include <string.h>
 #include "camera.h"
 #include "window.h"
 #include "graphics.h"
@@ -39,9 +40,9 @@ void get_triangle_data(B_Vertex *buffer)
 	buffer = memcpy(buffer, vertices, TRIANGLE_SIZE);
 }
 
-B_Model B_create_triangle()
+B_Model B_create_triangle(void)
 {
-	B_Vertex *triangle_data = malloc(TRIANGLE_SIZE);
+	B_Vertex *triangle_data = (B_Vertex *)malloc(TRIANGLE_SIZE);
 	memset(triangle_data, 0, TRIANGLE_SIZE);
 	get_triangle_data(triangle_data);
 	unsigned int faces[] = { 0, 1, 2 };
@@ -52,13 +53,13 @@ B_Model B_create_triangle()
 B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces)
 {
 	B_Mesh mesh;
-	memset(&mesh, 0, sizeof(mesh));
+	memset(&mesh, 0, sizeof(B_Mesh));
 	mesh.active = 1;
 	mesh.num_vertices = num_vertices;
 	mesh.num_faces = num_faces;
-	mesh.vertices = malloc(mesh.num_vertices * sizeof(B_Vertex));
+	mesh.vertices = (B_Vertex *)malloc(mesh.num_vertices * sizeof(B_Vertex));
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
-	mesh.faces = malloc(sizeof(unsigned int) * num_faces);
+	mesh.faces = (unsigned int *)malloc(sizeof(unsigned int) * num_faces);
 	memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
 	mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
 
@@ -92,7 +93,7 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 	}
 
 	unsigned int mesh_count = num_meshes;
-	for (int i = 0; i < mesh_count; ++i)
+	for (unsigned int i = 0; i < mesh_count; ++i)
 	{
 
 		model.meshes[i] = meshes[i];
@@ -115,7 +116,7 @@ B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned in
 	return model;
 }
 
-B_Model create_cube()
+B_Model create_cube(void)
 {
 		float _vertices_[] = {
 			    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -168,7 +169,8 @@ B_Model create_cube()
 
 B_Model load_model_from_file(const char *filename)
 {
-	B_Model model = {-1};
+	B_Model model;
+	memset(&model, -1, sizeof(B_Model));
 	FILE *fp = fopen(filename, "r");
 	if (!fp)
 	{
@@ -183,8 +185,8 @@ B_Model load_model_from_file(const char *filename)
 	fread(buff, total_length, 1, fp);
 	fclose(fp);
 
-	int num_meshes = 0;
-	int num_faces = 0;
+	unsigned int num_meshes = 0;
+	unsigned int num_faces = 0;
 	unsigned int *vertex_sizes;
 	unsigned int *face_sizes;
 	uint8_t **vertex_data = get_data_after_punctuated(buff, "B_MESH:", "END_MESHES", total_length, &num_meshes, &vertex_sizes);
@@ -196,20 +198,20 @@ B_Model load_model_from_file(const char *filename)
 	}
 
 	B_Mesh meshes[num_meshes];
-	for (int i = 0; i < num_meshes; ++i)
+	for (unsigned int i = 0; i < num_meshes; ++i)
 	{
 		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], vertex_sizes[i] / sizeof(B_Vertex), face_sizes[i]/sizeof(unsigned int));
 	}
 	model = B_create_model(meshes, num_meshes);
-	free(vertex_sizes);
-	free(face_sizes);
-	for (int i = 0; i < num_meshes; ++i)
+	BG_FREE(vertex_sizes);
+	BG_FREE(face_sizes);
+	for (unsigned int i = 0; i < num_meshes; ++i)
 	{
-		free(vertex_data[i]);
-		free(face_data[i]);
+		BG_FREE(vertex_data[i]);
+		BG_FREE(face_data[i]);
 	}
-	free(vertex_data);
-	free(face_data);
+	BG_FREE(vertex_data);
+	BG_FREE(face_data);
 	return model;
 }
 
@@ -249,10 +251,10 @@ void B_free_model(B_Model model)
 		{	
 			glDeleteBuffers(1, &model.meshes[i].ebo);
 			glDeleteBuffers(1, &model.meshes[i].vbo);
-			free(model.meshes[i].vertices);
+			BG_FREE(model.meshes[i].vertices);
 			if (model.meshes[i].faces)
 			{
-				free(model.meshes[i].faces);
+				BG_FREE(model.meshes[i].faces);
 			}
 		}
 		else

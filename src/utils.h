@@ -11,6 +11,7 @@
 #define VEC3_X_DOWN (vec3){-1.0, 0.0, 0.0}
 #define VEC3_Y_DONW (vec3){0.0, -1.0, 0.0}
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
+#define BG_FREE(ptr) _bg_free(ptr, __FILE__, __LINE__)
 
 
 int B_load_file(const char *filename, char *buff, int size);
@@ -43,4 +44,7 @@ uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_leng
  * !! Caller is responsible for freeing the returned pointer and each of its elements !! 
  * !! Element sizes does not need to be allocated before calling. Caller is also responsible for freeing element_sizes !! */
 uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_key, unsigned int data_length, unsigned int *number_of_elements, unsigned int **element_sizes);
+
+int valid(void *ptr);
+int _bg_free(void *ptr, const char *filename, unsigned int line);
 #endif

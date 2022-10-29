@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "input.h"
 
-CommandConfig default_command_config()
+CommandConfig default_command_config(void)
 {
 	CommandConfig config = {0};
 	config.alt_quit = SDLK_ESCAPE;

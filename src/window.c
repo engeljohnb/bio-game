@@ -22,12 +22,12 @@
 #include <glad/glad.h>
 #include "window.h"
 
-void B_init()
+void B_init(void)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
 }
 
-B_Window B_create_window()
+B_Window B_create_window(void)
 {
 	B_Window window;
 	int window_width = 0;
@@ -70,13 +70,13 @@ void B_flip_window(B_Window window)
 	SDL_GL_SwapWindow(window.sdl_window);
 }
 
-B_Window B_free_window(B_Window window)
+void B_free_window(B_Window window)
 {
 	SDL_GL_DeleteContext(window.gl_context);
 	SDL_DestroyWindow(window.sdl_window);
 }
 
-void B_quit()
+void B_quit(void)
 {
 	SDL_Quit();
 }
