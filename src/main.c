@@ -101,19 +101,25 @@ void game_loop(B_Window window)
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
 
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
+
+	float frame_time = 0;
 	while (running)
 	{
 		B_update_command_state_ui(&player.command_state, player.command_config);
-		glm_rotate(monkey.world_space, RAD((sin((float)SDL_GetTicks() / 1000))), VEC3_Y_UP);
-		if (player.command_state.quit)
+		frame_time += B_get_frame_time();
+		while (frame_time >= delta_t)
 		{
-			running = 0;
+			glm_rotate(monkey.world_space, RAD((sin((float)SDL_GetTicks() / 1000))), VEC3_Y_UP);
+			if (player.command_state.quit)
+			{
+				running = 0;
+			}
+			update_camera(&camera, player.command_state);
+			frame_time -= delta_t;
 		}
-		update_camera(&camera, player.command_state);
 		B_clear_window(window);
 		B_blit_model(monkey, camera, shader, point_light);
 		B_flip_window(window);
-		B_keep_time(FPS_30);
 	}
 	B_free_model(monkey);
 }

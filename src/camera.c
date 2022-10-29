@@ -35,6 +35,11 @@ Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
 	glm_lookat(frontpos, position, up, camera.view_space);
 	return camera;
 }
+/*
+void swivel_camera(Camera *camera, float x, float y, vec3 target)
+{
+
+}*/
 
 void rotate_camera(Camera *camera, float x, float y)
 {

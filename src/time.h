@@ -5,5 +5,6 @@
 #define FPS_30 33
 
 void B_keep_time(int target_period);
+float B_get_frame_time(void);
 
 #endif
