@@ -32,6 +32,7 @@ typedef struct
 {
 	uint8_t		quit;
 	uint8_t 	movement;
+	unsigned int	id;
 	float		look_x_increment;
 	float		look_y_increment;
 } CommandState;

@@ -1,6 +1,7 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 #include <stdint.h>
+#include <memmem.h>
 
 #define VEC3(x, y, z) (vec3){x, y, z}
 #define RAD(a) a*0.0174532925

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <memmem.h>
 #include "utils.h"
 
 int maxi(int a, int b)

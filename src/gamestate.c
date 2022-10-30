@@ -16,6 +16,11 @@ GameState create_game_state(void)
 	return state;
 }
 
+void update_actor_state(ActorState *actor_state, CommandState command_state)
+{
+	memcpy(&(actor_state->command_state), &command_state, sizeof(CommandState));
+}
+
 void update_game_state(GameState *state)
 {
 	for (ActorNode *current = state->all_actor_states->first; current != NULL; current = current->next)
@@ -75,6 +80,45 @@ void pop_actor(GameState *state)
 	}
 	BG_FREE(last);
 	state->num_actors--;
+}
+
+void delete_actor(GameState *state, unsigned int id)
+{
+	for (ActorNode *current = state->all_actor_states->first; current != NULL; current = current->next)
+	{
+		ActorState actor_state = current->actor_state;
+		if (actor_state.id == id)
+		{
+			if (actor_state.id == state->all_actor_states->last->actor_state.id)
+			{
+				pop_actor(state);
+				return;
+			}
+			current->prev->next = current->next;
+			if (actor_state.id == state->all_actor_states->first->actor_state.id)
+			{
+				for (ActorNode *_current = state->all_actor_states->first; _current != NULL; _current = _current->next)
+				{
+					_current->first = _current->first->next;
+				}
+			}
+			state->num_actors--;
+			return;
+		}
+	}
+}
+
+ActorState *get_actor_state_from_id(GameState *state, unsigned int id)
+{
+	for (ActorNode *current = state->all_actor_states->first; current != NULL; current = current->next)
+	{
+		if (current->actor_state.id == id)
+		{
+			return &(current->actor_state);
+		}
+	}
+	fprintf(stderr, "Error: no actor with ID %i: %s %i\n", id, __FILE__, __LINE__);
+	exit(0);
 }
 
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
