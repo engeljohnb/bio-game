@@ -35,8 +35,10 @@
 #include "time.h"
 #include "utils.h"
 
-// UP NEXT: make the cameras third person. Remember: The server (and therefore the game logic) has no reason to worry about what the camera's doing. 
-
+// UP NEXT: run the game on the desktop. Is it the server? If yes, then run the listening process in the background.
+// 	run the game on the laptop. Is it the server? If no, then send a message to the server.
+//
+//	Then just dive right in and try to get the client-server structure working in earnest.
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -125,19 +127,7 @@ void game_loop(B_Window window)
 	float frame_time = 0;
 	float delta_t = 15.0;
 	Actor player = all_actors[0];
-	int child_pid = fork();
-	if (!child_pid)
-	{
-		Message message;
-		memset(&message, 0, sizeof(Message));
-		listen_for_message(&message);
-		exit(0);
-	}
-	else
-	{
-		send_message(TEMP_SERVER_NAME);
-		waitpid(-1, NULL, 0);
-	}
+
 	while (state.running)
 	{
 		frame_time += B_get_frame_time();
@@ -150,17 +140,106 @@ void game_loop(B_Window window)
 		}
 		render_game(all_actors, num_actors, renderer);
 	}
+	for (unsigned int i = 0; i < num_actors; ++i)
+	{
+		free_actor(all_actors[i]);
+	}
+	BG_FREE(all_actors);
+	free_gamestate(state);
+}
+void client_main(const char *server_name)
+{
+	Actor *all_actors = malloc(sizeof(Actor)*2);
+	memset(all_actors, 0, sizeof(Actor)*2);
+	unsigned int num_actors = 0;	
+	all_actors[0] = create_player(num_actors++);
+	all_actors[1] = create_default_npc(num_actors++);
+
+	float frame_time = 0;
+	float delta_t = 15.0;
+	Actor player = all_actors[0];
+	CommandState command_state;
+	memset(&command_state, 0, sizeof(CommandState));
+
+	int running = 1;
+	while (running)
+	{
+		frame_time += B_get_frame_time();
+		while (frame_time >= delta_t)
+		{
+			B_update_command_state_ui(&command_state, player.command_config);
+			//update_game_state(&state);
+			//update_camera(&renderer.camera, state.all_actor_states->first->actor_state.command_state, delta_t);
+			frame_time -= delta_t;
+		}
+		send_message(server_name, &command_state, sizeof(CommandState));
+		if (command_state.quit)
+		{
+			running = 0;
+		}
+	}
+	for (unsigned int i = 0; i < num_actors; ++i)
+	{
+		free_actor(all_actors[i]);
+	}
+	BG_FREE(all_actors);
+}
+
+void server_main(void)
+{
+	GameState state = create_game_state();
+	unsigned int num_actors = 0;
+	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, -10), VEC3(0, 0, 1)));
+	float frame_time = 0;
+	float delta_t = 15.0;
+	while (state.running)
+	{
+		Message message;
+		memset(&message, 0, sizeof(Message));
+		B_listen_for_message(&message);
+		CommandState *command_state = (CommandState *)message.data;
+		if (command_state->quit)
+		{
+			state.running = 0;
+		}
+		frame_time += B_get_frame_time();
+		/*while (frame_time >= delta_t)
+		{
+		}*/
+	}
 	free_gamestate(state);
 }
 
 /* Just sets up and dives right into the main loop 
  * All functions and types that contain platform-specific elements are prefixed with B */
-int main(void)
+int main(int argc, char **argv)
 {
-	B_init();
-	B_Window window = B_create_window();
-	game_loop(window);	
-	B_free_window(window);
-	B_quit();
+	
+	if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [SERVER-HOSTNAME]\n", argv[0]);
+		return 0;
+	}
+
+	char hostname[512] = {0};
+	gethostname(hostname, 512);
+	if (strncmp(argv[1], hostname, 512) == 0)
+	{
+		if (!fork())
+		{
+			B_init();
+			B_Window window = B_create_window();
+			client_main(argv[1]);
+			B_free_window(window);
+			B_quit();
+		}
+		else
+		{
+			server_main();
+		}
+	}
+
+	//game_loop(window);	
 	return 0;
 }
+

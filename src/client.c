@@ -8,7 +8,7 @@
 #include "client.h"
 #include "network_types.h" 
 
-int send_message(const char *server_name)
+int send_message(const char *server_name, void *message, size_t message_len)
 {
 	struct addrinfo *server_info = NULL;
 	struct addrinfo hints;
@@ -39,8 +39,8 @@ int send_message(const char *server_name)
 		return -1;
 	}
 
-	char message[] = "This is a test of the emergency broadcasting system.\n";
-	if ((sendto(sockfd, message, strlen(message)+1, 0, (struct sockaddr *)current->ai_addr, current->ai_addrlen)) < 0)
+	//char message[] = "This is a test of the emergency broadcasting system.\n";
+	if ((sendto(sockfd, message, message_len, 0, (struct sockaddr *)current->ai_addr, current->ai_addrlen)) < 0)
 	{
 		fprintf(stderr, "Error sending message to %s: %s %i\n", server_name, __FILE__, __LINE__);
 		return -1;

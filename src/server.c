@@ -9,7 +9,7 @@
 #include "server.h"
 #include "utils.h"
 
-int listen_for_message(Message *message)
+int B_listen_for_message(Message *message)
 {
 	struct sockaddr_in server;
 	struct sockaddr_in client;
@@ -46,7 +46,6 @@ int listen_for_message(Message *message)
 	message->from = client;
 	message->type = 0;
 	message->data = buf;
-	fprintf(stderr, "%s\n", (char *)message->data);
 	close(sockfd);
 	return 0;
 }
