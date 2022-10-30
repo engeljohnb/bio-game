@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cglm/cglm.h>
+#include "gamestate.h"
 #include "window.h"
 #include "input.h"
 #include "utils.h"
@@ -51,6 +52,25 @@ void rotate_camera(Camera *camera, float x, float y)
 	 glm_normalize(camera->front);
 }
 
+void update_camera(Camera *camera, ActorState player, float delta_t)
+{
+	// Set the camera behind the player.
+	mat4 translate;
+	glm_mat4_identity(translate);	
+	glm_translate(translate, VEC3(0, 1, -5));
+	glm_mat4_mulv3(translate, player.position, 1, camera->position);
+
+	// Make it so the camera is looking slightly above the player, rather than straight at their center.
+	vec3 target_position;
+	glm_vec3_add(player.position, VEC3(0, 1, 0), target_position);
+	glm_vec3_sub(camera->position, target_position, camera->front);
+	glm_normalize(camera->front);
+
+	vec3 frontpos;
+	glm_vec3_add(camera->front, camera->position, frontpos);
+	glm_lookat(frontpos, camera->position, camera->up, camera->view_space);
+}
+/*
 void update_camera(Camera *camera, CommandState command_state, float delta_t)
 {
 	if (command_state.movement & M_BACKWARD)
@@ -125,4 +145,4 @@ void update_camera(Camera *camera, CommandState command_state, float delta_t)
 	vec3 frontpos = {0.0, 0.0, 0.0};
 	glm_vec3_add(camera->position, camera->front, frontpos);
 	glm_lookat(frontpos, camera->position, camera->up, camera->view_space);
-}
+}*/

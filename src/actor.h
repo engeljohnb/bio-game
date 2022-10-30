@@ -20,16 +20,20 @@
 #define __ACTORS_H__
 #include <SDL2/SDL.h>
 #include "graphics.h"
+#include "gamestate.h"
 #include "input.h"
 
 typedef struct
 {
 	unsigned int	id;
 	CommandConfig	command_config;
+	ActorState	actor_state;
 	B_Model		model;
 } Actor;
 
 Actor create_player(unsigned int id);
+void update_actor(Actor *actor, ActorState actor_state);
 void free_actor(Actor actor);
 Actor create_default_npc(unsigned int id);
+void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer);
 #endif

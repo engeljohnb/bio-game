@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include "graphics.h"
+#include "gamestate.h"
 #include "actor.h"
 #include "input.h"
 #include "utils.h"
@@ -28,6 +30,7 @@ Actor create_player(unsigned int id)
 	Actor player;
 	memset(&player, 0, sizeof(Actor));
 	memset(&player.model, 0, sizeof(B_Model));
+	player.actor_state = create_actor_state(id, VEC3(0, 0, 0), VEC3(0, 0, 1));
 	player.model = load_model_from_file("assets/monkey.bgm");
 	player.id = id;
 	player.model.valid = 1;
@@ -40,6 +43,7 @@ Actor create_default_npc(unsigned int id)
 	Actor actor;
 	memset(&actor, 0, sizeof(Actor));
 	memset(&actor.model, 0, sizeof(B_Model));
+	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3(0, 0, 1));
 	actor.id = id;
 	actor.command_config = default_command_config();
 	actor.model = load_model_from_file("assets/monkey.bgm");
@@ -47,12 +51,28 @@ Actor create_default_npc(unsigned int id)
 	glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
 	return actor;
 }
-/*
-void update_actor(Actor *actor)
+
+void update_actor(Actor *actor, ActorState actor_state)
 {
-		
+	memcpy(&actor->actor_state, &actor_state, sizeof(ActorState));
+	glm_translate(actor->model.world_space, actor_state.position);
 }
-*/
+
+void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
+{
+	B_clear_window(renderer.window);
+	for (unsigned int i = 0; i < num_actors; ++i)
+	{
+		if (!(all_actors[i].model.valid))
+		{
+			continue;
+		}
+		B_blit_model(all_actors[i].model, renderer.camera, renderer.shader, renderer.point_light);
+	}
+	B_flip_window(renderer.window);
+}
+
+
 void free_actor(Actor actor)
 {
 	B_free_model(actor.model);

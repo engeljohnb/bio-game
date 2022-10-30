@@ -62,7 +62,7 @@ int B_send_message(const char *recipient_name, unsigned int type, void *message,
 	return 0;
 }
 
-int B_listen_for_message(Message *message)
+int B_listen_for_message(Message *message, unsigned int flags)
 {
 	struct sockaddr_in *host = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 	struct sockaddr_in recipient;
@@ -94,7 +94,7 @@ int B_listen_for_message(Message *message)
 		sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 		if (sockfd < 0)
 		{
-			fprintf(stderr, "Error: could not create socket: %s %i\n", __FILE__, __LINE__);
+			fprintf(stderr, "Error: could not create socket: %s %i %i\n", __FILE__, __LINE__, errno);
 			continue;
 		}
 		int yes = 1;
@@ -124,14 +124,26 @@ int B_listen_for_message(Message *message)
 	int bytes_read = 0;
 	void *buf = malloc(MAX_BUFFER);
 	memset(buf, 0, MAX_BUFFER);
-	if ((bytes_read = recvfrom(sockfd, buf, MAX_BUFFER, 0, (struct sockaddr *)&recipient, &address_len)) < 0)
+	int recv_flags = 0;
+	if (flags == NON_BLOCKING)
 	{
-		fprintf(stderr, "Error receiving message: %s %i\n", __FILE__, __LINE__);
+		recv_flags = MSG_DONTWAIT;
+	}
+	if ((bytes_read = recvfrom(sockfd, buf, MAX_BUFFER, recv_flags, (struct sockaddr *)&recipient, &address_len)) < 0)
+	{
+		//fprintf(stderr, "Error receiving message: %s %i\n", __FILE__, __LINE__);
 		message->data = NULL;
 		message->from_name = NULL;
+		close(sockfd);
 		return -1;
 	}
-
+	if (!bytes_read)
+	{
+		message->data = NULL;
+		message->from_name = NULL;
+		close(sockfd);
+		return -1;
+	}
 	//recipient.sin_family = AF_INET;
 	uint8_t *data_end = memmem(buf, MAX_BUFFER, "\0EM", 3);
 	uint8_t *message_data = ((uint8_t *)buf + sizeof(unsigned int));

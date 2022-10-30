@@ -96,7 +96,7 @@ unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
 
 Renderer create_default_renderer(B_Window window)
 {
-	Camera camera = create_camera(window, VEC3(0.0, 0.0, 5.0), VEC3_Z_DOWN, VEC3_Y_UP);
+	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN, VEC3_Y_UP);
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 
@@ -134,7 +134,7 @@ void game_loop(B_Window window)
 		{
 			B_update_command_state_ui(&(state.all_actor_states->first->actor_state.command_state), player.command_config);
 			update_game_state(&state);
-			update_camera(&renderer.camera, state.all_actor_states->first->actor_state.command_state, delta_t);
+			//update_camera(&renderer.camera, state.all_actor_states->first->actor_state.command_state, delta_t);
 			frame_time -= delta_t;
 		}
 		render_game(all_actors, num_actors, renderer);
@@ -146,7 +146,8 @@ void game_loop(B_Window window)
 	BG_FREE(all_actors);
 	free_gamestate(state);
 }
-void client_main(const char *server_name)
+
+void client_main(const char *server_name, B_Window window)
 {
 	Message message;
 	memset(&message, 0, sizeof(Message));
@@ -154,7 +155,6 @@ void client_main(const char *server_name)
 	memset(all_actors, 0, sizeof(Actor)*2);
 	unsigned int num_actors = 0;	
 	all_actors[0] = create_player(num_actors++);
-	all_actors[1] = create_default_npc(num_actors++);
 
 	float frame_time = 0;
 	float delta_t = 15.0;
@@ -163,13 +163,12 @@ void client_main(const char *server_name)
 	memset(&command_state, 0, sizeof(CommandState));
 
 	B_send_message(server_name, JOIN_REQUEST, NULL, 0);
-	B_listen_for_message(&message);
+	B_listen_for_message(&message, BLOCKING);
 	unsigned int *id = (unsigned int*)message.data;
 	command_state.id = *id;
-
-	fprintf(stderr, "%i\n", command_state.id);
 	free_message(message);
 
+	Renderer renderer = create_default_renderer(window);
 	int running = 1;
 	while (running)
 	{
@@ -177,15 +176,32 @@ void client_main(const char *server_name)
 		while (frame_time >= delta_t)
 		{
 			B_update_command_state_ui(&command_state, player.command_config);
-			//update_game_state(&state);
-			//update_camera(&renderer.camera, state.all_actor_states->first->actor_state.command_state, delta_t);
+			B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
+			if (B_listen_for_message(&message, NON_BLOCKING) >= 0)
+			{
+				ActorState *actor_state = (ActorState *)message.data;
+				update_actor(&(all_actors[0]), *actor_state);
+				update_camera(&renderer.camera, *actor_state, delta_t);
+				if (command_state.quit)
+				{
+					running = 0;
+				}
+
+				free_message(message);
+			}
+			else
+			{
+				update_actor_state(&(all_actors[0].actor_state), command_state, delta_t);
+				update_actor(&(all_actors[0]), all_actors[0].actor_state);
+				update_camera(&renderer.camera, all_actors[0].actor_state, delta_t);
+				if (command_state.quit)
+				{
+					running = 0;
+				}
+			}
 			frame_time -= delta_t;
 		}
-		B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
-		if (command_state.quit)
-		{
-			running = 0;
-		}
+		render_game(all_actors, num_actors, renderer); 
 	}
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
@@ -204,9 +220,11 @@ void server_main(void)
 	float delta_t = 15.0;
 	while (state.running)
 	{
+		int progress_state = 0;
 		Message message;
 		memset(&message, 0, sizeof(Message));
-		if ((B_listen_for_message(&message)) < 0)
+		CommandState *command_state = NULL;
+		if ((B_listen_for_message(&message, BLOCKING)) < 0)
 		{
 			continue;
 		}
@@ -217,25 +235,33 @@ void server_main(void)
 			{
 				push_actor(&state, create_actor_state(num_actors, VEC3(0, 0, 0), VEC3(0, 0, 1)));
 				B_send_message(message.from_name, ID_ASSIGNMENT, &num_actors, sizeof(unsigned int));
-				fprintf(stderr, "%s\n", message.from_name);
 				num_actors++;
 				break;
 			}
 			case (COMMAND_STATE):
 			{
-				CommandState *command_state = (CommandState *)message.data;
-				ActorState *actor_state = get_actor_state_from_id(&state, command_state->id);
-				update_actor_state(actor_state, *command_state);
-				state.running = 0;
+				command_state = (CommandState *)message.data;
+				progress_state = 1;
+				if (command_state->quit)
+				{
+					state.running = 0;
+				}
 			}
 			default:
 				break;
 
 		}
 		frame_time += B_get_frame_time();
-		/*while (frame_time >= delta_t)
+		while (frame_time >= delta_t)
 		{
-		}*/
+			if (progress_state)
+			{
+				ActorState *actor_state = get_actor_state_from_id(&state, command_state->id);
+				update_actor_state(actor_state, *command_state, delta_t);
+				B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
+			}
+			frame_time -= delta_t;
+		}
 		free_message(message);
 	}
 	free_gamestate(state);
@@ -260,7 +286,7 @@ int main(int argc, char **argv)
 		{
 			B_init();
 			B_Window window = B_create_window();
-			client_main(argv[1]);
+			client_main(argv[1], window);
 			B_free_window(window);
 			B_quit();
 		}
@@ -273,7 +299,7 @@ int main(int argc, char **argv)
 	{
 		B_init();
 		B_Window window = B_create_window();
-		client_main(argv[1]);
+		client_main(argv[1], window);
 		B_free_window(window);
 		B_quit();
 		

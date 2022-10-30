@@ -19,6 +19,7 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include <string.h>
+#include "actor.h"
 #include "camera.h"
 #include "window.h"
 #include "graphics.h"
