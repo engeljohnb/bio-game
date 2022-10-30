@@ -114,7 +114,7 @@ void push_actor(GameState *state, ActorState actor_state)
 		return;
 	}
 	ActorNode *new_node = (ActorNode *)malloc(sizeof(ActorNode));
-	memcpy(&new_node->actor_state, &actor_state, sizeof(ActorState));
+	memcpy(&(new_node->actor_state), &actor_state, sizeof(ActorState));
 	new_node->prev = state->all_actor_states->last;
 	new_node->next = NULL;
 	state->all_actor_states->last->next = new_node;

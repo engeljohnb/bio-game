@@ -21,7 +21,7 @@ int B_send_message(const char *recipient_name, unsigned int type, void *message,
 	int error = 0;
 	if((error = getaddrinfo(recipient_name, port, &hints, &server_info)) < 0)
 	{
-		fprintf(stderr, "Could not get server address: %s %i %i\n", __FILE__, __LINE__, error);
+		fprintf(stderr, "Could not get server address for %s\n: %s %i %s\n", recipient_name, __FILE__, __LINE__, gai_strerror(error));
 		return -1;
 	}
 
@@ -43,14 +43,17 @@ int B_send_message(const char *recipient_name, unsigned int type, void *message,
 	freeaddrinfo(server_info);	
 
 	size_t data_len = message_len + sizeof(unsigned int) + sizeof("\0EM");
-	void *packaged_message = malloc(message_len);
-	memset(packaged_message, 0, message_len);
+	void *packaged_message = malloc(data_len);
+	memset(packaged_message, 0, data_len);
 
 	uint8_t *message_iter = (uint8_t *)packaged_message;
 	memcpy(message_iter, &type, sizeof(unsigned int));
 	message_iter += sizeof(unsigned int);
-	memcpy(message_iter, message, message_len);
-	message_iter += message_len;
+	if (message_len && (message != NULL))
+	{
+		memcpy(message_iter, message, message_len);
+		message_iter += message_len;
+	}
 	memcpy(message_iter, "\0EM", sizeof("\0EM"));
 
 	if ((sendto(sockfd, packaged_message, data_len, 0, (struct sockaddr *)current->ai_addr, current->ai_addrlen)) < 0)
@@ -74,9 +77,6 @@ int B_listen_for_message(Message *message, unsigned int flags)
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE;
-	/*server.sin_family = AF_INET;
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
-	server.sin_port = htons(atoi(get_port()));*/
 	if ((getaddrinfo(NULL, get_port(), &hints, &host_info)) < 0)
 	{
 		fprintf(stderr, "Could not get address info: %s %i\n", __FILE__, __LINE__);
@@ -122,7 +122,7 @@ int B_listen_for_message(Message *message, unsigned int flags)
 
 	unsigned int address_len = sizeof(struct sockaddr);
 	int bytes_read = 0;
-	void *buf = malloc(MAX_BUFFER);
+	uint8_t *buf = (uint8_t *)malloc(MAX_BUFFER);
 	memset(buf, 0, MAX_BUFFER);
 	int recv_flags = 0;
 	if (flags == NON_BLOCKING)
@@ -131,7 +131,10 @@ int B_listen_for_message(Message *message, unsigned int flags)
 	}
 	if ((bytes_read = recvfrom(sockfd, buf, MAX_BUFFER, recv_flags, (struct sockaddr *)&recipient, &address_len)) < 0)
 	{
-		//fprintf(stderr, "Error receiving message: %s %i\n", __FILE__, __LINE__);
+		if (flags == BLOCKING)
+		{
+			fprintf(stderr, "Error receiving message: %s %i\n", __FILE__, __LINE__);
+		}
 		message->data = NULL;
 		message->from_name = NULL;
 		close(sockfd);
@@ -179,7 +182,8 @@ int B_listen_for_message(Message *message, unsigned int flags)
 	}
 	message->from_name = malloc(256);
 	memset(message->from_name, 0, 256);
-	memcpy(message->from_name, recipient_name, strnlen(recipient_name, 256));
+	memcpy(message->from_name, recipient_name, strnlen(recipient_name, 255)+1);
+	message->from_name_len = strnlen(recipient_name, 255)+1;
 	BG_FREE(buf);
 	close(sockfd);
 	return 0;

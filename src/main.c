@@ -179,12 +179,29 @@ void client_main(const char *server_name, B_Window window)
 			B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
 			if (B_listen_for_message(&message, NON_BLOCKING) >= 0)
 			{
-				ActorState *actor_state = (ActorState *)message.data;
-				update_actor(&(all_actors[0]), *actor_state);
-				update_camera(&renderer.camera, *actor_state);
-				if (command_state.quit)
+				switch (message.type)
 				{
-					running = 0;
+					case (ACTOR_STATE):
+					{
+						ActorState *actor_state = (ActorState *)message.data;
+						if (actor_state->id == command_state.id)
+						{
+							update_actor(&(all_actors[0]), *actor_state);
+							update_camera(&renderer.camera, *actor_state);
+						}
+						if (command_state.quit)
+						{
+							running = 0;
+						}
+						break;
+					}
+					case (NEW_PLAYER):
+					{
+						fprintf(stderr, "%lu\n", sizeof(Actor));
+						break;
+					}
+					default:
+						break;
 				}
 
 				free_message(message);
@@ -199,7 +216,6 @@ void client_main(const char *server_name, B_Window window)
 					running = 0;
 				}
 			}
-			//fprintf(stderr, "%f %f %f\n", all_actors[0].actor_state.position[0], all_actors[0].actor_state.position[1], all_actors[0].actor_state.position[2]);
 			frame_time -= delta_t;
 		}
 		render_game(all_actors, num_actors, renderer); 
@@ -214,7 +230,11 @@ void client_main(const char *server_name, B_Window window)
 void server_main(void)
 {
 	GameState state = create_game_state();
-	int actor_ids[MAX_PLAYERS];
+	char player_hostnames[MAX_PLAYERS][256];
+	for (int i = 0; i < MAX_PLAYERS; ++i)
+	{
+		memset(player_hostnames[i], 0, 256);
+	}
 
 	unsigned int num_actors = 0;
 	float frame_time = 0;
@@ -236,6 +256,11 @@ void server_main(void)
 			{
 				push_actor(&state, create_actor_state(num_actors, VEC3(0, 0, 0), VEC3(0, 0, 1)));
 				B_send_message(message.from_name, ID_ASSIGNMENT, &num_actors, sizeof(unsigned int));
+				memcpy(player_hostnames[num_actors], message.from_name, message.from_name_len);
+				if (num_actors)
+				{
+					B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+				}
 				num_actors++;
 				break;
 			}
@@ -247,6 +272,7 @@ void server_main(void)
 				{
 					state.running = 0;
 				}
+				break;
 			}
 			default:
 				break;
@@ -257,9 +283,15 @@ void server_main(void)
 		{
 			if (progress_state)
 			{
-				ActorState *actor_state = get_actor_state_from_id(&state, command_state->id);
-				update_actor_state(actor_state, *command_state, delta_t);
-				B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
+				for (unsigned int i = 0; i < num_actors; ++i)
+				{
+					ActorState *actor_state = get_actor_state_from_id(&state, 0);
+					if (i == command_state->id)
+					{
+						update_actor_state(actor_state, *command_state, delta_t);
+					}
+					B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
+				}
 			}
 			frame_time -= delta_t;
 		}

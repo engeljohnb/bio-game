@@ -5,16 +5,17 @@
 #define MAX_BUFFER 2048
 #define MAX_PLAYERS 4
 #define TEMP_SERVER_NAME "gregor-desktop"
-#define TEMP_PORT "5000"
+#define TEMP_PORT "6000"
 #define BLOCKING 0
 #define NON_BLOCKING 1
 enum MESSAGE_TYPES
 {
-	ERRORS_OR_SOMETHING =	0,
-	JOIN_REQUEST =		0x00000001,
-	COMMAND_STATE =		0x00000002,
-	ACTOR_STATE =		0x00000004,
-	ID_ASSIGNMENT = 	0x00000008
+	ERRORS_OR_SOMETHING = 0,
+	JOIN_REQUEST,
+	COMMAND_STATE,
+	ACTOR_STATE,
+	ID_ASSIGNMENT,
+	NEW_PLAYER
 };
 
 typedef struct
@@ -26,6 +27,7 @@ typedef struct
 	struct sockaddr_in	from;
 	size_t			from_len;
 	char			*from_name;
+	size_t			from_name_len;
 	//struct sockaddr_in 	to;
 } Message;
 
