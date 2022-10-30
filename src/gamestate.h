@@ -6,6 +6,7 @@
 typedef struct
 {
 	vec3			position;
+	vec3			prev_position;
 	vec3			front;
 	vec3			move_direction;
 	vec3			up;

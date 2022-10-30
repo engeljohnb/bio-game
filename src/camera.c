@@ -52,23 +52,22 @@ void rotate_camera(Camera *camera, float x, float y)
 	 glm_normalize(camera->front);
 }
 
-void update_camera(Camera *camera, ActorState player, float delta_t)
+void update_camera(Camera *camera, ActorState player)
 {
-	// Set the camera behind the player.
+	glm_vec3_copy(player.position, camera->position);
 	mat4 translate;
 	glm_mat4_identity(translate);	
 	glm_translate(translate, VEC3(0, 1, -5));
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	// Make it so the camera is looking slightly above the player, rather than straight at their center.
-	vec3 target_position;
-	glm_vec3_add(player.position, VEC3(0, 1, 0), target_position);
-	glm_vec3_sub(camera->position, target_position, camera->front);
+	glm_vec3_copy(player.front, camera->front);
+	glm_normalize(camera->front);
+	glm_vec3_copy(player.up, camera->up);
 	glm_normalize(camera->front);
 
 	vec3 frontpos;
-	glm_vec3_add(camera->front, camera->position, frontpos);
-	glm_lookat(frontpos, camera->position, camera->up, camera->view_space);
+	glm_vec3_add(camera->position,camera->front, frontpos);
+	glm_lookat(camera->position, player.position, camera->up, camera->view_space);
 }
 /*
 void update_camera(Camera *camera, CommandState command_state, float delta_t)

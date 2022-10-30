@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cglm/cglm.h>
 #include "utils.h"
 
 int maxi(int a, int b)
@@ -176,3 +177,8 @@ int _bg_free(void *ptr, const char *filename, unsigned int line)
 	return 0;
 }
 
+
+void print_vec3(vec3 vector)
+{
+	fprintf(stderr, "%f %f %f\n", vector[0], vector[1], vector[2]);
+}

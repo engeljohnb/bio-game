@@ -5,7 +5,7 @@
 #define MAX_BUFFER 2048
 #define MAX_PLAYERS 4
 #define TEMP_SERVER_NAME "gregor-desktop"
-#define TEMP_PORT "4090"
+#define TEMP_PORT "5000"
 #define BLOCKING 0
 #define NON_BLOCKING 1
 enum MESSAGE_TYPES

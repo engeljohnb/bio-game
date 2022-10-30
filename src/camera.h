@@ -26,7 +26,7 @@ typedef struct
 
 Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up);
 //void update_camera(Camera *camera, CommandState command_state, float delta_t);
-void update_camera(Camera *camera, ActorState player, float delta_t);
+void update_camera(Camera *camera, ActorState player);
 void look_at(Camera *camera, vec3 target);
 
 #endif

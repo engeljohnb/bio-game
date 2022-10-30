@@ -113,7 +113,7 @@ void game_loop(B_Window window)
 	GameState state = create_game_state();
 	unsigned int num_actors = 0;
 	// Player
-	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, -10), VEC3(0, 0, 1)));
+	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, -10), VEC3_Z_UP));
 	// Monkey
 	push_actor(&state, create_actor_state(num_actors++, VEC3(0, 0, 0), VEC3(0, 0, -1)));
 
@@ -181,7 +181,7 @@ void client_main(const char *server_name, B_Window window)
 			{
 				ActorState *actor_state = (ActorState *)message.data;
 				update_actor(&(all_actors[0]), *actor_state);
-				update_camera(&renderer.camera, *actor_state, delta_t);
+				update_camera(&renderer.camera, *actor_state);
 				if (command_state.quit)
 				{
 					running = 0;
@@ -193,12 +193,13 @@ void client_main(const char *server_name, B_Window window)
 			{
 				update_actor_state(&(all_actors[0].actor_state), command_state, delta_t);
 				update_actor(&(all_actors[0]), all_actors[0].actor_state);
-				update_camera(&renderer.camera, all_actors[0].actor_state, delta_t);
+				update_camera(&renderer.camera, all_actors[0].actor_state);
 				if (command_state.quit)
 				{
 					running = 0;
 				}
 			}
+			//fprintf(stderr, "%f %f %f\n", all_actors[0].actor_state.position[0], all_actors[0].actor_state.position[1], all_actors[0].actor_state.position[2]);
 			frame_time -= delta_t;
 		}
 		render_game(all_actors, num_actors, renderer); 

@@ -20,16 +20,16 @@ GameState create_game_state(void)
 void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t)
 {
 	memcpy(&(actor_state->command_state), &command_state, sizeof(CommandState));	
-	if (command_state.movement & M_BACKWARD)
+	if (command_state.movement & M_FORWARD)
 	{
-		vec3 front;
-		glm_vec3_copy(actor_state->front, front);
-		glm_vec3_normalize(front);
-		glm_vec3_add(actor_state->front, actor_state->move_direction, actor_state->move_direction);
+		vec3 forward;
+		glm_vec3_copy(actor_state->front, forward);
+		glm_vec3_normalize(forward);
+		glm_vec3_add(forward, actor_state->move_direction, actor_state->move_direction);
 		glm_vec3_normalize(actor_state->move_direction);
 		actor_state->speed += 0.0001*delta_t;
 	}
-	if (command_state.movement & M_FORWARD)
+	if (command_state.movement & M_BACKWARD)
 	{
 		vec3 backward = {0.0, 0.0, 0.0};
 		glm_vec3_negate_to(actor_state->front, backward);
@@ -38,7 +38,7 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_vec3_normalize(actor_state->move_direction);
 		actor_state->speed += 0.0001*delta_t;
 	}
-	if (command_state.movement & M_RIGHT)
+	if (command_state.movement & M_LEFT)
 	{
 		vec3 left = {0.0, 0.0, 0.0};
 		glm_vec3_cross(actor_state->front, actor_state->up, left);
@@ -48,7 +48,7 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_vec3_normalize(actor_state->move_direction);
 		actor_state->speed += 0.0001*delta_t;
 	}
-	if (command_state.movement & M_LEFT)
+	if (command_state.movement & M_RIGHT)
 	{
 		vec3 right = {0.0, 0.0, 0.0};
 		glm_vec3_cross(actor_state->front, actor_state->up, right);
@@ -58,19 +58,26 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		actor_state->speed += 0.0001*delta_t;
 	}
 
-	// I have no idea why, but the player moves the opposite direction I think they should. Temporary solution until I actually figure it out.
-	//glm_vec3_negate(actor_state->move_direction);
-
 	if (actor_state->speed > actor_state->max_speed)
 	{
 		actor_state->speed = actor_state->max_speed;
 	}
-
+	
 	if (actor_state->speed < 0)
 	{
 		actor_state->speed = 0;
 	}
+	if (command_state.movement == 0)
+	{
+		glm_vec3_copy(VEC3_ZERO, actor_state->move_direction);
+		//actor_state->speed -= 0.001*delta_t;
+		actor_state->speed = 0;
+	}
 
+	vec3 velocity;
+	glm_vec3_copy(actor_state->position, actor_state->prev_position);
+	glm_vec3_scale(actor_state->move_direction, actor_state->speed, velocity);
+	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 }
 
 void update_game_state(GameState *state)
@@ -179,8 +186,9 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	memset(&state, 0, sizeof(ActorState));
 	memset(&state.command_state, 0, sizeof(CommandState));
 	glm_vec3_copy(position, state.position);
+	glm_vec3_copy(position, state.prev_position);
 	glm_vec3_copy(facing, state.front);
-	glm_vec3_copy(VEC3_Z_UP, state.up);
+	glm_vec3_copy(VEC3_Y_UP, state.up);
 	glm_vec3_copy(VEC3_ZERO, state.move_direction);
 	state.speed = 0;
 	state.max_speed = 0.3;

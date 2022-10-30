@@ -1,5 +1,6 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
+#include <cglm/cglm.h>
 #include <stdint.h>
 #include <memmem.h>
 
@@ -10,7 +11,7 @@
 #define VEC3_Y_UP (vec3){0.0, 1.0, 0.0}
 #define VEC3_Z_UP (vec3){0.0, 0.0, 1.0}
 #define VEC3_X_DOWN (vec3){-1.0, 0.0, 0.0}
-#define VEC3_Y_DONW (vec3){0.0, -1.0, 0.0}
+#define VEC3_Y_DOWN (vec3){0.0, -1.0, 0.0}
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
 #define BG_FREE(ptr) _bg_free(ptr, __FILE__, __LINE__)
 
@@ -48,4 +49,5 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 
 int valid(void *ptr);
 int _bg_free(void *ptr, const char *filename, unsigned int line);
+void print_vec3(vec3 vector);
 #endif

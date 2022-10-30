@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <cglm/cglm.h>
 #include "graphics.h"
 #include "gamestate.h"
 #include "actor.h"
@@ -30,7 +31,7 @@ Actor create_player(unsigned int id)
 	Actor player;
 	memset(&player, 0, sizeof(Actor));
 	memset(&player.model, 0, sizeof(B_Model));
-	player.actor_state = create_actor_state(id, VEC3(0, 0, 0), VEC3(0, 0, 1));
+	player.actor_state = create_actor_state(id, VEC3_ZERO, VEC3_Z_UP);
 	player.model = load_model_from_file("assets/monkey.bgm");
 	player.id = id;
 	player.model.valid = 1;
@@ -43,7 +44,7 @@ Actor create_default_npc(unsigned int id)
 	Actor actor;
 	memset(&actor, 0, sizeof(Actor));
 	memset(&actor.model, 0, sizeof(B_Model));
-	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3(0, 0, 1));
+	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3_Z_UP);
 	actor.id = id;
 	actor.command_config = default_command_config();
 	actor.model = load_model_from_file("assets/monkey.bgm");
@@ -55,7 +56,10 @@ Actor create_default_npc(unsigned int id)
 void update_actor(Actor *actor, ActorState actor_state)
 {
 	memcpy(&actor->actor_state, &actor_state, sizeof(ActorState));
-	glm_translate(actor->model.world_space, actor_state.position);
+	vec3 position_dif;
+	glm_vec3_sub(actor_state.position, actor_state.prev_position, position_dif);
+	glm_translate(actor->model.world_space, position_dif);
+	//glm_mat4_mulv3(actor->model.world_space, actor_state.position, 1, actor_state.position);
 }
 
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
