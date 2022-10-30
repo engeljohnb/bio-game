@@ -197,6 +197,7 @@ void client_main(const char *server_name, B_Window window)
 					}
 					case (NEW_PLAYER):
 					{
+						B_send_message(server_name, ACKNOWLEDGE_NP, NULL, 0);
 						fprintf(stderr, "%lu\n", sizeof(Actor));
 						break;
 					}
@@ -239,6 +240,7 @@ void server_main(void)
 	unsigned int num_actors = 0;
 	float frame_time = 0;
 	float delta_t = 15.0;
+	int np_acknowledged = 1;
 	while (state.running)
 	{
 		int progress_state = 0;
@@ -250,6 +252,10 @@ void server_main(void)
 			continue;
 		}
 
+		if (!np_acknowledged)
+		{
+			B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+		}
 		switch (message.type)
 		{
 			case (JOIN_REQUEST):
@@ -259,6 +265,7 @@ void server_main(void)
 				memcpy(player_hostnames[num_actors], message.from_name, message.from_name_len);
 				if (num_actors)
 				{
+					np_acknowledged = 0;
 					B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
 				}
 				num_actors++;
@@ -272,6 +279,11 @@ void server_main(void)
 				{
 					state.running = 0;
 				}
+				break;
+			}
+			case (ACKNOWLEDGE_NP):
+			{
+				np_acknowledged = 1;
 				break;
 			}
 			default:
