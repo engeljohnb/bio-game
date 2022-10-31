@@ -34,10 +34,7 @@
 #include "time.h"
 #include "utils.h"
 
-// UP NEXT: run the game on the desktop. Is it the server? If yes, then run the listening process in the background.
-// 	run the game on the laptop. Is it the server? If no, then send a message to the server.
-//
-//	Then just dive right in and try to get the client-server structure working in earnest.
+// UP NEXT: Why don't the NEW_PLAYER messages ever go through?
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -160,6 +157,7 @@ void client_main(const char *server_name, B_Window window)
 	float delta_t = 15.0;
 	Actor player = all_actors[0];
 	CommandState command_state;
+	ActorState *actor_state = NULL;
 	memset(&command_state, 0, sizeof(CommandState));
 
 	B_send_message(server_name, JOIN_REQUEST, NULL, 0);
@@ -172,54 +170,57 @@ void client_main(const char *server_name, B_Window window)
 	int running = 1;
 	while (running)
 	{
+		int got_message = 0;
+		int got_actor_state = 0;
+		B_update_command_state_ui(&command_state, player.command_config);
+		B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
+		actor_state = &(all_actors[0].actor_state);
 		frame_time += B_get_frame_time();
+		if (B_listen_for_message(&message, NON_BLOCKING) >= 0)
+		{
+			switch (message.type)
+			{
+				case (ACTOR_STATE):
+				{
+					if (actor_state->id == command_state.id)
+					{
+
+						actor_state = (ActorState *)message.data;	
+					}
+					got_actor_state++;
+					break;
+				}
+				case (NEW_PLAYER):
+				{
+					B_send_message(server_name, ACKNOWLEDGE_NP, "MESSAGE", sizeof("MESSAGE"));
+					fprintf(stderr, "%lu\n", sizeof(Actor));
+					break;
+				}
+				default:
+					break;
+			}
+			got_message++;
+		}
+
 		while (frame_time >= delta_t)
 		{
-			B_update_command_state_ui(&command_state, player.command_config);
-			B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
-			if (B_listen_for_message(&message, NON_BLOCKING) >= 0)
+			if (!got_actor_state)
 			{
-				switch (message.type)
-				{
-					case (ACTOR_STATE):
-					{
-						ActorState *actor_state = (ActorState *)message.data;
-						if (actor_state->id == command_state.id)
-						{
-							update_actor(&(all_actors[0]), *actor_state);
-							update_camera(&renderer.camera, *actor_state);
-						}
-						if (command_state.quit)
-						{
-							running = 0;
-						}
-						break;
-					}
-					case (NEW_PLAYER):
-					{
-						B_send_message(server_name, ACKNOWLEDGE_NP, NULL, 0);
-						fprintf(stderr, "%lu\n", sizeof(Actor));
-						break;
-					}
-					default:
-						break;
-				}
-
-				free_message(message);
+				update_actor_state(actor_state, command_state, delta_t);
 			}
-			else
+			update_actor(&(all_actors[0]), *actor_state);
+			update_camera(&renderer.camera, *actor_state);
+			if (command_state.quit)
 			{
-				update_actor_state(&(all_actors[0].actor_state), command_state, delta_t);
-				update_actor(&(all_actors[0]), all_actors[0].actor_state);
-				update_camera(&renderer.camera, all_actors[0].actor_state);
-				if (command_state.quit)
-				{
-					running = 0;
-				}
+				running = 0;
 			}
 			frame_time -= delta_t;
 		}
 		render_game(all_actors, num_actors, renderer); 
+		if (got_message)
+		{
+			free_message(message);
+		}
 	}
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
@@ -254,7 +255,10 @@ void server_main(void)
 
 		if (!np_acknowledged)
 		{
-			B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+			for (unsigned int i = 0; i < num_actors-1; ++i)
+			{
+				B_send_message(player_hostnames[i], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+			}
 		}
 		switch (message.type)
 		{
@@ -266,7 +270,11 @@ void server_main(void)
 				if (num_actors)
 				{
 					np_acknowledged = 0;
-					B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+					for (unsigned int i = 0; i < num_actors; ++i)
+					{
+						fprintf(stderr, "%s\n", player_hostnames[i]);
+					}
+					//B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
 				}
 				num_actors++;
 				break;
@@ -291,22 +299,22 @@ void server_main(void)
 
 		}
 		frame_time += B_get_frame_time();
+		ActorState *actor_state = get_actor_state_from_id(&state, 0);
 		while (frame_time >= delta_t)
 		{
 			if (progress_state)
 			{
 				for (unsigned int i = 0; i < num_actors; ++i)
 				{
-					ActorState *actor_state = get_actor_state_from_id(&state, 0);
 					if (i == command_state->id)
 					{
 						update_actor_state(actor_state, *command_state, delta_t);
 					}
-					B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
 				}
 			}
 			frame_time -= delta_t;
 		}
+		B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
 		free_message(message);
 	}
 	free_gamestate(state);
