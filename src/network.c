@@ -9,28 +9,41 @@
 #include "utils.h"
 #include "network.h"
 
-int B_send_message(const char *recipient_name, unsigned int type, void *message, size_t message_len)
+
+B_Connection B_connect_to(const char *recipient_name, const char *port)
 {
+	B_Connection connection;
+	memset(&connection, 0, sizeof(B_Connection));
 	struct addrinfo *server_info = NULL;
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(struct addrinfo));
-	const char *port = get_port();
+	//const char *port = get_port();
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
-
 	int error = 0;
 	if((error = getaddrinfo(recipient_name, port, &hints, &server_info)) < 0)
 	{
 		fprintf(stderr, "Could not get server address for %s\n: %s %i %s\n", recipient_name, __FILE__, __LINE__, gai_strerror(error));
-		return -1;
+		return connection;
 	}
 
 	int sockfd = -1;
 	struct addrinfo *current;
+
 	for (current = server_info; current != NULL; current = current->ai_next)
 	{
 		if ((sockfd = socket(current->ai_family, current->ai_socktype, current->ai_protocol)) < 0)
 		{
+			continue;
+		}
+		int yes = 1;
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) 
+		{
+			fprintf(stderr, "Error setting socket options: %s %i\n", __FILE__, __LINE__);
+		}
+		if ((bind(sockfd, (struct sockaddr *)current->ai_addr, sizeof(struct sockaddr))) < 0)
+		{
+			fprintf(stderr, "Error: could not bind socket: %s %i %i\n", __FILE__, __LINE__, errno);
 			continue;
 		}
 		break;
@@ -38,10 +51,25 @@ int B_send_message(const char *recipient_name, unsigned int type, void *message,
 	if (sockfd < 0)
 	{
 		fprintf(stderr, "Error creating socket: %s %i\n", __FILE__, __LINE__);
-		return -1;
+		return connection;
+	}
+	if (current == NULL)
+	{
+		fprintf(stderr, "Error creating socket: %s %i\n", __FILE__, __LINE__);
+		close(sockfd);
+		return connection;
 	}
 	freeaddrinfo(server_info);	
 
+//	connection = { (struct sockaddr *)current->ai_addr, current->ai_addrlen, sockfd };
+	connection.address = (struct sockaddr *)current->ai_addr;
+	connection.address_len = current->ai_addrlen;
+	connection.sockfd = sockfd;
+	return connection;
+}
+
+int _B_send_message(B_Connection connection, unsigned int type, void *message, size_t message_len, char *file, int line)
+{
 	size_t data_len = message_len + sizeof(unsigned int) + sizeof("\0EM");
 	void *packaged_message = malloc(data_len);
 	memset(packaged_message, 0, data_len);
@@ -56,33 +84,36 @@ int B_send_message(const char *recipient_name, unsigned int type, void *message,
 	}
 	memcpy(message_iter, "\0EM", sizeof("\0EM"));
 
-	if ((sendto(sockfd, packaged_message, data_len, 0, (struct sockaddr *)current->ai_addr, current->ai_addrlen)) < 0)
+	if ((sendto(connection.sockfd, packaged_message, data_len, MSG_DONTWAIT, connection.address, connection.address_len)) < 0)
 	{
-		fprintf(stderr, "Error sending message to %s: %s %i\n", recipient_name, __FILE__, __LINE__);
+		char error[512] = {0};
+		strerror_r(errno, error, 512);
+		fprintf(stderr, "Error sending message in %s, line %i: %s\n", file, line, error);
 		return -1;
 	}
-	close(sockfd);
+	//close(sockfd);
 	return 0;
 }
 
-int B_listen_for_message(Message *message, unsigned int flags)
+B_Connection B_setup_recv_connection(char *port)
 {
+	B_Connection connection;
+	memset(&connection, 0, sizeof(B_Connection));
 	struct sockaddr_in *host = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-	struct sockaddr_in recipient;
 	struct addrinfo *host_info;
 	struct addrinfo hints;
 	memset(host, 0, sizeof(struct sockaddr_in));
-	memset(&recipient, 0, sizeof(struct sockaddr_in));
+//	memset(&recipient, 0, sizeof(struct sockaddr_in));
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE;
-	if ((getaddrinfo(NULL, get_port(), &hints, &host_info)) < 0)
+	if ((getaddrinfo(NULL, port, &hints, &host_info)) < 0)
 	{
 		fprintf(stderr, "Could not get address info: %s %i\n", __FILE__, __LINE__);
-		message->data = NULL;
-		message->from_name = NULL;
-		return -1;
+		//message->data = NULL;
+		//message->from_name = NULL;
+		return connection;
 	}
 
 	struct addrinfo *current = host_info;
@@ -111,15 +142,30 @@ int B_listen_for_message(Message *message, unsigned int flags)
 		host = (struct sockaddr_in *)(current->ai_addr);
 		break;
 	}
-	freeaddrinfo(host_info);
 	if (current == NULL)
+	{
+		fprintf(stderr, "Error: could not setup recv socket: %s %i\n", __FILE__, __LINE__);
+		return connection;
+	}
+	freeaddrinfo(host_info);
+	
+//	connection = { (struct sockaddr *)current->address, current->address_len, sockfd };
+	connection.address = (struct sockaddr *)current->ai_addr;
+	connection.address_len = current->ai_addrlen;
+	connection.sockfd = sockfd;
+	return connection;
+}
+
+int B_listen_for_message(B_Connection connection, Message *message, unsigned int flags)
+{
+	/*if (current == NULL)
 	{
 		fprintf(stderr, "Error: Could not bind host address: %s %i\n", __FILE__, __LINE__);
 		message->data = NULL;
 		message->from_name = NULL;
 		return -1;
-	}
-
+	}*/
+	struct sockaddr_in recipient;
 	unsigned int address_len = sizeof(struct sockaddr);
 	int bytes_read = 0;
 	uint8_t *buf = (uint8_t *)malloc(MAX_BUFFER);
@@ -129,7 +175,7 @@ int B_listen_for_message(Message *message, unsigned int flags)
 	{
 		recv_flags = MSG_DONTWAIT;
 	}
-	if ((bytes_read = recvfrom(sockfd, buf, MAX_BUFFER, recv_flags, (struct sockaddr *)&recipient, &address_len)) < 0)
+	if ((bytes_read = recvfrom(connection.sockfd, buf, MAX_BUFFER, recv_flags, (struct sockaddr *)&recipient, &address_len)) < 0)
 	{
 		if (flags == BLOCKING)
 		{
@@ -137,14 +183,14 @@ int B_listen_for_message(Message *message, unsigned int flags)
 		}
 		message->data = NULL;
 		message->from_name = NULL;
-		close(sockfd);
+		close(connection.sockfd);
 		return -1;
 	}
 	if (!bytes_read)
 	{
 		message->data = NULL;
 		message->from_name = NULL;
-		close(sockfd);
+		//close(sockfd);
 		return -1;
 	}
 	//recipient.sin_family = AF_INET;
@@ -185,7 +231,7 @@ int B_listen_for_message(Message *message, unsigned int flags)
 	memcpy(message->from_name, recipient_name, strnlen(recipient_name, 255)+1);
 	message->from_name_len = strnlen(recipient_name, 255)+1;
 	BG_FREE(buf);
-	close(sockfd);
+	//close(sockfd);
 	return 0;
 }
 
@@ -198,4 +244,9 @@ void free_message(Message message)
 {
 	BG_FREE(message.from_name);
 	BG_FREE(message.data);
+}
+
+void B_close_connection(B_Connection connection)
+{
+	close(connection.sockfd);
 }

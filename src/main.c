@@ -35,6 +35,8 @@
 #include "utils.h"
 
 // UP NEXT: Why don't the NEW_PLAYER messages ever go through?
+// 		Maybe try opening a socket and maintaining that one connection through the whole game.
+// 		Probably should've been doing that anyway.
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -160,8 +162,9 @@ void client_main(const char *server_name, B_Window window)
 	ActorState *actor_state = NULL;
 	memset(&command_state, 0, sizeof(CommandState));
 
-	B_send_message(server_name, JOIN_REQUEST, NULL, 0);
-	B_listen_for_message(&message, BLOCKING);
+	B_Connection server_connection = B_connect_to(server_name, "3940");
+	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
+	B_listen_for_message(server_connection, &message, BLOCKING);
 	unsigned int *id = (unsigned int*)message.data;
 	command_state.id = *id;
 	free_message(message);
@@ -173,11 +176,12 @@ void client_main(const char *server_name, B_Window window)
 		int got_message = 0;
 		int got_actor_state = 0;
 		B_update_command_state_ui(&command_state, player.command_config);
-		B_send_message(server_name, COMMAND_STATE, &command_state, sizeof(CommandState));
+		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
 		actor_state = &(all_actors[0].actor_state);
 		frame_time += B_get_frame_time();
-		if (B_listen_for_message(&message, NON_BLOCKING) >= 0)
+		if (B_listen_for_message(server_connection, &message, NON_BLOCKING) >= 0)
 		{
+			fprintf(stderr, "Any message at all received\n");
 			switch (message.type)
 			{
 				case (ACTOR_STATE):
@@ -192,7 +196,7 @@ void client_main(const char *server_name, B_Window window)
 				}
 				case (NEW_PLAYER):
 				{
-					B_send_message(server_name, ACKNOWLEDGE_NP, "MESSAGE", sizeof("MESSAGE"));
+					B_send_message(server_connection, ACKNOWLEDGE_NP, "MESSAGE", sizeof("MESSAGE"));
 					fprintf(stderr, "%lu\n", sizeof(Actor));
 					break;
 				}
@@ -226,6 +230,7 @@ void client_main(const char *server_name, B_Window window)
 	{
 		free_actor(all_actors[i]);
 	}
+	B_close_connection(server_connection);
 	BG_FREE(all_actors);
 }
 
@@ -233,22 +238,25 @@ void server_main(void)
 {
 	GameState state = create_game_state();
 	char player_hostnames[MAX_PLAYERS][256];
+	B_Connection connections[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		memset(player_hostnames[i], 0, 256);
+		memset(&connections[i], 0, sizeof(B_Connection));
 	}
 
 	unsigned int num_actors = 0;
 	float frame_time = 0;
 	float delta_t = 15.0;
 	int np_acknowledged = 1;
+	B_Connection recv_connection = B_setup_recv_connection("3940");
 	while (state.running)
 	{
 		int progress_state = 0;
 		Message message;
 		memset(&message, 0, sizeof(Message));
 		CommandState *command_state = NULL;
-		if ((B_listen_for_message(&message, BLOCKING)) < 0)
+		if ((B_listen_for_message(recv_connection, &message, BLOCKING)) < 0)
 		{
 			continue;
 		}
@@ -257,7 +265,7 @@ void server_main(void)
 		{
 			for (unsigned int i = 0; i < num_actors-1; ++i)
 			{
-				B_send_message(player_hostnames[i], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
+				B_send_message(connections[i], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
 			}
 		}
 		switch (message.type)
@@ -265,8 +273,10 @@ void server_main(void)
 			case (JOIN_REQUEST):
 			{
 				push_actor(&state, create_actor_state(num_actors, VEC3(0, 0, 0), VEC3(0, 0, 1)));
-				B_send_message(message.from_name, ID_ASSIGNMENT, &num_actors, sizeof(unsigned int));
+				B_Connection connection = B_connect_to(message.from_name, "3940");
+				B_send_message(connection, ID_ASSIGNMENT, &num_actors, sizeof(unsigned int));
 				memcpy(player_hostnames[num_actors], message.from_name, message.from_name_len);
+				memcpy(&connections[num_actors], &connection, sizeof(B_Connection));
 				if (num_actors)
 				{
 					np_acknowledged = 0;
@@ -277,6 +287,11 @@ void server_main(void)
 					//B_send_message(player_hostnames[0], NEW_PLAYER, "MESSAGE", strlen("MESSAGE"));
 				}
 				num_actors++;
+				break;
+			}
+			case (NEW_PLAYER):
+			{
+				fprintf(stderr, "If this executes, we've got a funny problem\n");
 				break;
 			}
 			case (COMMAND_STATE):
@@ -314,10 +329,21 @@ void server_main(void)
 			}
 			frame_time -= delta_t;
 		}
-		B_send_message(message.from_name, ACTOR_STATE, actor_state, sizeof(ActorState));
+		for (unsigned int i = 0; i < num_actors; ++i)
+		{
+			if (strncpy(player_hostnames[i], message.from_name, 256) == 0)
+			{
+				B_send_message(connections[i], ACTOR_STATE, actor_state, sizeof(ActorState));
+				break;
+			}
+		}
 		free_message(message);
 	}
 	free_gamestate(state);
+	for (unsigned int i = 0; i < num_actors; ++i)
+	{
+		B_close_connection(connections[i]);
+	}
 }
 
 /* Just sets up and dives right into the main loop 
@@ -335,7 +361,7 @@ int main(int argc, char **argv)
 	gethostname(hostname, 512);
 	if (strncmp(argv[1], hostname, 512) == 0)
 	{
-		if (!fork())
+/*		if (!fork())
 		{
 			B_init();
 			B_Window window = B_create_window();
@@ -344,9 +370,9 @@ int main(int argc, char **argv)
 			B_quit();
 		}
 		else
-		{
+		{*/
 			server_main();
-		}
+	//	}
 	}
 	else
 	{
