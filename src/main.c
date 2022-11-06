@@ -228,18 +228,18 @@ int main(int argc, char **argv)
 
 	char hostname[512] = {0};
 	gethostname(hostname, 512);
+	char port[] = "4590";
 	//if (strncmp(argv[1], hostname, 512) == 0)
-	char port[] = "4480";
 	if (strncmp(argv[1], "0", 1) == 0)
 	{
-/*		if (!fork())
-		{
-			game_loop(NULL, port);
-		}
-		else
-		{*/
+		//if (!fork())
+		//{
 			server_loop(port);
 		//}
+		//else
+	//	{
+	//		game_loop(NULL, port);
+	//	}
 	}
 	else
 	{

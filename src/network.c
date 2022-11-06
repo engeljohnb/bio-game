@@ -89,7 +89,6 @@ int _B_send_message(B_Connection connection, int type, void *data, size_t data_l
 	BG_FREE(compiled_message);
 	return 0;
 }
-
 int _B_send_reply(B_Connection connection, B_Message message, int type, void *data, size_t data_len, char *file, int line)
 {
 	size_t new_data_len = 0;
@@ -116,7 +115,10 @@ B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int 
 
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE;
+	if (flags & SETUP_SERVER)
+	{ 
+		hints.ai_flags = AI_PASSIVE;
+	}
 
 	int error = 0;
 	if ((error = getaddrinfo(hostname, port, &hints, &info)) < 0)
