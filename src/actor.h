@@ -23,6 +23,7 @@
 #include "gamestate.h"
 #include "input.h"
 
+#define CURRENT_PLAYER 0
 typedef struct
 {
 	unsigned int	id;

@@ -18,6 +18,7 @@
 
 int B_load_file(const char *filename, char *buff, int size);
 int maxi(int a, int b);
+size_t mins(size_t a, size_t b);
 
 /* Gets the distance between two substrings in a bigger string 
    Specifically, the distance between the START of the first string and the END of the second.

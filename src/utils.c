@@ -13,6 +13,15 @@ int maxi(int a, int b)
 	return b;
 }
 
+size_t mins(size_t a, size_t b)
+{
+	if (a < b)
+	{
+		return a;
+	}
+	return b;
+}
+
 unsigned int length_between(char *haystack,
 			    int len_haystack,
 			    const char *needle1,

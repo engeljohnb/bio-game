@@ -24,6 +24,7 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
+#include <arpa/inet.h>
 #include "network.h"
 #include "gamestate.h"
 #include "window.h"
@@ -34,9 +35,8 @@
 #include "time.h"
 #include "utils.h"
 
-// UP NEXT: Why don't the NEW_PLAYER messages ever go through?
-// 		Maybe try opening a socket and maintaining that one connection through the whole game.
-// 		Probably should've been doing that anyway.
+
+/* UP NEXT: Maybe the port number needs to be different for the client and the server?" */
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -107,6 +107,148 @@ Renderer create_default_renderer(B_Window window)
 	return renderer;
 }
 
+void server_loop(const char *port)
+{
+	B_Connection connections[MAX_PLAYERS];
+	for (int i = 0; i < MAX_PLAYERS; ++i)
+	{
+		memset(&connections[i], 0, sizeof(B_Connection));
+	}
+
+	GameState state = create_game_state();
+	int num_players = 0;
+	B_Connection server_connection = B_connect_to(NULL, port, SETUP_SERVER);
+	while (state.running)
+	{
+		B_Message message;
+		memset(&message, 0, sizeof(B_Message));
+		B_listen_for_message(server_connection, &message, 0);
+		switch (message.type)
+		{
+			case BORING_TYPE:
+			{
+				state.running = 0;
+				break;
+			}
+			case JOIN_REQUEST:
+			{
+				char f_addr[INET_ADDRSTRLEN] = {0};
+				char c_addr[INET_ADDRSTRLEN] = {0};
+				struct sockaddr_in *from_addr = (struct sockaddr_in *)&message.from_addr;
+				struct sockaddr_in *con_addr = (struct sockaddr_in *)&message.from_addr;
+				inet_ntop(AF_INET, &(from_addr->sin_addr), f_addr, INET_ADDRSTRLEN);
+				inet_ntop(AF_INET, &(con_addr->sin_addr), c_addr, INET_ADDRSTRLEN);
+				fprintf(stderr, "%s\n%s\n\n", f_addr, c_addr);
+				/*char hostname[512] = {0};
+				if (B_get_sender_name(message, hostname, 512) >= 0)
+				{*/
+					
+					//connections[num_players] = B_connect_to(NULL, (char *)message.data, CONNECT_TO_SERVER);
+					B_send_reply(server_connection, message, ID_ASSIGNMENT, &num_players, sizeof(int));
+				//}
+				//B_send_message(server_connection, ID_ASSIGNMENT, &num_players, sizeof(int));
+				num_players++;
+				break;
+			}
+			case COMMAND_STATE:
+			{
+				fprintf(stderr, "Command State\n");
+				break;
+			}
+			case ACTOR_STATE:
+			{
+				fprintf(stderr, "Actor State\n");
+				break;
+			}
+			case ID_ASSIGNMENT:
+			{
+				fprintf(stderr, "ID Assignment\n");
+				break;
+			}
+			case NEW_PLAYER:
+			{
+				fprintf(stderr, "New Payer\n");
+				break;
+			}
+			case ACKNOWLEDGE_NP:
+			{
+				fprintf(stderr, "Acknowledge NP\n");
+				break;
+			}
+			default:
+			{
+				fprintf(stderr, "Warning: improper message received\n");
+				break;
+			}
+		}
+		free_message(message);
+	}
+	
+}
+
+unsigned int confirm_join_request(B_Connection connection)
+{
+	B_Message message;
+	memset(&message, 0, sizeof(B_Message));
+	while (message.type != ID_ASSIGNMENT)
+	{
+		B_listen_for_message(connection, &message, BLOCKING);
+	}
+	unsigned int id = *(unsigned int *)message.data;
+	free_message(message);
+	return id;
+}
+
+void game_loop(const char *server_name, const char *port)
+{
+//	GameState state = create_game_state();
+	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
+// 	B_Window window = B_create_window();	
+	Actor all_actors[MAX_PLAYERS];
+	for (int i = 0; i < MAX_PLAYERS; ++i)
+	{
+		memset(&all_actors[i], 0, sizeof(Actor));
+	}
+
+	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
+	unsigned int player_id = confirm_join_request(server_connection);
+	fprintf(stderr, "%u\n", player_id);
+}
+
+/* Just sets up and dives right into the main loop 
+ * All functions and types that contain platform-specific elements are prefixed with B */
+int main(int argc, char **argv)
+{
+	
+	if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [SERVER-HOSTNAME]\n", argv[0]);
+		return 0;
+	}
+
+	char hostname[512] = {0};
+	gethostname(hostname, 512);
+	//if (strncmp(argv[1], hostname, 512) == 0)
+	char port[] = "4480";
+	if (strncmp(argv[1], "0", 1) == 0)
+	{
+/*		if (!fork())
+		{
+			game_loop(NULL, port);
+		}
+		else
+		{*/
+			server_loop(port);
+		//}
+	}
+	else
+	{
+		game_loop(NULL, port);
+	}
+	return 0;
+}
+/*
+
 void game_loop(B_Window window)
 {
 	GameState state = create_game_state();
@@ -145,6 +287,7 @@ void game_loop(B_Window window)
 	BG_FREE(all_actors);
 	free_gamestate(state);
 }
+
 
 void client_main(const char *server_name, B_Window window)
 {
@@ -344,47 +487,4 @@ void server_main(void)
 	{
 		B_close_connection(connections[i]);
 	}
-}
-
-/* Just sets up and dives right into the main loop 
- * All functions and types that contain platform-specific elements are prefixed with B */
-int main(int argc, char **argv)
-{
-	
-	if (argc < 2)
-	{
-		fprintf(stderr, "Usage: %s [SERVER-HOSTNAME]\n", argv[0]);
-		return 0;
-	}
-
-	char hostname[512] = {0};
-	gethostname(hostname, 512);
-	if (strncmp(argv[1], hostname, 512) == 0)
-	{
-/*		if (!fork())
-		{
-			B_init();
-			B_Window window = B_create_window();
-			client_main(argv[1], window);
-			B_free_window(window);
-			B_quit();
-		}
-		else
-		{*/
-			server_main();
-	//	}
-	}
-	else
-	{
-		B_init();
-		B_Window window = B_create_window();
-		client_main(argv[1], window);
-		B_free_window(window);
-		B_quit();
-		
-	}
-
-	//game_loop(window);	
-	return 0;
-}
-
+}*/
