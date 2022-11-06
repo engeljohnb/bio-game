@@ -36,7 +36,7 @@
 #include "utils.h"
 
 
-/* UP NEXT: Maybe the port number needs to be different for the client and the server?" */
+// UP NEXT: Client allways binds to INADDR_ANY, and client gives server address thru command line
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -135,16 +135,16 @@ void server_loop(const char *port)
 				char f_addr[INET_ADDRSTRLEN] = {0};
 				char c_addr[INET_ADDRSTRLEN] = {0};
 				struct sockaddr_in *from_addr = (struct sockaddr_in *)&message.from_addr;
-				struct sockaddr_in *con_addr = (struct sockaddr_in *)&message.from_addr;
+				struct sockaddr_in *con_addr = (struct sockaddr_in *)&server_connection.address;
 				inet_ntop(AF_INET, &(from_addr->sin_addr), f_addr, INET_ADDRSTRLEN);
 				inet_ntop(AF_INET, &(con_addr->sin_addr), c_addr, INET_ADDRSTRLEN);
-				fprintf(stderr, "%s\n%s\n\n", f_addr, c_addr);
+				fprintf(stderr, "Message from: %s\n My (server) address: %s\n\n", f_addr, c_addr);
 				/*char hostname[512] = {0};
 				if (B_get_sender_name(message, hostname, 512) >= 0)
 				{*/
 					
 					//connections[num_players] = B_connect_to(NULL, (char *)message.data, CONNECT_TO_SERVER);
-					B_send_reply(server_connection, message, ID_ASSIGNMENT, &num_players, sizeof(int));
+					B_send_reply(server_connection, &message, ID_ASSIGNMENT, &num_players, sizeof(int));
 				//}
 				//B_send_message(server_connection, ID_ASSIGNMENT, &num_players, sizeof(int));
 				num_players++;
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		game_loop(NULL, port);
+		game_loop("localhost", port);
 	}
 	return 0;
 }

@@ -6,7 +6,8 @@
 #define B_connect_to(hostname, port, flags) _B_connect_to(hostname, port, flags, __FILE__, __LINE__)
 #define B_listen_for_message(connection, message, flags) _B_listen_for_message(connection, message, flags, __FILE__, __LINE__)
 #define B_send_message(connection, type, data, data_len) _B_send_message(connection, type, data, data_len,  __FILE__, __LINE__)
-#define B_send_reply(connection, message, type, data, data_len) _B_send_message(connection, type, data, data_len, __FILE__, __LINE__);
+// #define B_send_reply(connection, message, type, data, data_len) _B_send_message(connection, type, data, data_len, __FILE__, __LINE__);
+#define B_send_reply(connection, message, type, data, data_len) _B_send_reply(connection, message, type, data, data_len, __FILE__, __LINE__);
 #define MAX_PLAYERS 4
 #define MAX_MESSAGE_SIZE 2048
 
@@ -62,7 +63,7 @@ void *construct_message(int type, void *data, size_t data_len, size_t *new_data_
 int B_get_sender_name(B_Message message, char *name, size_t name_len);
 int _B_send_message(B_Connection connection, int type, void *data, size_t data_len, char *file, int line);
 int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned int flags, char *file, int line);
-int _B_send_reply(B_Connection connection, B_Message message, int type, void *data, size_t data_len, char *file, int line);
+int _B_send_reply(B_Connection connection, B_Message *message, int type, void *data, size_t data_len, char *file, int line);
 void B_close_connection(B_Connection connection);
 void free_message(B_Message message);
 #endif

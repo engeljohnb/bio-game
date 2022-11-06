@@ -11,12 +11,24 @@
 #include "network.h"
 #include "utils.h"
 
+void print_address(struct sockaddr sockaddr, const char *additional)
+{
+	char address_string[INET_ADDRSTRLEN] = {0};
+	struct sockaddr_in *address = (struct sockaddr_in *)&sockaddr;
+	inet_ntop(AF_INET, &(address->sin_addr), address_string, INET_ADDRSTRLEN);
+	fprintf(stderr, "%s: %s\n", additional, address_string);
+	struct sockaddr_in in_addr = *(struct sockaddr_in *)&sockaddr;
+	fprintf(stderr, "Port %u\n--------------------------------------\n\n", ntohs(in_addr.sin_port));
+}
+
+
 int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned int flags, char *file, int line)
 {
 	size_t message_size = MAX_MESSAGE_SIZE + sizeof(int) + sizeof("\0EM");
 	void *data = malloc(message_size);
 	memset(data, 0, message_size);
 	unsigned int recv_flags = 0;
+	message->from_addr_len = sizeof(struct sockaddr);
 	if (flags & BLOCKING)
 	{
 		recv_flags |= MSG_DONTWAIT;
@@ -27,6 +39,7 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 		return  -1;
 	}
 
+	print_address(message->from_addr, "Receiving from: ");
 	memcpy(&message->type, (int *)data, sizeof(int));
 	uint8_t *data_start = (uint8_t *)((uint8_t *)data + sizeof(int));
 	uint8_t *data_end = (uint8_t *)memmem(data_start, message_size-sizeof(int), "\0EM", sizeof("\0EM"));
@@ -85,15 +98,18 @@ int _B_send_message(B_Connection connection, int type, void *data, size_t data_l
 		fprintf(stderr, "B_send_message sendto %s line %i error: %s\n", file, line, strerror(errno));
 		return -1;
 	}
+	print_address(connection.address, "Sending to");
 
 	BG_FREE(compiled_message);
 	return 0;
 }
-int _B_send_reply(B_Connection connection, B_Message message, int type, void *data, size_t data_len, char *file, int line)
+
+int _B_send_reply(B_Connection connection, B_Message *message, int type, void *data, size_t data_len, char *file, int line)
 {
 	size_t new_data_len = 0;
 	void *compiled_message = construct_message(type, data, data_len, &new_data_len);
-	if ((sendto(connection.sockfd, compiled_message, new_data_len, 0, &message.from_addr, message.from_addr_len)) < 0)
+	print_address(message->from_addr, "Replying to");
+	if ((sendto(connection.sockfd, compiled_message, new_data_len, 0, &message->from_addr, message->from_addr_len)) < 0)
 	{
 		fprintf(stderr, "B_send_reply sendto %s line %i error: %s\n", file, line, strerror(errno));
 		return -1;
@@ -147,6 +163,11 @@ B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int 
 				close(sockfd);
 				continue;
 			}
+			print_address(*(struct sockaddr *)current->ai_addr, "Server bound to");
+		}
+		else
+		{
+			print_address(*(struct sockaddr *)current->ai_addr, "Client connected to");
 		}
 		break;
 	}
