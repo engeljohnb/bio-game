@@ -33,13 +33,17 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 	{
 		recv_flags |= MSG_DONTWAIT;
 	}
-	if ((recvfrom(connection.sockfd, data, message_size, recv_flags, &(message->from_addr), &message->from_addr_len)) < 0)
+	int error = 0;
+	if ((error = recvfrom(connection.sockfd, data, message_size, recv_flags, &(message->from_addr), &message->from_addr_len)) < 0)
 	{
+		if ((error == EAGAIN) || (error == EWOULDBLOCK))
+		{
+			return 0;
+		}
 		fprintf(stderr, "B_listen_for_message recvfrom %s line %i error: %s\n", file, line, strerror(errno));
 		return  -1;
 	}
 
-	print_address(message->from_addr, "Receiving from: ");
 	memcpy(&message->type, (int *)data, sizeof(int));
 	uint8_t *data_start = (uint8_t *)((uint8_t *)data + sizeof(int));
 	uint8_t *data_end = (uint8_t *)memmem(data_start, message_size-sizeof(int), "\0EM", sizeof("\0EM"));
@@ -58,7 +62,7 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 	data_bytes[data_len] = 0;
 	message->from_name = 0;
 	message->from_name_len = 0;
-	return 0;
+	return 1;
 }
 
 void *construct_message(int type, void *data, size_t data_len, size_t *new_data_len)
@@ -98,17 +102,39 @@ int _B_send_message(B_Connection connection, int type, void *data, size_t data_l
 		fprintf(stderr, "B_send_message sendto %s line %i error: %s\n", file, line, strerror(errno));
 		return -1;
 	}
-	print_address(connection.address, "Sending to");
 
 	BG_FREE(compiled_message);
 	return 0;
 }
 
+int _B_send_to_address(B_Connection connection, B_Address address, int type, void *data, size_t data_len, char *file, int line)
+{
+	size_t new_data_len = 0;
+	void *compiled_message = construct_message(type, data, data_len, &new_data_len);
+	if ((sendto(connection.sockfd, compiled_message, new_data_len, 0, &address.address, address.address_len)) < 0)
+	{
+		fprintf(stderr, "B_send_to_addr sendto %s line %i error: %s\n", file, line, strerror(errno));
+		return -1;
+	}
+
+	BG_FREE(compiled_message);
+	return 0;
+}
+
+B_Address B_get_address_from_message(B_Message message)
+{
+	B_Address address;
+	memset(&address, 0, sizeof(B_Address));
+	address.address = message.from_addr;
+	address.address_len = message.from_addr_len;
+	return address;
+}
+
+
 int _B_send_reply(B_Connection connection, B_Message *message, int type, void *data, size_t data_len, char *file, int line)
 {
 	size_t new_data_len = 0;
 	void *compiled_message = construct_message(type, data, data_len, &new_data_len);
-	print_address(message->from_addr, "Replying to");
 	if ((sendto(connection.sockfd, compiled_message, new_data_len, 0, &message->from_addr, message->from_addr_len)) < 0)
 	{
 		fprintf(stderr, "B_send_reply sendto %s line %i error: %s\n", file, line, strerror(errno));
@@ -119,9 +145,46 @@ int _B_send_reply(B_Connection connection, B_Message *message, int type, void *d
 	return 0;
 }
 
-/* For one-player mode, set hostname to NULL for both the server and the client */
-B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int flags, char *file, int line)
+B_Connection B_server_connection(const char *port)
 {
+	B_Connection connection;
+	memset(&connection, -1, sizeof(B_Connection));
+	int sockfd = -1;
+ 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+ 	{
+		return connection;
+	}
+	int yes = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) 
+	{
+		fprintf(stderr, "B_connect_to error setting sock options\n");
+	}
+	struct sockaddr_in server_addr;
+	memset(&server_addr, 0, sizeof(struct sockaddr_in));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sin_port = htons(atoi(port));
+	if ((bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr))) < 0)
+	{
+		fprintf(stderr, "B_connect_to error: could not bind server address: %s", strerror(errno));
+		close(sockfd);
+		return connection;
+	}
+	connection.sockfd = sockfd;
+	connection.address = *(struct sockaddr *)&server_addr;
+	connection.address_len = sizeof(struct sockaddr);
+	connection.address_info = NULL;
+	return connection;
+	
+}
+
+/* For one-player mode, set hostname to NULL for both the server and the client */
+B_Connection _B_connect_to(const char *server_addr, const char *port, unsigned int flags, char *file, int line)
+{
+	if (flags & SETUP_SERVER)
+	{
+		return B_server_connection(port);
+	}
 	B_Connection connection;
 	memset(&connection, -1, sizeof(B_Connection));
 
@@ -131,13 +194,9 @@ B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int 
 
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
-	if (flags & SETUP_SERVER)
-	{ 
-		hints.ai_flags = AI_PASSIVE;
-	}
 
 	int error = 0;
-	if ((error = getaddrinfo(hostname, port, &hints, &info)) < 0)
+	if ((error = getaddrinfo(server_addr, port, &hints, &info)) < 0)
 	{
 		fprintf(stderr, "B_connect_to error getaddrinfo %s line %i: %s\n", file, line, gai_strerror(error));
 		return connection;
@@ -150,24 +209,6 @@ B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int 
 		if ((sockfd = socket(current->ai_family, current->ai_socktype, 0)) < 0)
 		{
 			continue;
-		}
-		if (flags & SETUP_SERVER)
-		{
-			int yes = 1;
-			if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) 
-			{
-				fprintf(stderr, "B_connect_to %s line %i: Error setting sock options\n", file, line);
-			}
-			if ((bind(sockfd, (struct sockaddr *)current->ai_addr, current->ai_addrlen)) < 0)
-			{
-				close(sockfd);
-				continue;
-			}
-			print_address(*(struct sockaddr *)current->ai_addr, "Server bound to");
-		}
-		else
-		{
-			print_address(*(struct sockaddr *)current->ai_addr, "Client connected to");
 		}
 		break;
 	}
@@ -183,8 +224,6 @@ B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int 
 	connection.sockfd = sockfd;
 	return connection;
 }
-
-//int B_send_reply(B_Connection connection, B_Message message, void *data)
 
 int B_get_sender_name(B_Message message, char *name, size_t name_len)
 {

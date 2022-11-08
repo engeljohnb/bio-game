@@ -6,8 +6,8 @@
 #define B_connect_to(hostname, port, flags) _B_connect_to(hostname, port, flags, __FILE__, __LINE__)
 #define B_listen_for_message(connection, message, flags) _B_listen_for_message(connection, message, flags, __FILE__, __LINE__)
 #define B_send_message(connection, type, data, data_len) _B_send_message(connection, type, data, data_len,  __FILE__, __LINE__)
-// #define B_send_reply(connection, message, type, data, data_len) _B_send_message(connection, type, data, data_len, __FILE__, __LINE__);
-#define B_send_reply(connection, message, type, data, data_len) _B_send_reply(connection, message, type, data, data_len, __FILE__, __LINE__);
+#define B_send_reply(connection, message, type, data, data_len) _B_send_reply(connection, message, type, data, data_len, __FILE__, __LINE__)
+#define B_send_to_address(connection, address, type, data, data_len) _B_send_to_address(connection, address, type, data, data_len, __FILE__, __LINE__)
 #define MAX_PLAYERS 4
 #define MAX_MESSAGE_SIZE 2048
 
@@ -55,15 +55,23 @@ typedef struct
 	ssize_t			address_len;
 } B_Connection;
 
-/* For one-player mode, set hostname to NULL for both the server and the client */
-B_Connection _B_connect_to(const char *hostname, const char *port, unsigned int flags, char *file, int line);
+typedef struct
+{
+	struct sockaddr		address;
+	socklen_t		address_len;
+} B_Address;
+
+B_Connection _B_connect_to(const char *server_addr, const char *port, unsigned int flags, char *file, int line);
 
 /* Returns a message suitable for sending over the network. User is responsible for freeing the returned memory. */
 void *construct_message(int type, void *data, size_t data_len, size_t *new_data_len);
 int B_get_sender_name(B_Message message, char *name, size_t name_len);
 int _B_send_message(B_Connection connection, int type, void *data, size_t data_len, char *file, int line);
+/* Returns 1 if a message was received, 0 if no message was received, or -1 on an error */
 int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned int flags, char *file, int line);
+int _B_send_to_address(B_Connection connection, B_Address address, int type, void *data, size_t data_len, char *file, int line);
 int _B_send_reply(B_Connection connection, B_Message *message, int type, void *data, size_t data_len, char *file, int line);
 void B_close_connection(B_Connection connection);
+B_Address B_get_address_from_message(B_Message message);
 void free_message(B_Message message);
 #endif

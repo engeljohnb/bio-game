@@ -34,9 +34,10 @@
 #include "input.h"
 #include "time.h"
 #include "utils.h"
-
-
-// UP NEXT: Client allways binds to INADDR_ANY, and client gives server address thru command line
+/* stuff I'm pretty sure I'm not using:
+ * 	ActorState.command_state 
+ * 	GameState	*/
+// UP NEXT: Remove the accursed lag
 int B_check_shader(unsigned int id, const char *name, int status)
 {
 	int success = 1;
@@ -109,50 +110,54 @@ Renderer create_default_renderer(B_Window window)
 
 void server_loop(const char *port)
 {
-	B_Connection connections[MAX_PLAYERS];
+	B_Address addresses[MAX_PLAYERS];
+	ActorState players[MAX_PLAYERS];
+	CommandState command_states[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
-		memset(&connections[i], 0, sizeof(B_Connection));
+		memset(&addresses[i], 0, sizeof(B_Address));
+		memset(&players[i], 0, sizeof(ActorState));
+		memset(&command_states[i], 0, sizeof(CommandState));
 	}
 
 	GameState state = create_game_state();
 	int num_players = 0;
+	float frame_time = 0.0;
+	float delta_t = 15.0;
 	B_Connection server_connection = B_connect_to(NULL, port, SETUP_SERVER);
 	while (state.running)
 	{
 		B_Message message;
+		int got_message = 0;
 		memset(&message, 0, sizeof(B_Message));
-		B_listen_for_message(server_connection, &message, 0);
+		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
+		{
+			got_message = 1;
+		}
 		switch (message.type)
 		{
-			case BORING_TYPE:
-			{
-				state.running = 0;
-				break;
-			}
 			case JOIN_REQUEST:
 			{
-				char f_addr[INET_ADDRSTRLEN] = {0};
-				char c_addr[INET_ADDRSTRLEN] = {0};
-				struct sockaddr_in *from_addr = (struct sockaddr_in *)&message.from_addr;
-				struct sockaddr_in *con_addr = (struct sockaddr_in *)&server_connection.address;
-				inet_ntop(AF_INET, &(from_addr->sin_addr), f_addr, INET_ADDRSTRLEN);
-				inet_ntop(AF_INET, &(con_addr->sin_addr), c_addr, INET_ADDRSTRLEN);
-				fprintf(stderr, "Message from: %s\n My (server) address: %s\n\n", f_addr, c_addr);
-				/*char hostname[512] = {0};
-				if (B_get_sender_name(message, hostname, 512) >= 0)
-				{*/
-					
-					//connections[num_players] = B_connect_to(NULL, (char *)message.data, CONNECT_TO_SERVER);
-					B_send_reply(server_connection, &message, ID_ASSIGNMENT, &num_players, sizeof(int));
-				//}
-				//B_send_message(server_connection, ID_ASSIGNMENT, &num_players, sizeof(int));
-				num_players++;
+				if (num_players < MAX_PLAYERS)
+				{
+					addresses[num_players] = B_get_address_from_message(message);
+					B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &num_players, sizeof(int));
+					players[num_players] = create_actor_state(num_players, VEC3_ZERO, VEC3_Z_UP);
+					num_players++;
+				}
 				break;
 			}
 			case COMMAND_STATE:
 			{
-				fprintf(stderr, "Command State\n");
+				CommandState command_state = *(CommandState *)message.data;
+				if (memcmp(&message.from_addr, &(addresses[command_state.id]), sizeof(struct sockaddr)) == 0)
+				{
+					command_states[command_state.id] = command_state;
+				}
+				if (command_state.quit)
+				{
+					state.running = 0;
+				}
 				break;
 			}
 			case ACTOR_STATE:
@@ -181,9 +186,24 @@ void server_loop(const char *port)
 				break;
 			}
 		}
-		free_message(message);
+		frame_time += B_get_frame_time();
+		while (frame_time >= delta_t)
+		{
+			for (int i = 0; i < num_players; ++i)
+			{
+				update_actor_state(&players[i], command_states[i], delta_t);
+			}
+			frame_time -= delta_t;
+		}
+		for (int i = 0; i < num_players; ++i)
+		{
+			B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[i]), sizeof(ActorState));
+		}
+		if (got_message)
+		{
+			free_message(message);
+		}
 	}
-	
 }
 
 unsigned int confirm_join_request(B_Connection connection)
@@ -201,18 +221,73 @@ unsigned int confirm_join_request(B_Connection connection)
 
 void game_loop(const char *server_name, const char *port)
 {
-//	GameState state = create_game_state();
 	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
-// 	B_Window window = B_create_window();	
+ 	B_Window window = B_create_window();	
+	Renderer renderer = create_default_renderer(window);
 	Actor all_actors[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		memset(&all_actors[i], 0, sizeof(Actor));
 	}
-
 	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
 	unsigned int player_id = confirm_join_request(server_connection);
-	fprintf(stderr, "%u\n", player_id);
+	all_actors[player_id] = create_player(player_id);
+	int num_players = player_id+1;
+	CommandState command_state = {0};
+	command_state.id = player_id;
+	all_actors[player_id].actor_state = create_actor_state(player_id, VEC3_ZERO, VEC3_Z_UP);
+	int running = 1;
+	float frame_time = 0.0;
+	float delta_t = 15.0;
+	while (running)
+	{
+		B_Message message;
+		int got_message = 0;
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config);
+		if (command_state.quit)
+		{
+			running = 0;
+		}
+		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
+		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
+		{
+			got_message = 0;
+		}
+		switch (message.type)
+		{
+			case ACTOR_STATE:
+			{
+				ActorState actor_state = *(ActorState *)message.data;
+				//all_actors[actor_state.id].actor_state = actor_state;
+			}
+		}
+		frame_time += B_get_frame_time();
+		while (frame_time >= delta_t)
+		{
+
+			if (!got_message)
+			{
+				update_actor_state(&all_actors[player_id].actor_state, command_state, delta_t);
+			}
+			for (int i = 0; i < num_players; ++i)
+			{
+				update_actor(&all_actors[i], all_actors[i].actor_state);
+			}
+			frame_time -= delta_t;
+		}
+		update_camera(&renderer.camera, all_actors[player_id].actor_state);
+		render_game(all_actors, num_players, renderer);
+		if (got_message)
+		{
+			free_message(message);
+		}
+	}
+	for (int i = 0; i < num_players; ++i)
+	{
+		free_actor(all_actors[i]);
+	}
+	B_close_connection(server_connection);
+	B_free_window(window);
 }
 
 /* Just sets up and dives right into the main loop 
@@ -220,30 +295,23 @@ void game_loop(const char *server_name, const char *port)
 int main(int argc, char **argv)
 {
 	
-	if (argc < 2)
+	if (argc < 3)
 	{
-		fprintf(stderr, "Usage: %s [SERVER-HOSTNAME]\n", argv[0]);
+		fprintf(stderr, "Usage: %s [SERVER-ADDRESS]\n", argv[0]);
 		return 0;
 	}
-
 	char hostname[512] = {0};
 	gethostname(hostname, 512);
 	char port[] = "4590";
-	//if (strncmp(argv[1], hostname, 512) == 0)
-	if (strncmp(argv[1], "0", 1) == 0)
+	if (strncmp(argv[2], "0", 1) == 0)
 	{
-		//if (!fork())
-		//{
-			server_loop(port);
-		//}
-		//else
-	//	{
-	//		game_loop(NULL, port);
-	//	}
+		server_loop(port);
 	}
 	else
 	{
-		game_loop("localhost", port);
+		B_init();
+		game_loop(argv[1], port);
+		B_quit();
 	}
 	return 0;
 }

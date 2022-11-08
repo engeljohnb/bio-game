@@ -189,8 +189,8 @@ B_Model load_model_from_file(const char *filename)
 
 	unsigned int num_meshes = 0;
 	unsigned int num_faces = 0;
-	unsigned int *vertex_sizes;
-	unsigned int *face_sizes;
+	unsigned int *vertex_sizes = 0;
+	unsigned int *face_sizes = 0;
 	uint8_t **vertex_data = get_data_after_punctuated(buff, "B_MESH:", "END_MESHES", total_length, &num_meshes, &vertex_sizes);
 	uint8_t **face_data = get_data_after_punctuated(buff, "B_FACES:", "END_FACES", total_length, &num_faces, &face_sizes);
 	if (num_meshes > MAX_MESHES)

@@ -20,6 +20,7 @@ GameState create_game_state(void)
 void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t)
 {
 	memcpy(&(actor_state->command_state), &command_state, sizeof(CommandState));	
+	actor_state->id = command_state.id;
 	if (command_state.movement & M_FORWARD)
 	{
 		vec3 forward;
