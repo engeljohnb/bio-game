@@ -38,6 +38,11 @@
 /* stuff I'm pretty sure I'm not using:
  * 	ActorState.command_state 
  * 	GameState	*/
+
+// UP NEXT: 
+//   Make it so when a player quits, it doesn't crash for all the other players;
+//   Then Implement camera movement.
+//   Then the wash and doc stage
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -50,12 +55,13 @@ void server_loop(const char *port)
 		memset(&command_states[i], 0, sizeof(CommandState));
 	}
 
-	GameState state = create_game_state();
+	//GameState state = create_game_state();
 	unsigned int num_players = 0;
 	float frame_time = 0.0;
 	float delta_t = 15.0;
 	B_Connection server_connection = B_connect_to(NULL, port, SETUP_SERVER);
-	while (state.running)
+	int running = 1;
+	while (running)
 	{
 		B_Message message;
 		int got_message = 0;
@@ -98,7 +104,20 @@ void server_loop(const char *port)
 					}
 					if (command_state.quit)
 					{
-						state.running = 0;
+						players[command_state.id].active = 0;
+					}
+					int quit = 1;
+					for (unsigned int i = 0; i < num_players; ++i)
+					{
+						if (players[i].active)
+						{
+							quit = 0;
+							break;
+						}
+					}
+					if (quit && num_players)
+					{
+						running = 0;
 					}
 					num_states++;
 					break;
@@ -127,6 +146,13 @@ void server_loop(const char *port)
 				{
 					fprintf(stderr, "Warning: improper message received\n");
 					break;
+				}
+			}
+			for (unsigned int i = 0; i < num_players; ++i)
+			{
+				if (!players[i].active)
+				{
+					num_states++;
 				}
 			}
 		}

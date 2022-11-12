@@ -197,6 +197,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	glm_vec3_copy(VEC3_Y_UP, state.up);
 	glm_vec3_copy(VEC3_ZERO, state.move_direction);
 	state.speed = 0;
+	state.active = 1;
 	state.max_speed = 0.3;
 	state.id = id;
 	return state;

@@ -11,12 +11,11 @@ typedef struct
 	vec3			move_direction;
 	vec3			up;
 	CommandState		command_state;
+	int			active;
 	unsigned int		id;
 	int			num_updates;
 	float			speed;
 	float			max_speed;
-	//float			*forces;
-	//int			num_forces;
 } ActorState;
 
 typedef struct
