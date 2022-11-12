@@ -70,6 +70,7 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 	glm_mat4_copy(result, target);
 
 }
+
 void update_camera(Camera *camera, ActorState player)
 {
 	glm_vec3_copy(player.position, camera->position);

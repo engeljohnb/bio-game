@@ -60,6 +60,7 @@ void update_actor(Actor *actor, ActorState actor_state)
 	glm_translate(actor->model.world_space, position_dif);
 }
 
+
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
 {
 	B_clear_window(renderer.window);
@@ -73,7 +74,6 @@ void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
 	}
 	B_flip_window(renderer.window);
 }
-
 
 void free_actor(Actor actor)
 {

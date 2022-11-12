@@ -38,112 +38,6 @@
 /* stuff I'm pretty sure I'm not using:
  * 	ActorState.command_state 
  * 	GameState	*/
-/*void server_loop(const char *port)
-{
-	B_Address addresses[MAX_PLAYERS];
-	ActorState players[MAX_PLAYERS];
-	CommandState command_states[MAX_PLAYERS];
-	for (int i = 0; i < MAX_PLAYERS; ++i)
-	{
-		memset(&addresses[i], 0, sizeof(B_Address));
-		memset(&players[i], 0, sizeof(ActorState));
-		memset(&command_states[i], 0, sizeof(CommandState));
-	}
-
-	GameState state = create_game_state();
-	unsigned int num_players = 0;
-	float frame_time = 0.0;
-	float delta_t = 15.0;
-	B_Connection server_connection = B_connect_to(NULL, port, SETUP_SERVER);
-	while (state.running)
-	{
-		B_Message message;
-		int got_message = 0;
-		memset(&message, 0, sizeof(B_Message));
-		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
-		{
-			got_message = 1;
-		}
-		switch (message.type)
-		{
-			case JOIN_REQUEST:
-			{
-				if (num_players < MAX_PLAYERS)
-				{
-					addresses[num_players] = B_get_address_from_message(message);
-					B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &num_players, sizeof(unsigned int));
-					players[num_players] = create_actor_state(num_players, VEC3_ZERO, VEC3_Z_UP);
-					for (unsigned int i = 0; i < num_players; ++i)
-					{
-						B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
-					}
-					num_players++;
-				}
-				break;
-			}
-			case COMMAND_STATE:
-			{
-				CommandState command_state = *(CommandState *)message.data;
-				if (memcmp(&message.from_addr, &(addresses[command_state.id]), sizeof(struct sockaddr)) == 0)
-				{
-					command_states[command_state.id] = command_state;
-				}
-				if (command_state.quit)
-				{
-					state.running = 0;
-				}
-				break;
-			}
-			case ACTOR_STATE:
-			{
-				fprintf(stderr, "Actor State\n");
-				break;
-			}
-			case ID_ASSIGNMENT:
-			{
-				fprintf(stderr, "ID Assignment\n");
-				break;
-			}
-			case NEW_PLAYER:
-			{
-				fprintf(stderr, "New Payer\n");
-				break;
-			}
-			case ACKNOWLEDGE_NP:
-			{
-				fprintf(stderr, "Acknowledge NP\n");
-				break;
-			}
-			default:
-			{
-				fprintf(stderr, "Warning: improper message received\n");
-				break;
-			}
-		}
-		frame_time += B_get_frame_time();
-		for (unsigned int i = 0; i < num_players; ++i)
-		{
-			players[i].num_updates = 0;
-		}
-		while (frame_time >= delta_t)
-		{
-			for (unsigned int i = 0; i < num_players; ++i)
-			{
-				update_actor_state(&players[i], command_states[i], delta_t);
-			}
-			frame_time -= delta_t;
-		}
-		for (unsigned int i = 0; i < num_players; ++i)
-		{
-			B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[i]), sizeof(ActorState));
-		}
-		if (got_message)
-		{
-			free_message(message);
-		}
-	}
-	B_close_connection(server_connection);
-}*/
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -165,72 +59,82 @@ void server_loop(const char *port)
 	{
 		B_Message message;
 		int got_message = 0;
+		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
-		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
+		while ((num_states < num_players) || (!num_states))
 		{
-			got_message = 1;
-		}
-		switch (message.type)
-		{
-			case JOIN_REQUEST:
+			B_listen_for_message(server_connection, &message, BLOCKING);
+			switch (message.type)
 			{
-				if (num_players < MAX_PLAYERS)
+				case JOIN_REQUEST:
 				{
-					addresses[num_players] = B_get_address_from_message(message);
-					B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &num_players, sizeof(unsigned int));
-					players[num_players] = create_actor_state(num_players, VEC3_ZERO, VEC3_Z_UP);
-					for (unsigned int i = 0; i < num_players; ++i)
+					if (num_players < MAX_PLAYERS)
 					{
-						B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
+						addresses[num_players] = B_get_address_from_message(message);
+						NewPlayerPackage package;
+						memset(&package, 0, sizeof(NewPlayerPackage));
+						for (unsigned int i = 0; i < num_players; ++i)
+						{
+							package.actor_states[i] = players[i];
+							package.my_id = num_players;
+							package.num_actors = num_players;
+						}
+						B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &package, sizeof(NewPlayerPackage));
+						players[num_players] = create_actor_state(num_players, VEC3_ZERO, VEC3_Z_UP);
+						for (unsigned int i = 0; i < num_players; ++i)
+						{
+							B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
+						}
+						num_players++;
 					}
-					num_players++;
+					break;
 				}
-				break;
-			}
-			case COMMAND_STATE:
-			{
-				CommandState command_state = *(CommandState *)message.data;
-				if (memcmp(&message.from_addr, &(addresses[command_state.id]), sizeof(struct sockaddr)) == 0)
+				case COMMAND_STATE:
 				{
-					command_states[command_state.id] = command_state;
+					CommandState command_state = *(CommandState *)message.data;
+					if (memcmp(&message.from_addr, &(addresses[command_state.id]), sizeof(B_Address)) == 0)
+					{
+						command_states[command_state.id] = command_state;
+					}
+					if (command_state.quit)
+					{
+						state.running = 0;
+					}
+					num_states++;
+					break;
 				}
-				if (command_state.quit)
+				case ACTOR_STATE:
 				{
-					state.running = 0;
+					fprintf(stderr, "Actor State\n");
+					break;
 				}
-				break;
-			}
-			case ACTOR_STATE:
-			{
-				fprintf(stderr, "Actor State\n");
-				break;
-			}
-			case ID_ASSIGNMENT:
-			{
-				fprintf(stderr, "ID Assignment\n");
-				break;
-			}
-			case NEW_PLAYER:
-			{
-				fprintf(stderr, "New Payer\n");
-				break;
-			}
-			case ACKNOWLEDGE_NP:
-			{
-				fprintf(stderr, "Acknowledge NP\n");
-				break;
-			}
-			default:
-			{
-				fprintf(stderr, "Warning: improper message received\n");
-				break;
+				case ID_ASSIGNMENT:
+				{
+					fprintf(stderr, "ID Assignment\n");
+					break;
+				}
+				case NEW_PLAYER:
+				{
+					fprintf(stderr, "New Payer\n");
+					break;
+				}
+				case ACKNOWLEDGE_NP:
+				{
+					fprintf(stderr, "Acknowledge NP\n");
+					break;
+				}
+				default:
+				{
+					fprintf(stderr, "Warning: improper message received\n");
+					break;
+				}
 			}
 		}
-		frame_time += B_get_frame_time();
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			players[i].num_updates = 0;
 		}
+		frame_time += B_get_frame_time();
 		while (frame_time >= delta_t)
 		{
 			for (unsigned int i = 0; i < num_players; ++i)
@@ -251,17 +155,18 @@ void server_loop(const char *port)
 	B_close_connection(server_connection);
 }
 
-unsigned int confirm_join_request(B_Connection connection)
+NewPlayerPackage *confirm_join_request(B_Connection connection)
 {
 	B_Message message;
 	memset(&message, 0, sizeof(B_Message));
+	NewPlayerPackage *package = malloc(sizeof(NewPlayerPackage));
 	while (message.type != ID_ASSIGNMENT)
 	{
 		B_listen_for_message(connection, &message, BLOCKING);
 	}
-	unsigned int id = *(unsigned int *)message.data;
+	memcpy(package, message.data, sizeof(NewPlayerPackage));
 	free_message(message);
-	return id;
+	return package;
 }
 
 int check_position(ActorState client, ActorState server, float delta_t)
@@ -284,7 +189,14 @@ void game_loop(const char *server_name, const char *port)
 		memset(&all_actors[i], 0, sizeof(Actor));
 	}
 	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
-	unsigned int player_id = confirm_join_request(server_connection);
+	NewPlayerPackage *package = confirm_join_request(server_connection);
+	unsigned int player_id = package->my_id;
+	for (unsigned int i = 0; i < package->num_actors; ++i)
+	{
+		all_actors[i] = create_player(package->actor_states[i].id);
+		all_actors[i].actor_state = package->actor_states[i];
+	}
+	BG_FREE(package);
 	all_actors[player_id] = create_player(player_id);
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
@@ -318,9 +230,11 @@ void game_loop(const char *server_name, const char *port)
 			{
 				unsigned int new_id = *(unsigned int *)message.data;
 				all_actors[new_id] = create_player(new_id);
-				num_players++;
+				num_players = new_id + 1;
 				break;
 			}
+			default:
+				break;
 		}
 	/*	frame_time += B_get_frame_time();
 		while (frame_time >= delta_t)

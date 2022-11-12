@@ -8,7 +8,6 @@
 #define B_send_message(connection, type, data, data_len) _B_send_message(connection, type, data, data_len,  __FILE__, __LINE__)
 #define B_send_reply(connection, message, type, data, data_len) _B_send_reply(connection, message, type, data, data_len, __FILE__, __LINE__)
 #define B_send_to_address(connection, address, type, data, data_len) _B_send_to_address(connection, address, type, data, data_len, __FILE__, __LINE__)
-#define MAX_PLAYERS 4
 #define MAX_MESSAGE_SIZE 2048
 
 enum CONNECT_TO_FLAGS	

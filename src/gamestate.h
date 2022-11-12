@@ -2,7 +2,7 @@
 #define __GAMESTATE_H__
 #include <cglm/cglm.h>
 #include "input.h"
-
+#define MAX_PLAYERS 4
 typedef struct
 {
 	vec3			position;
@@ -18,6 +18,13 @@ typedef struct
 	//float			*forces;
 	//int			num_forces;
 } ActorState;
+
+typedef struct
+{
+	ActorState	actor_states[MAX_PLAYERS];
+	unsigned int	num_actors;
+	unsigned int	my_id;
+} NewPlayerPackage;
 
 typedef struct ActorNode
 {
