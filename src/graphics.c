@@ -249,6 +249,77 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight poin
 	}
 }
 
+int B_check_shader(unsigned int id, const char *name, int status)
+{
+	int success = 1;
+	char info_log[512] = { 0 };
+	if (status == GL_COMPILE_STATUS)
+	{
+		glGetShaderiv(id, status, &success);
+	}
+	else
+	{
+		glGetProgramiv(id, status, &success);
+	}
+	if (!success && (status == GL_COMPILE_STATUS))
+	{
+		glGetShaderInfoLog(id, 512, NULL, info_log);
+		fprintf(stderr, "Shader compilation failed for shader %s: %s\n", name, info_log);
+		return 0;
+	}
+
+	else if (!success && (status == GL_LINK_STATUS))
+	{
+		glGetProgramInfoLog(id, 512, NULL, info_log);
+		fprintf(stderr, "Shader linking failed for shader program: %s\n", info_log);
+		return 0;
+	}
+	return 1;
+}
+
+unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
+{	
+	unsigned int program_id = glCreateProgram();
+	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
+	unsigned int fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+
+	char vertex_buffer[65536] = {0};
+	B_load_file(vert_path, vertex_buffer, 65536);
+	char fragment_buffer[65536] = {0};
+	B_load_file(frag_path, fragment_buffer, 65536);
+	const char *vertex_source = vertex_buffer;
+	const char *fragment_source = fragment_buffer;
+
+	glShaderSource(vertex_id, 1, &vertex_source, NULL);
+	glCompileShader(vertex_id);
+	B_check_shader(vertex_id, vert_path, GL_COMPILE_STATUS);
+
+	glShaderSource(fragment_id, 1, &fragment_source, NULL);
+	glCompileShader(fragment_id);
+	B_check_shader(fragment_id, frag_path, GL_COMPILE_STATUS);
+
+	glAttachShader(program_id, vertex_id);
+	glAttachShader(program_id, fragment_id);
+	glLinkProgram(program_id);
+	B_check_shader(program_id, "shader program", GL_LINK_STATUS);
+	return program_id;
+}
+
+Renderer create_default_renderer(B_Window window)
+{
+	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN, VEC3_Y_UP);
+	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
+	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
+
+	Renderer renderer;
+	renderer.camera = camera;
+	renderer.window = window;
+	renderer.shader = shader;
+	renderer.point_light = point_light;
+	return renderer;
+}
+
+
 void B_free_model(B_Model model)
 {
 	for (int i = 0; i < MAX_MESHES; ++i)

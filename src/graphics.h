@@ -84,6 +84,9 @@ B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_v
 B_Model create_cube(void);
 B_Model load_model_from_file(const char *filename);
 PointLight create_point_light(vec3 position, vec3 color, float intensity);
+int B_check_shader(unsigned int id, const char *name, int status);
+unsigned int B_setup_shader(const char *vert_path, const char *frag_path);
+Renderer create_default_renderer(B_Window window);
 void B_set_uniform_float(B_Shader shader, char *name, float value);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
