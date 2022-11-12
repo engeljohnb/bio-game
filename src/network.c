@@ -62,6 +62,7 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 	data_bytes[data_len] = 0;
 	message->from_name = 0;
 	message->from_name_len = 0;
+	BG_FREE(data);
 	return 1;
 }
 
@@ -178,7 +179,6 @@ B_Connection B_server_connection(const char *port)
 	
 }
 
-/* For one-player mode, set hostname to NULL for both the server and the client */
 B_Connection _B_connect_to(const char *server_addr, const char *port, unsigned int flags, char *file, int line)
 {
 	if (flags & SETUP_SERVER)

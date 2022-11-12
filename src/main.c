@@ -26,7 +26,7 @@
 #include <cglm/cglm.h>
 #include <arpa/inet.h>
 #include "network.h"
-#include "gamestate.h"
+#include "actor_state.h"
 #include "window.h"
 #include "camera.h"
 #include "graphics.h"
@@ -35,12 +35,7 @@
 #include "time.h"
 #include "utils.h"
 #include "debug.h"
-/* stuff I'm pretty sure I'm not using:
- * 	ActorState.command_state 
- * 	GameState	*/
-
 // UP NEXT: 
-//   Make it so when a player quits, it doesn't crash for all the other players;
 //   Then Implement camera movement.
 //   Then the wash and doc stage
 void server_loop(const char *port)
@@ -55,16 +50,15 @@ void server_loop(const char *port)
 		memset(&command_states[i], 0, sizeof(CommandState));
 	}
 
-	//GameState state = create_game_state();
 	unsigned int num_players = 0;
 	float frame_time = 0.0;
 	float delta_t = 15.0;
 	B_Connection server_connection = B_connect_to(NULL, port, SETUP_SERVER);
 	int running = 1;
+
 	while (running)
 	{
 		B_Message message;
-		int got_message = 0;
 		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
 		while ((num_states < num_players) || (!num_states))
@@ -176,10 +170,7 @@ void server_loop(const char *port)
 				B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[j]), sizeof(ActorState));
 			}
 		}
-		if (got_message)
-		{
-			free_message(message);
-		}
+		free_message(message);
 	}
 	B_close_connection(server_connection);
 }
@@ -192,6 +183,10 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 	while (message.type != ID_ASSIGNMENT)
 	{
 		B_listen_for_message(connection, &message, BLOCKING);
+		if (message.type != ID_ASSIGNMENT)
+		{
+			free_message(message);
+		}
 	}
 	memcpy(package, message.data, sizeof(NewPlayerPackage));
 	free_message(message);
@@ -231,23 +226,16 @@ void game_loop(const char *server_name, const char *port)
 	CommandState command_state = {0};
 	command_state.id = player_id;
 	int running = 1;
-	//float frame_time = 0.0;
-	//float delta_t = 15.0;
 	while (running)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		int got_message = 0;
 		B_update_command_state_ui(&command_state, all_actors[player_id].command_config);
 		if (command_state.quit)
 		{
 			running = 0;
 		}
 		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
-		/*if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
-		{
-			got_message = 1;
-		}*/
 		while (num_states < num_players)
 		{
 			B_listen_for_message(server_connection, &message, BLOCKING);
@@ -271,22 +259,13 @@ void game_loop(const char *server_name, const char *port)
 					break;
 			}
 		}
-	/*	frame_time += B_get_frame_time();
-		while (frame_time >= delta_t)
-		{	
-			// This is where the client-side estimation code will go.
-			frame_time -= delta_t;
-		}*/
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor(&all_actors[i], all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state);
 		render_game(all_actors, num_players, renderer);
-		if (got_message)
-		{
-			free_message(message);
-		}
+		free_message(message);
 	}
 	for (unsigned int i = 0; i < num_players; ++i)
 	{

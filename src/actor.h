@@ -20,10 +20,13 @@
 #define __ACTORS_H__
 #include <SDL2/SDL.h>
 #include "graphics.h"
-#include "gamestate.h"
+#include "actor_state.h"
 #include "input.h"
 
 #define CURRENT_PLAYER 0
+
+/* An actor is a player or an NPC. The Actor struct has all information about the actor, including graphics,
+ * while the ActorState struct (see actor_state.h) has only the information needed for network communication. */
 typedef struct
 {
 	unsigned int	id;

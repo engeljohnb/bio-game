@@ -2,7 +2,7 @@
 #define __CAMERA_H__
 
 #include <cglm/cglm.h>
-#include "gamestate.h"
+#include "actor_state.h"
 #include "window.h"
 #include "input.h"
 

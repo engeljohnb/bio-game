@@ -21,7 +21,7 @@
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
 #include "graphics.h"
-#include "gamestate.h"
+#include "actor_state.h"
 #include "actor.h"
 #include "input.h"
 #include "utils.h"
