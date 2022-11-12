@@ -12,6 +12,7 @@ typedef struct
 	vec3			up;
 	CommandState		command_state;
 	unsigned int		id;
+	int			num_updates;
 	float			speed;
 	float			max_speed;
 	//float			*forces;

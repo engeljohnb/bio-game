@@ -48,8 +48,7 @@ Actor create_default_npc(unsigned int id)
 	actor.id = id;
 	actor.command_config = default_command_config();
 	actor.model = load_model_from_file("assets/monkey.bgm");
-	glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
-	glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
+	//glm_translate(actor.model.world_space, VEC3(0.0, 0.0, 0.0));
 	return actor;
 }
 
@@ -59,7 +58,6 @@ void update_actor(Actor *actor, ActorState actor_state)
 	vec3 position_dif;
 	glm_vec3_sub(actor_state.position, actor_state.prev_position, position_dif);
 	glm_translate(actor->model.world_space, position_dif);
-	//glm_mat4_mulv3(actor->model.world_space, actor_state.position, 1, actor_state.position);
 }
 
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)

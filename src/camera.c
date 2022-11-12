@@ -52,6 +52,24 @@ void rotate_camera(Camera *camera, float x, float y)
 	 glm_normalize(camera->front);
 }
 
+void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
+{
+	vec3 forward;
+	glm_vec3_sub(camera_center, target_center, forward);
+	glm_vec3_normalize(forward);
+
+	vec3 right;
+	glm_vec3_cross(up, forward, right);
+	glm_vec3_normalize(right);	
+
+	mat4 result = { { right[0],         right[1],         right[2],         0},
+		        { up[0],            up[1],            up[2],	        0},
+			{ forward[0],       forward[1],       forward[2],       0 },
+			{ camera_center[0], camera_center[1], camera_center[2], 1 } };
+
+	glm_mat4_copy(result, target);
+
+}
 void update_camera(Camera *camera, ActorState player)
 {
 	glm_vec3_copy(player.position, camera->position);

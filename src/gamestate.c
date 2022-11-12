@@ -28,7 +28,6 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_vec3_normalize(forward);
 		glm_vec3_add(forward, actor_state->move_direction, actor_state->move_direction);
 		glm_vec3_normalize(actor_state->move_direction);
-		actor_state->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_BACKWARD)
 	{
@@ -37,7 +36,6 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_normalize(backward);
 		glm_vec3_add(backward, actor_state->move_direction, actor_state->move_direction);
 		glm_vec3_normalize(actor_state->move_direction);
-		actor_state->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_LEFT)
 	{
@@ -47,7 +45,6 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_vec3_normalize(left);
 		glm_vec3_add(left, actor_state->move_direction, actor_state->move_direction);
 		glm_vec3_normalize(actor_state->move_direction);
-		actor_state->speed += 0.0001*delta_t;
 	}
 	if (command_state.movement & M_RIGHT)
 	{
@@ -56,9 +53,18 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 		glm_normalize(right);
 		glm_vec3_add(right, actor_state->move_direction, actor_state->move_direction);
 		glm_vec3_normalize(actor_state->move_direction);
-		actor_state->speed += 0.0001*delta_t;
 	}
 
+
+	if (command_state.movement)
+	{
+		actor_state->speed += 0.0001*delta_t;
+	}
+	else	
+	{
+		glm_vec3_copy(VEC3_ZERO, actor_state->move_direction);
+		actor_state->speed = 0;
+	}
 	if (actor_state->speed > actor_state->max_speed)
 	{
 		actor_state->speed = actor_state->max_speed;
@@ -68,17 +74,16 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 	{
 		actor_state->speed = 0;
 	}
-	if (command_state.movement == 0)
-	{
-		glm_vec3_copy(VEC3_ZERO, actor_state->move_direction);
-		//actor_state->speed -= 0.001*delta_t;
-		actor_state->speed = 0;
-	}
+	
 
 	vec3 velocity;
-	glm_vec3_copy(actor_state->position, actor_state->prev_position);
+	if (!actor_state->num_updates)
+	{
+		glm_vec3_copy(actor_state->position, actor_state->prev_position);
+	}
 	glm_vec3_scale(actor_state->move_direction, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
+	actor_state->num_updates++;
 }
 
 void update_game_state(GameState *state)

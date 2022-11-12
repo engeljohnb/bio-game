@@ -34,6 +34,7 @@
 #include "input.h"
 #include "time.h"
 #include "utils.h"
+#include "debug.h"
 /* stuff I'm pretty sure I'm not using:
  * 	ActorState.command_state 
  * 	GameState	*/
@@ -187,6 +188,10 @@ void server_loop(const char *port)
 			}
 		}
 		frame_time += B_get_frame_time();
+		for (int i = 0; i < num_players; ++i)
+		{
+			players[i].num_updates = 0;
+		}
 		while (frame_time >= delta_t)
 		{
 			for (int i = 0; i < num_players; ++i)
@@ -204,6 +209,7 @@ void server_loop(const char *port)
 			free_message(message);
 		}
 	}
+	B_close_connection(server_connection);
 }
 
 unsigned int confirm_join_request(B_Connection connection)
@@ -219,6 +225,15 @@ unsigned int confirm_join_request(B_Connection connection)
 	return id;
 }
 
+int check_position(ActorState client, ActorState server, float delta_t)
+{
+	for (int i = 0; i < server.num_updates; ++i)
+	{
+		update_actor_state(&client, server.command_state, delta_t);		
+	}
+	return position_equal(client.position, server.position);
+}
+
 void game_loop(const char *server_name, const char *port)
 {
 	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
@@ -232,13 +247,14 @@ void game_loop(const char *server_name, const char *port)
 	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
 	unsigned int player_id = confirm_join_request(server_connection);
 	all_actors[player_id] = create_player(player_id);
-	int num_players = player_id+1;
+	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
 	all_actors[player_id].actor_state = create_actor_state(player_id, VEC3_ZERO, VEC3_Z_UP);
 	int running = 1;
 	float frame_time = 0.0;
 	float delta_t = 15.0;
+	int frames = 0;
 	while (running)
 	{
 		B_Message message;
@@ -251,29 +267,25 @@ void game_loop(const char *server_name, const char *port)
 		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
 		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
 		{
-			got_message = 0;
+			got_message = 1;
 		}
 		switch (message.type)
 		{
 			case ACTOR_STATE:
 			{
 				ActorState actor_state = *(ActorState *)message.data;
-				//all_actors[actor_state.id].actor_state = actor_state;
+				all_actors[actor_state.id].actor_state = actor_state;
 			}
 		}
 		frame_time += B_get_frame_time();
 		while (frame_time >= delta_t)
-		{
-
-			if (!got_message)
-			{
-				update_actor_state(&all_actors[player_id].actor_state, command_state, delta_t);
-			}
-			for (int i = 0; i < num_players; ++i)
-			{
-				update_actor(&all_actors[i], all_actors[i].actor_state);
-			}
+		{	
+			// This is where the client-side estimation code will go.
 			frame_time -= delta_t;
+		}
+		for (unsigned int i = 0; i < num_players; ++i)
+		{
+			update_actor(&all_actors[i], all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state);
 		render_game(all_actors, num_players, renderer);
@@ -281,8 +293,9 @@ void game_loop(const char *server_name, const char *port)
 		{
 			free_message(message);
 		}
+		frames++;
 	}
-	for (int i = 0; i < num_players; ++i)
+	for (unsigned int i = 0; i < num_players; ++i)
 	{
 		free_actor(all_actors[i]);
 	}

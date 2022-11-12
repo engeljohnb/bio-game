@@ -22,6 +22,13 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
+int position_equal(float a[3], float b[3])
+{
+	return ((a[0] == b[0]) &&
+		(a[1] == b[1]) &&
+		(a[2] == b[2]));
+}
+
 unsigned int length_between(char *haystack,
 			    int len_haystack,
 			    const char *needle1,
