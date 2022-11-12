@@ -209,6 +209,7 @@ void game_loop(const char *server_name, const char *port)
 	//float delta_t = 15.0;
 	while (running)
 	{
+		unsigned int num_states = 0;
 		B_Message message;
 		int got_message = 0;
 		B_update_command_state_ui(&command_state, all_actors[player_id].command_config);
@@ -217,27 +218,32 @@ void game_loop(const char *server_name, const char *port)
 			running = 0;
 		}
 		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
-		if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
+		/*if (B_listen_for_message(server_connection, &message, NON_BLOCKING))
 		{
 			got_message = 1;
-		}
-		switch (message.type)
+		}*/
+		while (num_states < num_players)
 		{
-			case ACTOR_STATE:
+			B_listen_for_message(server_connection, &message, BLOCKING);
+			switch (message.type)
 			{
-				ActorState actor_state = *(ActorState *)message.data;
-				all_actors[actor_state.id].actor_state = actor_state;
-				break;
+				case ACTOR_STATE:
+				{
+					ActorState actor_state = *(ActorState *)message.data;
+					all_actors[actor_state.id].actor_state = actor_state;
+					num_states++;
+					break;
+				}
+				case NEW_PLAYER:
+				{
+					unsigned int new_id = *(unsigned int *)message.data;
+					all_actors[new_id] = create_player(new_id);
+					num_players = new_id + 1;
+					break;
+				}
+				default:
+					break;
 			}
-			case NEW_PLAYER:
-			{
-				unsigned int new_id = *(unsigned int *)message.data;
-				all_actors[new_id] = create_player(new_id);
-				num_players = new_id + 1;
-				break;
-			}
-			default:
-				break;
 		}
 	/*	frame_time += B_get_frame_time();
 		while (frame_time >= delta_t)
