@@ -145,7 +145,10 @@ void server_loop(const char *port)
 		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[i]), sizeof(ActorState));
+			for (unsigned int j = 0; i < num_players; ++j)
+			{
+				B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[j]), sizeof(ActorState));
+			}
 		}
 		if (got_message)
 		{
