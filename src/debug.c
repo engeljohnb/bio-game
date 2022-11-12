@@ -44,10 +44,6 @@ void log_actor_state(ActorState actor_state)
 	fprintf(stdout, "----[0]: %f\n", actor_state.up[0]);
 	fprintf(stdout, "----[1]: %f\n", actor_state.up[1]);
 	fprintf(stdout, "----[2]: %f\n", actor_state.up[2]);
-	fprintf(stdout, "MOVE_DIRECTION:\n");
-	fprintf(stdout, "----[0]: %f\n", actor_state.move_direction[0]);
-	fprintf(stdout, "----[1]: %f\n", actor_state.move_direction[1]);
-	fprintf(stdout, "----[2]: %f\n", actor_state.move_direction[2]);
 	fprintf(stdout, "COMMAND_STATE:\n");
 	fprintf(stdout, "----movement: %u\n", actor_state.command_state.movement);
 	fprintf(stdout, "----id: %u\n", actor_state.command_state.id);

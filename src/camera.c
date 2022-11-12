@@ -38,15 +38,6 @@ Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
 	return camera;
 }
 
-void rotate_camera(Camera *camera, float x, float y)
-{
-	 glm_vec3_copy(VEC3(cos(RAD(x)) * cos(RAD(y)), 
-				 sin(RAD(y)), 
-				 sin(RAD(x))*cos(RAD(y))), 
-			camera->front);
-	 glm_normalize(camera->front);
-}
-
 void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 {
 	vec3 forward;
@@ -69,15 +60,17 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 void update_camera(Camera *camera, ActorState player)
 {
 	glm_vec3_copy(player.position, camera->position);
+	turn(camera->front, player.command_state.look_x, player.command_state.look_y);
 	mat4 translate;
-	glm_mat4_identity(translate);	
-	glm_translate(translate, VEC3(0, 1, -5));
+	glm_mat4_identity(translate);
+
+	vec3 camera_direction;
+	glm_vec3_copy(camera->front, camera_direction);
+	glm_vec3_scale(camera_direction, 5, camera_direction);
+	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	glm_vec3_copy(player.front, camera->front);
-	glm_normalize(camera->front);
 	glm_vec3_copy(player.up, camera->up);
-	glm_normalize(camera->front);
 
 	vec3 frontpos;
 	glm_vec3_add(camera->position,camera->front, frontpos);

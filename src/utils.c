@@ -40,6 +40,15 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
+void turn(vec3 front, float x, float y)
+{
+	 glm_vec3_copy(VEC3(cos(RAD(x)) * cos(RAD(y)), 
+				 sin(RAD(y)), 
+				 sin(RAD(x))*cos(RAD(y))), 
+			front);
+	 glm_normalize(front);
+}
+
 int position_equal(float a[3], float b[3])
 {
 	return ((a[0] == b[0]) &&

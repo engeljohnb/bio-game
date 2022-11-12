@@ -36,8 +36,7 @@
 #include "utils.h"
 #include "debug.h"
 // UP NEXT: 
-//   Then Implement camera movement.
-//   Then the wash and doc stage
+// 	I don't think lookat is going to work for rotating regular models.
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -230,7 +229,7 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.move_direction);
 		if (command_state.quit)
 		{
 			running = 0;

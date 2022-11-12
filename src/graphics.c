@@ -101,6 +101,7 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 		model.meshes[i] = meshes[i];
 	}
 	glm_mat4_identity(model.world_space);
+	glm_mat4_identity(model.local_space);
 	return model;
 }
 
@@ -115,6 +116,7 @@ B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned in
 	B_Mesh mesh = B_create_mesh(vertices, faces, num_vertices, num_faces);
 	model.meshes[0] = mesh;
 	glm_mat4_identity(model.world_space);
+	glm_mat4_identity(model.local_space);
 	return model;
 }
 
@@ -235,6 +237,7 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight poin
 			B_set_uniform_vec4(shader, "color", color);
 			B_set_uniform_mat4(shader, "view_space", camera.view_space);
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
+			B_set_uniform_mat4(shader, "local_space", model.local_space);
 			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
 			glUseProgram(shader);
 			if (model.meshes[i].num_faces)

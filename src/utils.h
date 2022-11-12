@@ -68,6 +68,7 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 
 int position_equal(float a[3], float b[3]);
 int valid(void *ptr);
+void turn(vec3 front, float x, float y);
 int _bg_free(void *ptr, const char *filename, unsigned int line);
 void print_vec3(vec3 vector);
 #endif

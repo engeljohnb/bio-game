@@ -19,6 +19,7 @@
 #ifndef __B_INPUT_H__
 #define __B_INPUT_H__
 #include <SDL2/SDL.h>
+#include <cglm/cglm.h>
 
 enum MOVEMENT_DIRECTION
 {
@@ -35,6 +36,9 @@ typedef struct
 	unsigned int	id;
 	float		look_x_increment;
 	float		look_y_increment;
+	float		look_x;
+	float		look_y;
+	vec3		move_direction;
 } CommandState;
 
 
@@ -51,5 +55,5 @@ typedef struct
 } CommandConfig;
 
 CommandConfig default_command_config(void);
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config);
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction);
 #endif

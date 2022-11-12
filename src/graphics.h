@@ -57,6 +57,7 @@ typedef struct
 typedef struct
 {
 	int	valid;
+	mat4	local_space;
 	mat4	world_space;
 	B_Mesh 	meshes[MAX_MESHES];
 } B_Model;

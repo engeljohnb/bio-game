@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <cglm/cglm.h>
 #include "input.h"
 
 CommandConfig default_command_config(void)
@@ -35,8 +36,9 @@ CommandConfig default_command_config(void)
 }
 
 /* Sets a command state based on user input. */
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction)
 {
+	glm_vec3_copy(move_direction, command_state->move_direction);
 	SDL_Event event;
 	command_state->look_x_increment = 0;
 	command_state->look_y_increment = 0;
@@ -101,6 +103,8 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 			{
 				command_state->look_x_increment = (float)event.motion.xrel*0.4;
 				command_state->look_y_increment = -(float)event.motion.yrel*0.4;
+				command_state->look_x += (float)event.motion.xrel*0.4;
+				command_state->look_y -= (float)event.motion.yrel*0.4;
 				break;
 			}
 			default:
