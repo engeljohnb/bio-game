@@ -59,7 +59,7 @@ void update_actor(Actor *actor, ActorState actor_state)
 	vec3 position_dif;
 	glm_vec3_sub(actor_state.position, actor_state.prev_position, position_dif);
 
-	glm_mat4_identity(actor->model.local_space);
+	//glm_mat4_identity(actor->model.local_space);
 	glm_translate(actor->model.world_space, position_dif);
 }
 

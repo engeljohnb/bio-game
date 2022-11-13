@@ -115,26 +115,6 @@ void server_loop(const char *port)
 					num_states++;
 					break;
 				}
-				case ACTOR_STATE:
-				{
-					fprintf(stderr, "Actor State\n");
-					break;
-				}
-				case ID_ASSIGNMENT:
-				{
-					fprintf(stderr, "ID Assignment\n");
-					break;
-				}
-				case NEW_PLAYER:
-				{
-					fprintf(stderr, "New Payer\n");
-					break;
-				}
-				case ACKNOWLEDGE_NP:
-				{
-					fprintf(stderr, "Acknowledge NP\n");
-					break;
-				}
 				default:
 				{
 					fprintf(stderr, "Warning: improper message received\n");
@@ -198,7 +178,7 @@ int check_position(ActorState client, ActorState server, float delta_t)
 	{
 		update_actor_state(&client, server.command_state, delta_t);		
 	}
-	return position_equal(client.position, server.position);
+	return vec3_equal(client.position, server.position);
 }
 
 void game_loop(const char *server_name, const char *port)
@@ -229,7 +209,8 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.move_direction);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
+		print_vec3(renderer.camera.front);
 		if (command_state.quit)
 		{
 			running = 0;

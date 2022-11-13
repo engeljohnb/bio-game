@@ -72,7 +72,5 @@ void update_camera(Camera *camera, ActorState player)
 
 	glm_vec3_copy(player.up, camera->up);
 
-	vec3 frontpos;
-	glm_vec3_add(camera->position,camera->front, frontpos);
 	glm_lookat(camera->position, player.position, camera->up, camera->view_space);
 }

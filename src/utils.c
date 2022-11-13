@@ -42,18 +42,26 @@ size_t mins(size_t a, size_t b)
 
 void turn(vec3 front, float x, float y)
 {
-	 glm_vec3_copy(VEC3(cos(RAD(x)) * cos(RAD(y)), 
+	 glm_vec3_add(VEC3(cos(RAD(x)) * cos(RAD(y)), 
 				 sin(RAD(y)), 
-				 sin(RAD(x))*cos(RAD(y))), 
+				 sin(RAD(x))*cos(RAD(y))),
+			 front,
 			front);
 	 glm_normalize(front);
 }
 
-int position_equal(float a[3], float b[3])
+int vec3_equal(float a[3], float b[3])
 {
 	return ((a[0] == b[0]) &&
 		(a[1] == b[1]) &&
 		(a[2] == b[2]));
+}
+
+int vec3_zero(float a[3])
+{
+	return ((a[0] == 0) &&
+		(a[1] == 0) &&
+		(a[2] == 0));
 }
 
 unsigned int length_between(char *haystack,

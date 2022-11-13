@@ -34,7 +34,7 @@ uniform mat4 projection_space;
 void main()
 {
 	mat3 normal_world_space = mat3(transpose(inverse(world_space)));
-	gl_Position = projection_space * view_space * world_space * local_space *vec4(v_position, 1.0);
+	gl_Position = projection_space * view_space * world_space * local_space * vec4(v_position, 1.0);
 	v_normal = normalize(normal_world_space * normal);
 	frag_position = vec3(world_space * vec4(v_position, 1.0));
 	//frag_position = normal;

@@ -38,6 +38,13 @@ CommandConfig default_command_config(void)
 /* Sets a command state based on user input. */
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction)
 {
+	static int first_time_thru = 0;
+	if (!first_time_thru)
+	{
+		command_state->look_x = 270;
+		command_state->look_y = 0;
+		first_time_thru++;
+	}
 	glm_vec3_copy(move_direction, command_state->move_direction);
 	SDL_Event event;
 	command_state->look_x_increment = 0;
