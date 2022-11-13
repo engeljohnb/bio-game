@@ -36,7 +36,7 @@
 #include "utils.h"
 #include "debug.h"
 // UP NEXT: 
-// 	I don't think lookat is going to work for rotating regular models.
+// 	Perhaps it's time to actually understand rotation matrices.
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -133,7 +133,7 @@ void server_loop(const char *port)
 		{
 			players[i].num_updates = 0;
 		}
-		frame_time += B_get_frame_time();
+		frame_time += B_get_frame_time(delta_t);
 		while (frame_time >= delta_t)
 		{
 			for (unsigned int i = 0; i < num_players; ++i)
@@ -209,8 +209,7 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
-		print_vec3(renderer.camera.front);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front, renderer.camera.rotation_axis, renderer.camera.rotation_angle);
 		if (command_state.quit)
 		{
 			running = 0;

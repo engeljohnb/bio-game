@@ -52,15 +52,23 @@ Actor create_default_npc(unsigned int id)
 	return actor;
 }
 
+void my_rotate(vec3 forward, vec3 up, mat4 result)
+{
+	vec3 right;
+	glm_vec3_cross(forward, up, right);
+	glm_vec3_normalize(right);
+	mat4 rotation = { { right[0],		up[0], 		forward[0], 	0 },
+			  { right[1],		up[1], 		forward[1],	0 },
+			  { right[2],		up[2],		forward[2],	0 },
+			  { 0,			0,		0,		1 } };
+	glm_mat4_copy(rotation, result);
+}
 void update_actor(Actor *actor, ActorState actor_state)
 {
 	memcpy(&actor->actor_state, &actor_state, sizeof(ActorState));
-
-	vec3 position_dif;
-	glm_vec3_sub(actor_state.position, actor_state.prev_position, position_dif);
-
-	//glm_mat4_identity(actor->model.local_space);
-	glm_translate(actor->model.world_space, position_dif);
+	glm_mat4_identity(actor->model.world_space);
+	glm_translate(actor->model.world_space, actor_state.position);
+	glm_rotate(actor->model.world_space, actor_state.command_state.rotation_angle, actor_state.command_state.rotation_axis);
 }
 
 

@@ -31,15 +31,9 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 	memcpy(&(actor_state->command_state), &command_state, sizeof(CommandState));	
 	actor_state->id = command_state.id;
 	glm_vec3_negate(command_state.move_direction);
-	glm_vec3_copy(actor_state->front, actor_state->prev_front);
 	glm_vec3_copy(command_state.move_direction, actor_state->front);
 	if (command_state.movement & M_BACKWARD)
 	{
-		/*vec3 backward = {0.0, 0.0, 0.0};
-		glm_vec3_negate_to(actor_state->front, backward);
-		glm_normalize(backward);
-		glm_vec3_add(backward, command_state.move_direction, command_state.move_direction);
-		glm_vec3_normalize(command_state.move_direction);*/
 		glm_vec3_negate(command_state.move_direction);
 	}
 	if (command_state.movement & M_FORWARD)

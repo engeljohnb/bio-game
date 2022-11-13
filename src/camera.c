@@ -31,8 +31,6 @@ Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
 	glm_vec3_add(front, position, frontpos);
 
 	glm_vec3_copy(VEC3_ZERO, camera.move_direction);
-	glm_vec3_copy(VEC3_ZERO, camera.yaw);
-	glm_vec3_copy(VEC3_ZERO, camera.pitch);
 
 	glm_lookat(frontpos, position, up, camera.view_space);
 	return camera;
@@ -59,7 +57,12 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 void update_camera(Camera *camera, ActorState player)
 {
+	static float look_x = -90;
+	look_x += 0.1;
+	player.command_state.look_x = look_x;
 	glm_vec3_copy(player.position, camera->position);
+	vec3 prev_front;
+	glm_vec3_copy(camera->front, prev_front);
 	turn(camera->front, player.command_state.look_x, player.command_state.look_y);
 	mat4 translate;
 	glm_mat4_identity(translate);
@@ -73,4 +76,10 @@ void update_camera(Camera *camera, ActorState player)
 	glm_vec3_copy(player.up, camera->up);
 
 	glm_lookat(camera->position, player.position, camera->up, camera->view_space);
+	float angle = glm_vec3_angle(VEC3_Z_DOWN, camera->front);//, -1.0, 1.0);
+	vec3 axis;
+	glm_vec3_cross(VEC3_Z_DOWN, camera->front, axis);
+	glm_vec3_normalize(axis);
+	glm_vec3_copy(axis, camera->rotation_axis);
+	camera->rotation_angle = angle;
 }

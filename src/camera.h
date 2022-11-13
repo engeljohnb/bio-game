@@ -10,15 +10,13 @@ typedef struct
 {
 	float	speed;
 	float	max_speed;
-	float	look_x;
-	float 	look_y;
+	float	rotation_angle;
+	vec3	rotation_axis;
 	vec3	position;
 	vec3 	move_direction;
 	vec3	front;
 	vec3	up;
 	vec3	right;
-	vec3	yaw;
-	vec3	pitch;
 	mat4	view_space;
 	mat4	projection_space;
 } Camera;

@@ -42,10 +42,9 @@ size_t mins(size_t a, size_t b)
 
 void turn(vec3 front, float x, float y)
 {
-	 glm_vec3_add(VEC3(cos(RAD(x)) * cos(RAD(y)), 
+	 glm_vec3_copy(VEC3(cos(RAD(x)) * cos(RAD(y)), 
 				 sin(RAD(y)), 
 				 sin(RAD(x))*cos(RAD(y))),
-			 front,
 			front);
 	 glm_normalize(front);
 }

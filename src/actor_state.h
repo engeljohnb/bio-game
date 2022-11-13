@@ -32,7 +32,6 @@ typedef struct
 	vec3			position;
 	vec3			prev_position;
 	vec3			front;
-	vec3			prev_front;
 	vec3			up;
 	CommandState		command_state;
 	int			active;
