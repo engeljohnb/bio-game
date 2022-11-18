@@ -36,13 +36,10 @@ CommandConfig default_command_config(void)
 }
 
 /* Sets a command state based on user input. */
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction, vec3 rotation_axis, float rotation_angle)
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction)
 {
-	static int first_time_thru = 1;
 	glm_vec3_copy(move_direction, command_state->move_direction);
 	SDL_Event event;
-	command_state->look_x_increment = 0;
-	command_state->look_y_increment = 0;
 	while (SDL_PollEvent(&event))
 	{
 		switch (event.type)
@@ -102,12 +99,8 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 			}
 			case SDL_MOUSEMOTION:
 			{
-				command_state->look_x_increment = (float)event.motion.xrel*0.4;
-				command_state->look_y_increment = -(float)event.motion.yrel*0.4;
 				command_state->look_x += (float)event.motion.xrel*0.4;
 				command_state->look_y -= (float)event.motion.yrel*0.4;
-				/*command_state->look_x = glm_clamp(command_state->look_x, -60, 60);*/
-				/*command_state->look_y = glm_clamp(command_state->look_y, -60, 60);*/
 				break;
 			}
 			default:
@@ -116,14 +109,5 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 		}
 	}
 
-	if (first_time_thru)
-	{
-		command_state->look_x = -90;
-		command_state->look_y = 0;
-		first_time_thru = 0;
-	}
-
-	glm_vec3_copy(rotation_axis, command_state->rotation_axis);
-	command_state->rotation_angle = rotation_angle;
 	return 0;
 }

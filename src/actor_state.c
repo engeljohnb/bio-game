@@ -26,42 +26,44 @@
 
 #define GRAPHICAL_RENDER 1
 
-void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t)
+void update_actor_state_direction(ActorState *actor_state, CommandState *command_state)
 {
-	memcpy(&(actor_state->command_state), &command_state, sizeof(CommandState));	
-	actor_state->id = command_state.id;
-	glm_vec3_negate(command_state.move_direction);
-	glm_vec3_copy(command_state.move_direction, actor_state->front);
-	if (command_state.movement & M_BACKWARD)
+	glm_vec3_negate(command_state->move_direction);
+	glm_vec3_copy(command_state->move_direction, actor_state->front);
+	if (command_state->movement & M_BACKWARD)
 	{
-		glm_vec3_negate(command_state.move_direction);
+		glm_vec3_negate(command_state->move_direction);
 	}
-	if (command_state.movement & M_FORWARD)
+	if (command_state->movement & M_FORWARD)
 	{
 		vec3 forward;
 		glm_vec3_copy(actor_state->front, forward);
 		glm_vec3_normalize(forward);
-		glm_vec3_add(forward, command_state.move_direction, command_state.move_direction);
-		glm_vec3_normalize(command_state.move_direction);
+		glm_vec3_add(forward, command_state->move_direction, command_state->move_direction);
+		glm_vec3_normalize(command_state->move_direction);
 	}
 	
-	if (command_state.movement & M_LEFT)
+	if (command_state->movement & M_LEFT)
 	{
 		vec3 left = {0.0, 0.0, 0.0};
-		glm_vec3_cross(actor_state->front, actor_state->up, left);
+		glm_vec3_cross(actor_state->front, VEC3_Y_UP, left);
 		glm_vec3_negate(left);
 		glm_vec3_normalize(left);
-		glm_vec3_add(left, command_state.move_direction, command_state.move_direction);
-		glm_vec3_normalize(command_state.move_direction);
+		glm_vec3_add(left, command_state->move_direction, command_state->move_direction);
+		glm_vec3_normalize(command_state->move_direction);
 	}
-	if (command_state.movement & M_RIGHT)
+	if (command_state->movement & M_RIGHT)
 	{
 		vec3 right = {0.0, 0.0, 0.0};
-		glm_vec3_cross(actor_state->front, actor_state->up, right); glm_normalize(right);
-		glm_vec3_add(right, command_state.move_direction, command_state.move_direction);
-		glm_vec3_normalize(command_state.move_direction);
+		glm_vec3_cross(actor_state->front, VEC3_Y_UP, right); glm_normalize(right);
+		glm_vec3_add(right, command_state->move_direction, command_state->move_direction);
+		glm_vec3_normalize(command_state->move_direction);
 	}
+	memcpy(&(actor_state->command_state), command_state, sizeof(CommandState));	
+}
 
+void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t)
+{
 	if (command_state.movement)
 	{
 		actor_state->speed += 0.0001*delta_t;
@@ -82,10 +84,6 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 	}
 
 	vec3 velocity;
-	if (!actor_state->num_updates)
-	{
-		glm_vec3_copy(actor_state->position, actor_state->prev_position);
-	}
 	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 	actor_state->num_updates++;
@@ -97,12 +95,10 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	memset(&state, 0, sizeof(ActorState));
 	memset(&state.command_state, 0, sizeof(CommandState));
 	glm_vec3_copy(position, state.position);
-	glm_vec3_copy(position, state.prev_position);
 	glm_vec3_copy(facing, state.front);
-	glm_vec3_copy(VEC3_Y_UP, state.up);
 	state.speed = 0;
-	state.active = 1;
 	state.max_speed = 0.3;
+	state.active = 1;
 	state.id = id;
 	return state;
 }

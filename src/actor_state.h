@@ -30,9 +30,7 @@
 typedef struct
 {
 	vec3			position;
-	vec3			prev_position;
 	vec3			front;
-	vec3			up;
 	CommandState		command_state;
 	int			active;
 	unsigned int		id;
@@ -55,5 +53,6 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing);
 
 /* Destructively applies changes based on the given CommandState */
 void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t);
+void update_actor_state_direction(ActorState *actor_state, CommandState *command_state);
 
 #endif

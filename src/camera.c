@@ -10,22 +10,14 @@
 
 extern float delta_t;
 
-Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up)
+Camera create_camera(B_Window window, vec3 position, vec3 front)
 {
 	Camera camera;
+	vec3 up;
 	memset(&camera, 0, sizeof(Camera));
-	camera.speed = 0.0;
-	camera.max_speed = 0.03;
 	glm_perspective(RAD(45.0f), (float)window.width/(float)window.height, 0.1f, 100.0f, camera.projection_space);
 	glm_vec3_copy(position, camera.position);
 	glm_vec3_copy(front, camera.front);
-	glm_vec3_copy(up, camera.up);
-	glm_vec3_zero(camera.right);
-
-	vec3 right;
-	glm_vec3_cross(front, up, right);
-	glm_vec3_normalize(right);
-	glm_vec3_copy(right, camera.right);
 
 	vec3 frontpos;
 	glm_vec3_add(front, position, frontpos);
@@ -55,15 +47,10 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 }
 
-void update_camera(Camera *camera, ActorState player)
+void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
 {
-	static float look_x = -90;
-	look_x += 0.1;
-	player.command_state.look_x = look_x;
 	glm_vec3_copy(player.position, camera->position);
-	vec3 prev_front;
-	glm_vec3_copy(camera->front, prev_front);
-	turn(camera->front, player.command_state.look_x, player.command_state.look_y);
+	turn(camera->front, player.command_state.look_x, player.command_state.look_y, euler_dest);
 	mat4 translate;
 	glm_mat4_identity(translate);
 
@@ -73,13 +60,5 @@ void update_camera(Camera *camera, ActorState player)
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	glm_vec3_copy(player.up, camera->up);
-
-	glm_lookat(camera->position, player.position, camera->up, camera->view_space);
-	float angle = glm_vec3_angle(VEC3_Z_DOWN, camera->front);//, -1.0, 1.0);
-	vec3 axis;
-	glm_vec3_cross(VEC3_Z_DOWN, camera->front, axis);
-	glm_vec3_normalize(axis);
-	glm_vec3_copy(axis, camera->rotation_axis);
-	camera->rotation_angle = angle;
+	glm_lookat(camera->position, player.position, VEC3_Y_UP, camera->view_space);
 }

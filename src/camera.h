@@ -8,23 +8,17 @@
 
 typedef struct
 {
-	float	speed;
-	float	max_speed;
-	float	rotation_angle;
-	vec3	rotation_axis;
 	vec3	position;
 	vec3 	move_direction;
 	vec3	front;
-	vec3	up;
-	vec3	right;
 	mat4	view_space;
 	mat4	projection_space;
 } Camera;
 
 
-Camera create_camera(B_Window window, vec3 position, vec3 front, vec3 up);
+Camera create_camera(B_Window window, vec3 position, vec3 front);
 //void update_camera(Camera *camera, CommandState command_state, float delta_t);
-void update_camera(Camera *camera, ActorState player);
+void update_camera(Camera *camera, ActorState player, mat4 euler_dest);
 void look_at(Camera *camera, vec3 target);
 
 #endif

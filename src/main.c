@@ -131,7 +131,7 @@ void server_loop(const char *port)
 		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			players[i].num_updates = 0;
+			update_actor_state_direction(&players[i], &command_states[i]);
 		}
 		frame_time += B_get_frame_time(delta_t);
 		while (frame_time >= delta_t)
@@ -209,7 +209,7 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front, renderer.camera.rotation_axis, renderer.camera.rotation_angle);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
 		if (command_state.quit)
 		{
 			running = 0;
@@ -242,7 +242,7 @@ void game_loop(const char *server_name, const char *port)
 		{
 			update_actor(&all_actors[i], all_actors[i].actor_state);
 		}
-		update_camera(&renderer.camera, all_actors[player_id].actor_state);
+		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		render_game(all_actors, num_players, renderer);
 		free_message(message);
 	}

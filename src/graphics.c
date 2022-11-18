@@ -310,7 +310,7 @@ unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
 
 Renderer create_default_renderer(B_Window window)
 {
-	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN, VEC3_Y_UP);
+	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN);
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
 	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
 
