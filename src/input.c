@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <cglm/cglm.h>
 #include "input.h"
+#include "utils.h"
 
 CommandConfig default_command_config(void)
 {
@@ -100,7 +101,18 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 			case SDL_MOUSEMOTION:
 			{
 				command_state->look_x += (float)event.motion.xrel*0.4;
-				command_state->look_y -= (float)event.motion.yrel*0.4;
+				command_state->look_y += (float)event.motion.yrel*0.4;
+				/*
+				float look_x = (float)event.motion.xrel*0.4;
+				float look_y = (float)event.motion.yrel*0.4;
+				if (absf(look_x) < absf(look_y))
+				{
+					command_state->look_y += look_y;
+				}
+				else
+				{
+					command_state->look_x += look_x;
+				}*/
 				break;
 			}
 			default:

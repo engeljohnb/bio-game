@@ -31,10 +31,10 @@ typedef struct
 {
 	vec3			position;
 	vec3			front;
+	vec3			right;
 	CommandState		command_state;
 	int			active;
 	unsigned int		id;
-	int			num_updates;
 	float			speed;
 	float			max_speed;
 } ActorState;

@@ -36,7 +36,7 @@
 #include "utils.h"
 #include "debug.h"
 // UP NEXT: 
-// 	Perhaps it's time to actually understand rotation matrices.
+// 		It's so close, just futz with it and I think it'll be perfect.
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -170,15 +170,6 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 	memcpy(package, message.data, sizeof(NewPlayerPackage));
 	free_message(message);
 	return package;
-}
-
-int check_position(ActorState client, ActorState server, float delta_t)
-{
-	for (int i = 0; i < server.num_updates; ++i)
-	{
-		update_actor_state(&client, server.command_state, delta_t);		
-	}
-	return vec3_equal(client.position, server.position);
 }
 
 void game_loop(const char *server_name, const char *port)

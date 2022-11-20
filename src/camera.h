@@ -11,6 +11,7 @@ typedef struct
 	vec3	position;
 	vec3 	move_direction;
 	vec3	front;
+	vec3	right;
 	mat4	view_space;
 	mat4	projection_space;
 } Camera;

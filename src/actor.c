@@ -62,6 +62,7 @@ void my_rotate(vec3 forward, vec3 up, mat4 result)
 			  { 0,			0,		0,		1 } };
 	glm_mat4_copy(rotation, result);
 }
+
 void update_actor(Actor *actor, ActorState actor_state)
 {
 	memcpy(&actor->actor_state, &actor_state, sizeof(ActorState));

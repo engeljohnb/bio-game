@@ -22,6 +22,15 @@
 #include <cglm/cglm.h>
 #include "utils.h"
 
+
+float absf(float value)
+{
+	if (value < 0)
+	{
+		return -value;
+	}
+	return value;
+}
 int maxi(int a, int b)
 {
 	if (a > b)
@@ -40,13 +49,18 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
-void turn(vec3 front, float x, float y, mat4 dest)
+void turn(vec3 front, float x, float y, vec3 axis, mat4 dest)
 {
-	glm_mat4_identity(dest);
-	glm_euler(VEC3(RAD(x), RAD(y), 0), x_dest);
-	glm_vec3_copy(VEC3_Z_DOWN, front);
-	glm_mat4_mulv3(dest, front, 1, front);
+	mat4 destination;
+	glm_mat4_identity(destination);
+	glm_euler(VEC3(RAD(y), RAD(x), 0), destination);
+	glm_vec3_copy(axis, front);
+	glm_mat4_mulv3(destination, front, 1, front);
 	glm_normalize(front);
+	if (dest != NULL)
+	{
+		glm_mat4_copy(destination, dest);
+	}
 }
 
 int vec3_equal(float a[3], float b[3])

@@ -28,37 +28,29 @@
 
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state)
 {
-	glm_vec3_negate(command_state->move_direction);
-	glm_vec3_copy(command_state->move_direction, actor_state->front);
+	glm_vec3_zero(command_state->move_direction);
 	if (command_state->movement & M_BACKWARD)
 	{
-		glm_vec3_negate(command_state->move_direction);
+		vec3 backward;
+		glm_vec3_negate_to(actor_state->front, backward);
+		glm_vec3_add(backward, command_state->move_direction, command_state->move_direction);
 	}
 	if (command_state->movement & M_FORWARD)
 	{
-		vec3 forward;
-		glm_vec3_copy(actor_state->front, forward);
-		glm_vec3_normalize(forward);
-		glm_vec3_add(forward, command_state->move_direction, command_state->move_direction);
-		glm_vec3_normalize(command_state->move_direction);
+		glm_vec3_add(actor_state->front, command_state->move_direction, command_state->move_direction);
 	}
 	
 	if (command_state->movement & M_LEFT)
 	{
 		vec3 left = {0.0, 0.0, 0.0};
-		glm_vec3_cross(actor_state->front, VEC3_Y_UP, left);
-		glm_vec3_negate(left);
-		glm_vec3_normalize(left);
+		glm_vec3_negate_to(actor_state->right, left);
 		glm_vec3_add(left, command_state->move_direction, command_state->move_direction);
-		glm_vec3_normalize(command_state->move_direction);
 	}
 	if (command_state->movement & M_RIGHT)
 	{
-		vec3 right = {0.0, 0.0, 0.0};
-		glm_vec3_cross(actor_state->front, VEC3_Y_UP, right); glm_normalize(right);
-		glm_vec3_add(right, command_state->move_direction, command_state->move_direction);
-		glm_vec3_normalize(command_state->move_direction);
+		glm_vec3_add(actor_state->right, command_state->move_direction, command_state->move_direction);
 	}
+	glm_vec3_normalize(command_state->move_direction);
 	memcpy(&(actor_state->command_state), command_state, sizeof(CommandState));	
 }
 
@@ -84,9 +76,10 @@ void update_actor_state(ActorState *actor_state, CommandState command_state, flo
 	}
 
 	vec3 velocity;
+	turn(actor_state->front, command_state.look_x, command_state.look_y, VEC3_Z_UP, NULL);
+	turn(actor_state->right, command_state.look_x, command_state.look_y, VEC3_X_DOWN, NULL);
 	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
-	actor_state->num_updates++;
 }
 
 ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
