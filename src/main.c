@@ -218,7 +218,17 @@ void game_loop(const char *server_name, const char *port)
 		{
 			fprintf(stderr, "start of state collection\n");
 			int num_loops = 0;
-			B_listen_for_message(server_connection, &message, NON_BLOCKING);
+			int message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
+			if (message_return == 0)
+			{
+				fprintf(stderr, "Message returned 0\n");
+				continue;
+			}
+			else if (message_return < 0)
+			{
+				fprintf(stderr, "B_listen_for_message error\n");
+				continue;
+			}
 			fprintf(stderr, "Received message\n");
 			switch (message.type)
 			{
