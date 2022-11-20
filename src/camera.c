@@ -63,7 +63,5 @@ void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	vec3 target_position;
-	glm_vec3_copy(VEC3(player.position[0], player.position[1]+0.75, player.position[2]), target_position);
-	glm_lookat(camera->position, target_position, up, camera->view_space);
+	glm_lookat(camera->position, player.position, up, camera->view_space);
 }

@@ -57,12 +57,13 @@ void server_loop(const char *port)
 
 	while (running)
 	{
+		int num_loops = 0;
 		B_Message message;
 		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
 		while ((num_states < num_players) || (!num_states))
 		{
-			B_listen_for_message(server_connection, &message, BLOCKING);
+			B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			switch (message.type)
 			{
 				case JOIN_REQUEST:
@@ -90,6 +91,7 @@ void server_loop(const char *port)
 				}
 				case COMMAND_STATE:
 				{
+					fprintf(stderr, "Received command state\n");
 					CommandState command_state = *(CommandState *)message.data;
 					if (memcmp(&message.from_addr, &(addresses[command_state.id]), sizeof(B_Address)) == 0)
 					{
@@ -112,6 +114,7 @@ void server_loop(const char *port)
 					{
 						running = 0;
 					}
+					fprintf(stderr, "Number of players: %i\n", num_players);
 					num_states++;
 					break;
 				}
@@ -128,7 +131,9 @@ void server_loop(const char *port)
 					num_states++;
 				}
 			}
+			fprintf(stderr, "%i\n", num_loops);
 		}
+		fprintf(stderr, "-------------------------------------------------------\n");
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor_state_direction(&players[i], &command_states[i]);
@@ -161,7 +166,7 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 	NewPlayerPackage *package = malloc(sizeof(NewPlayerPackage));
 	while (message.type != ID_ASSIGNMENT)
 	{
-		B_listen_for_message(connection, &message, BLOCKING);
+		B_listen_for_message(connection, &message, NON_BLOCKING);
 		if (message.type != ID_ASSIGNMENT)
 		{
 			free_message(message);
@@ -198,6 +203,7 @@ void game_loop(const char *server_name, const char *port)
 	int running = 1;
 	while (running)
 	{
+		fprintf(stderr, "Start of game loop\n");
 		unsigned int num_states = 0;
 		B_Message message;
 		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
@@ -205,10 +211,15 @@ void game_loop(const char *server_name, const char *port)
 		{
 			running = 0;
 		}
+		fprintf(stderr, "Updated command state\n");
 		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
+		fprintf(stderr, "Sent message\n");
 		while (num_states < num_players)
 		{
-			B_listen_for_message(server_connection, &message, BLOCKING);
+			fprintf(stderr, "start of state collection\n");
+			int num_loops = 0;
+			B_listen_for_message(server_connection, &message, NON_BLOCKING);
+			fprintf(stderr, "Received message\n");
 			switch (message.type)
 			{
 				case ACTOR_STATE:
@@ -216,6 +227,7 @@ void game_loop(const char *server_name, const char *port)
 					ActorState actor_state = *(ActorState *)message.data;
 					all_actors[actor_state.id].actor_state = actor_state;
 					num_states++;
+					fprintf(stderr, "Received state for %i\n", actor_state.id);
 					break;
 				}
 				case NEW_PLAYER:
@@ -228,14 +240,18 @@ void game_loop(const char *server_name, const char *port)
 				default:
 					break;
 			}
+			fprintf(stderr, "%i\n", num_loops);
 		}
+		fprintf(stderr, "---------------------------------------\n");
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor(&all_actors[i], all_actors[i].actor_state);
 		}
+		fprintf(stderr, "Updated all actors\n");
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		render_game(all_actors, num_players, renderer);
 		free_message(message);
+		fprintf(stderr, "End of game loop\n\n");
 	}
 	for (unsigned int i = 0; i < num_players; ++i)
 	{

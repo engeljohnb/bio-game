@@ -24,7 +24,7 @@
 
 void B_init(void)
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Init(SDL_INIT_VIDEO);
 }
 
 B_Window B_create_window(void)
