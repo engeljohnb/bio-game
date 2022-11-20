@@ -29,14 +29,14 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 	memset(data, 0, message_size);
 	unsigned int recv_flags = 0;
 	message->from_addr_len = sizeof(struct sockaddr);
-	if (flags & BLOCKING)
+	if (flags & NON_BLOCKING)
 	{
 		recv_flags |= MSG_DONTWAIT;
 	}
 	int error = 0;
 	if ((error = recvfrom(connection.sockfd, data, message_size, recv_flags, &(message->from_addr), &message->from_addr_len)) < 0)
 	{
-		if ((error == EAGAIN) || (error == EWOULDBLOCK))
+		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
 		{
 			return 0;
 		}
