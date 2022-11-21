@@ -37,9 +37,11 @@ CommandConfig default_command_config(void)
 }
 
 /* Sets a command state based on user input. */
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction)
+int B_update_command_state_ui(B_Window window, CommandState *command_state, CommandConfig config, vec3 move_direction)
 {
 	glm_vec3_copy(move_direction, command_state->move_direction);
+	int prev_mouse_x = window.width/2;
+	int prev_mouse_y = window.height/2;
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -100,19 +102,11 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 			}
 			case SDL_MOUSEMOTION:
 			{
-				command_state->look_x += (float)event.motion.xrel*0.4;
-				command_state->look_y += (float)event.motion.yrel*0.4;
-				/*
-				float look_x = (float)event.motion.xrel*0.4;
-				float look_y = (float)event.motion.yrel*0.4;
-				if (absf(look_x) < absf(look_y))
-				{
-					command_state->look_y += look_y;
-				}
-				else
-				{
-					command_state->look_x += look_x;
-				}*/
+				command_state->look_x += (float)(event.motion.x - prev_mouse_x)*0.4;
+				command_state->look_y += (float)(event.motion.y - prev_mouse_y)*0.4;
+				prev_mouse_x = event.motion.x;
+				prev_mouse_y = event.motion.y;
+				SDL_WarpMouseInWindow(window.sdl_window, window.width/2, window.height/2);
 				break;
 			}
 			default:
@@ -120,6 +114,5 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 
 		}
 	}
-
 	return 0;
 }

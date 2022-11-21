@@ -241,7 +241,28 @@ int _bg_free(void *ptr, const char *filename, unsigned int line)
 	return 0;
 }
 
+void print_mat4(mat4 mat)
+{
+	fprintf(stderr, "%f\t", mat[0][0]);
+	fprintf(stderr, "%f\t", mat[0][1]);
+	fprintf(stderr, "%f\t", mat[0][2]);
+	fprintf(stderr, "%f\t\n", mat[0][3]);
 
+	fprintf(stderr, "%f\t", mat[1][0]);
+	fprintf(stderr, "%f\t", mat[1][1]);
+	fprintf(stderr, "%f\t", mat[1][2]);
+	fprintf(stderr, "%f\t\n", mat[1][3]);
+
+	fprintf(stderr, "%f\t", mat[2][0]);
+	fprintf(stderr, "%f\t", mat[2][1]);
+	fprintf(stderr, "%f\t", mat[2][2]);
+	fprintf(stderr, "%f\t\n", mat[2][3]);
+
+	fprintf(stderr, "%f\t", mat[3][0]);
+	fprintf(stderr, "%f\t", mat[3][1]);
+	fprintf(stderr, "%f\t", mat[3][2]);
+	fprintf(stderr, "%f\t\n", mat[3][3]);
+}
 void print_vec3(vec3 vector)
 {
 	fprintf(stderr, "%f %f %f\n", vector[0], vector[1], vector[2]);

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "actor_state.h"
 #include "debug.h"
-
+#define DEBUG 1
 void log_actor_state(ActorState actor_state)
 {
 	if (!actor_state.position[0] &&

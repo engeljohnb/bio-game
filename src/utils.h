@@ -73,4 +73,5 @@ void turn(vec3 front, float x, float y, vec3 axis, mat4 dest);
 int _bg_free(void *ptr, const char *filename, unsigned int line);
 float absf(float value);
 void print_vec3(vec3 vector);
+void print_mat4(mat4 mat);
 #endif

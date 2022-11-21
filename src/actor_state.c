@@ -54,7 +54,7 @@ void update_actor_state_direction(ActorState *actor_state, CommandState *command
 	memcpy(&(actor_state->command_state), command_state, sizeof(CommandState));	
 }
 
-void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t)
+void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t)
 {
 	if (command_state.movement)
 	{

@@ -36,7 +36,7 @@
 #include "utils.h"
 #include "debug.h"
 // UP NEXT: 
-// 		It's so close, just futz with it and I think it'll be perfect.
+// 	Make sure this works across two computers.
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
@@ -60,9 +60,10 @@ void server_loop(const char *port)
 		B_Message message;
 		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
+		int message_return = 0;
 		while ((num_states < num_players) || (!num_states))
 		{
-			int message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
+			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
 				SDL_Delay(10);
@@ -142,7 +143,7 @@ void server_loop(const char *port)
 		{
 			for (unsigned int i = 0; i < num_players; ++i)
 			{
-				update_actor_state(&players[i], command_states[i], delta_t);
+				update_actor_state_position(&players[i], command_states[i], delta_t);
 			}
 			frame_time -= delta_t;
 		}
@@ -153,7 +154,10 @@ void server_loop(const char *port)
 				B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[j]), sizeof(ActorState));
 			}
 		}
-		free_message(message);
+		if (message_return > 0)
+		{
+			free_message(message);
+		}	
 	}
 	B_close_connection(server_connection);
 }
@@ -168,7 +172,10 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 		B_listen_for_message(connection, &message, NON_BLOCKING);
 		if (message.type != ID_ASSIGNMENT)
 		{
-			free_message(message);
+			if (valid(message.data))
+			{
+				free_message(message);
+			}
 		}
 	}
 	memcpy(package, message.data, sizeof(NewPlayerPackage));
@@ -199,24 +206,36 @@ void game_loop(const char *server_name, const char *port)
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
+	float delta_t = 15.0;
+	float frame_time = 0;
 	int running = 1;
+	int frames = 0;
 	while (running)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
+		B_update_command_state_ui(window, &command_state, all_actors[player_id].command_config, renderer.camera.front);
 		if (command_state.quit)
 		{
 			running = 0;
 		}
 		B_send_message(server_connection, COMMAND_STATE, &command_state, sizeof(CommandState));
+		int message_return = 0;
 		while (num_states < num_players)
 		{
-			int message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
+			frames++;
+			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
 				SDL_Delay(10);
-				continue;
+				break;
+			}
+			else if ((frames % 10) == 0)
+			{
+				message_return = 0;
+				free_message(message);
+				all_actors[player_id].actor_state.command_state = command_state;
+				break;
 			}
 			switch (message.type)
 			{
@@ -238,13 +257,36 @@ void game_loop(const char *server_name, const char *port)
 					break;
 			}
 		}
+		frame_time += B_get_frame_time(delta_t);
+		if (message_return <= 0)
+		{
+			for (unsigned int i = 0; i < num_players; ++i)
+			{
+				update_actor_state_direction(&all_actors[i].actor_state, &all_actors[i].actor_state.command_state);
+			}
+			while (frame_time >= delta_t)
+			{
+				for (unsigned int i = 0; i < num_players; ++i)
+				{
+					update_actor_state_position(&all_actors[i].actor_state, all_actors[i].actor_state.command_state, delta_t);
+				}
+				frame_time -= delta_t;
+			}
+		}
+		else
+		{
+			frame_time = 0;
+		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor(&all_actors[i], all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		render_game(all_actors, num_players, renderer);
-		free_message(message);
+		if (message_return > 0)
+		{
+			free_message(message);
+		}
 	}
 	for (unsigned int i = 0; i < num_players; ++i)
 	{

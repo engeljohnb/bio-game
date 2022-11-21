@@ -53,7 +53,7 @@ B_Window B_create_window(void)
 	window.background_color[1] = 0.1f;
 	window.background_color[2] = 0.3f;
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
+	//SDL_SetRelativeMouseMode(SDL_TRUE);
 	SDL_WarpMouseInWindow(window.sdl_window, window_width/2, window_height/2);
 	SDL_ShowCursor(SDL_DISABLE);
 	return window;

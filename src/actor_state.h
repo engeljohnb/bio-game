@@ -52,7 +52,7 @@ typedef struct
 ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing);
 
 /* Destructively applies changes based on the given CommandState */
-void update_actor_state(ActorState *actor_state, CommandState command_state, float delta_t);
+void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t);
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state);
 
 #endif
