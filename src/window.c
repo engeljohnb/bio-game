@@ -53,7 +53,12 @@ B_Window B_create_window(void)
 	window.background_color[1] = 0.1f;
 	window.background_color[2] = 0.3f;
 
-	//SDL_SetRelativeMouseMode(SDL_TRUE);
+	/* So there's this bug on some machines where if relative mouse mode is enabled, and the user has two windows running the game, 
+	 * all the mouse motion from the one window also happens in the other. However, when I implement
+	 * relative mouse motion manually, that causes bugs on other machines. If it becomes necessary, I could chase down these bugs
+	 * so everything runs ** perfectly **, but for now my solution is to just recommend not running two games 
+	 * in two windows on one computer. */
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 	SDL_WarpMouseInWindow(window.sdl_window, window_width/2, window_height/2);
 	SDL_ShowCursor(SDL_DISABLE);
 	return window;

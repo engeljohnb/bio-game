@@ -55,5 +55,5 @@ typedef struct
 } CommandConfig;
 
 CommandConfig default_command_config(void);
-int B_update_command_state_ui(B_Window window, CommandState *command_state, CommandConfig config, vec3 move_direction);
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction);
 #endif

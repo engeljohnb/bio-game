@@ -214,7 +214,7 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(window, &command_state, all_actors[player_id].command_config, renderer.camera.front);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
 		if (command_state.quit)
 		{
 			running = 0;
@@ -230,13 +230,13 @@ void game_loop(const char *server_name, const char *port)
 				SDL_Delay(10);
 				break;
 			}
-			else if ((frames % 10) == 0)
+			/*else if ((frames % 10) == 0)
 			{
 				message_return = 0;
 				free_message(message);
 				all_actors[player_id].actor_state.command_state = command_state;
 				break;
-			}
+			}*/
 			switch (message.type)
 			{
 				case ACTOR_STATE:
