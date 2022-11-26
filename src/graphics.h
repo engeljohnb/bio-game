@@ -34,20 +34,47 @@ typedef struct
 } PointLight;
 
 typedef unsigned int B_Shader;
+
+typedef struct
+{
+	int 	id;
+	float	weight;
+} BoneID;
+
 typedef struct
 {
 	vec3	position;
 	vec3	normal;
 	vec3	tex_coords;	
+	int	bone_ids[4];
+	float	bone_weights[4];
 } B_Vertex;
+
+/* REMEMBER:	If you change anything (even the order of the members) in this struct, you'll have to make
+ * 		corresponding changes to file_convert/file_convert.cpp */
+typedef struct
+{
+	mat4		current_transform;
+	float		current_timestamp;
+	int		num_rotation_keys;
+	int		num_position_keys;
+	int		num_scale_keys;
+	vec4		*rotation_keys;
+	vec3		*scale_keys;
+	vec3		*position_keys;
+} Animation;
 
 typedef struct
 {
 	B_Vertex 	*vertices;
 	unsigned int	*faces;
+	mat4		*bones;
+	Animation	*animations;
 	int		active;
 	int 		num_vertices;
 	int		num_faces;	
+	int		num_bones;
+	int		num_animations;
 	unsigned int 	vao;
 	unsigned int	vbo;
 	unsigned int	ebo;
@@ -80,7 +107,14 @@ B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned in
 /* Creates a model from existing meshes. Usually called in conjunction with B_create_mesh */
 B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
 
-B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
+B_Mesh B_create_mesh(B_Vertex 		*vertices, 
+		    unsigned int 	*faces, 
+		    mat4 		*bones, 
+		    Animation		*animations,
+		    unsigned int 	num_vertices, 
+		    unsigned int 	num_faces, 
+		    unsigned int 	num_bones,
+		    unsigned int 	num_animations);
 
 B_Model create_cube(void);
 B_Model load_model_from_file(const char *filename);

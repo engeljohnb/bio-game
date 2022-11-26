@@ -33,36 +33,40 @@ PointLight create_point_light(vec3 position, vec3 color, float intensity)
 	light.intensity = intensity;
 	return light;
 }
-void get_triangle_data(B_Vertex *buffer)
-{
-	B_Vertex vertices[] = { { {-1.0, -1.0, 0.0}, { 0.0, 0.0, -1.0}, { 0.0, 0.0, 0.0} },
-		 	      	{ {1.0, -1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} },
-			      	{ {0.0, 1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 0.0} } };
-	buffer = memcpy(buffer, vertices, TRIANGLE_SIZE);
-}
 
-B_Model B_create_triangle(void)
-{
-	B_Vertex *triangle_data = (B_Vertex *)malloc(TRIANGLE_SIZE);
-	memset(triangle_data, 0, TRIANGLE_SIZE);
-	get_triangle_data(triangle_data);
-	unsigned int faces[] = { 0, 1, 2 };
-	B_Model model = B_create_model_from(triangle_data, faces, 3, 3);
-	return model;
-}
-
-B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces)
+B_Mesh B_create_mesh(B_Vertex 		*vertices, 
+		     unsigned int 	*faces, 
+		     mat4 		*bones, 
+		     Animation		*animations,
+		     unsigned int 	num_vertices,
+		     unsigned int 	num_faces, 
+		     unsigned int 	num_bones,
+		     unsigned int 	num_animations)
 {
 	B_Mesh mesh;
 	memset(&mesh, 0, sizeof(B_Mesh));
 	mesh.active = 1;
+
 	mesh.num_vertices = num_vertices;
 	mesh.num_faces = num_faces;
+	mesh.num_bones = num_bones;
+	mesh.num_animations = num_animations;
+
 	mesh.vertices = (B_Vertex *)malloc(mesh.num_vertices * sizeof(B_Vertex));
+	memset(mesh.vertices, 0, sizeof(B_Vertex)*mesh.num_vertices);
 	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
+
 	mesh.faces = (unsigned int *)malloc(sizeof(unsigned int) * num_faces);
 	memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
 	mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
+
+	mesh.bones = (mat4 *)malloc(mesh.num_bones*sizeof(mat4));
+	memset(mesh.bones, 0, sizeof(mat4)*mesh.num_bones);
+	mesh.bones = memcpy(mesh.bones, bones, mesh.num_bones*sizeof(mat4)); 
+
+	mesh.animations = (Animation *)malloc(mesh.num_animations * sizeof(Animation));
+	memset(mesh.animations, 0, sizeof(Animation)*mesh.num_animations);
+	mesh.animations = memcpy(mesh.animations, animations, sizeof(Animation)*mesh.num_animations);
 
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -74,13 +78,18 @@ B_Mesh B_create_mesh(B_Vertex *vertices, unsigned int *faces, unsigned int num_v
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)(sizeof(vec3)));
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vec3)*3, (void*)(sizeof(vec3)));
+	size_t stride = (sizeof(vec3)*3) + sizeof(int)*4 + sizeof(float)*4;
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)*2));
+	glVertexAttribPointer(3, 4, GL_INT,   GL_FALSE, stride, (void*)(sizeof(vec3)*3));
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)*3 + sizeof(int)*4));
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
+	glEnableVertexAttribArray(4);
 	return mesh;
 }
 
@@ -113,7 +122,7 @@ B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned in
 	{
 		model.meshes[i].active = 0;
 	}
-	B_Mesh mesh = B_create_mesh(vertices, faces, num_vertices, num_faces);
+	B_Mesh mesh = B_create_mesh(vertices, faces, NULL, NULL, num_vertices, num_faces, 0, 0);
 	model.meshes[0] = mesh;
 	glm_mat4_identity(model.world_space);
 	glm_mat4_identity(model.local_space);
@@ -191,10 +200,16 @@ B_Model load_model_from_file(const char *filename)
 
 	unsigned int num_meshes = 0;
 	unsigned int num_faces = 0;
+	unsigned int num_bones = 0;
+	unsigned int num_animations = 0;
 	unsigned int *vertex_sizes = 0;
 	unsigned int *face_sizes = 0;
+	unsigned int *bone_sizes = 0;
+	unsigned int *animation_sizes = 0;
 	uint8_t **vertex_data = get_data_after_punctuated(buff, "B_MESH:", "END_MESHES", total_length, &num_meshes, &vertex_sizes);
 	uint8_t **face_data = get_data_after_punctuated(buff, "B_FACES:", "END_FACES", total_length, &num_faces, &face_sizes);
+	uint8_t **bone_data = get_data_after_punctuated(buff, "B_BONES:", "END_BONES", total_length, &num_bones, &bone_sizes);
+	uint8_t **animation_data = get_data_after_punctuated(buff, "ANIMATIONS:", "END_ANIMATIONS", total_length, &num_animations, &animation_sizes);
 	if (num_meshes > MAX_MESHES)
 	{
 		fprintf(stderr, "WARNING: mesh loaded from %s contains more meshes than maximum supported.\n", filename);
@@ -204,7 +219,14 @@ B_Model load_model_from_file(const char *filename)
 	B_Mesh meshes[num_meshes];
 	for (unsigned int i = 0; i < num_meshes; ++i)
 	{
-		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], (unsigned int *)face_data[i], vertex_sizes[i] / sizeof(B_Vertex), face_sizes[i]/sizeof(unsigned int));
+		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], 
+				          (unsigned int *)face_data[i], 
+					  (mat4 *)bone_data[i], 
+					  (Animation *)animation_data[i],
+			                  vertex_sizes[i]/sizeof(B_Vertex), 
+					  face_sizes[i]/sizeof(unsigned int), 
+					  bone_sizes[i]/sizeof(mat4), 
+					  animation_sizes[i]/sizeof(Animation));
 	}
 	model = B_create_model(meshes, num_meshes);
 	BG_FREE(vertex_sizes);
@@ -239,6 +261,14 @@ void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight poin
 			B_set_uniform_mat4(shader, "world_space", model.world_space);
 			B_set_uniform_mat4(shader, "local_space", model.local_space);
 			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
+			for (int j = 0; j < model.meshes[i].num_bones; ++j)
+			{
+				char uniform_name[128] = {0};
+				snprintf(uniform_name, 128, "bone_matrices[%i]", j);
+				//print_mat4(model.meshes[i].bones[j]);
+				//fprintf(stderr, "--------------------------------------------\n\n");
+				B_set_uniform_mat4(shader, uniform_name, model.meshes[i].bones[j]);
+			}
 			glUseProgram(shader);
 			if (model.meshes[i].num_faces)
 			{
@@ -312,7 +342,7 @@ Renderer create_default_renderer(B_Window window)
 {
 	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN);
 	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
-	B_Shader shader = B_setup_shader("src/vertex_shader.vs", "src/fragment_shader.fs");
+	B_Shader shader = B_setup_shader("src/vertex_shader.vert", "src/fragment_shader.frag");
 
 	Renderer renderer;
 	renderer.camera = camera;

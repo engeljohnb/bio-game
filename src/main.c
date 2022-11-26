@@ -35,8 +35,12 @@
 #include "time.h"
 #include "utils.h"
 #include "debug.h"
-// UP NEXT: 
-// 	Make sure this works across two computers.
+
+/* UP NEXT:
+ * 	The model loader loads animations (I think -- if stuff starts breaking, don't just assume the loader's working correctly),
+ * 	so now the next step is learning how to use the data to interpolate between the different animation keys. In other words:
+ * 	make the monkey move. */
+
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
