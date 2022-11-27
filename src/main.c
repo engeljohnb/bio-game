@@ -317,11 +317,26 @@ int main(int argc, char **argv)
 	{
 		server_loop(port);
 	}
-	else
+	else if (strncmp(argv[2], "1", 1) == 0)
 	{
 		B_init();
 		game_loop(argv[1], port);
 		B_quit();
+	}
+	else if (strncmp(argv[2], "2", 1) == 0)
+	{
+		if (!fork())
+		{
+			server_loop(port);
+			int status = 0;
+			waitpid(0, &status, 0);
+		}
+		else
+		{
+			B_init();
+			game_loop(argv[1], port);
+			B_quit();
+		}
 	}
 	return 0;
 }

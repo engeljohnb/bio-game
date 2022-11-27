@@ -110,12 +110,12 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 	uint8_t *start;
 	uint8_t *end;
 	int num_elements = 0;
-	/* TODO: Write an uglier for loop than this */
 	if (data_end == NULL)
 	{
 		fprintf(stderr, "get_data_after_punctuated error: data end key %s not found\n", end_key);
 		data_end = data+data_length;
 	}
+	/* TODO: Write an uglier for loop than this */
 	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128))) != NULL; ++i)
 	{
 		start += strnlen(search_key, 128);

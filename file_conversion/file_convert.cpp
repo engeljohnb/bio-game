@@ -12,12 +12,16 @@ typedef struct
 	int		bone_id;
         mat4            current_transform;
         float           current_timestamp;
+	double		duration;
         int             num_rotation_keys;
         int             num_position_keys;
         int             num_scale_keys; 
         vec4            *rotation_keys;
         vec3          	*scale_keys;
         vec3            *position_keys;
+	double		*rotation_times;
+	double		*scale_times;
+	double		*position_times;
 } Animation;
 
 typedef struct
@@ -34,39 +38,83 @@ void write_animations(FILE *fp, const aiScene *scene, aiNode *node)
 		aiAnimation *ai_animation = scene->mAnimations[i];
 		for (int j = 0; j < ai_animation->mNumChannels; ++j)
 		{
+
+			fwrite("ANIMATION:", 1, strlen("ANIMATION:"), fp);
 			Animation animation;
 			aiNodeAnim *channel = ai_animation->mChannels[j];
 			memset(&animation, 0, sizeof(Animation));
 
 			animation.bone_id = j;
+			animation.duration = ai_animation->mDuration;
 			animation.num_rotation_keys = channel->mNumRotationKeys;
 			animation.num_position_keys = channel->mNumPositionKeys;
 			animation.num_scale_keys = channel->mNumScalingKeys;
 
 			animation.position_keys = (vec3 *)malloc(sizeof(vec3)*channel->mNumPositionKeys);
+			memset(animation.position_keys, 0, sizeof(vec3)*channel->mNumPositionKeys);
+
 			animation.scale_keys = (vec3 *)malloc(sizeof(vec3)*channel->mNumScalingKeys);
+			memset(animation.scale_keys, 0, sizeof(vec3)*channel->mNumScalingKeys);
+
 			animation.rotation_keys = (vec4 *)malloc(sizeof(vec4)*channel->mNumRotationKeys);
+			memset(animation.rotation_keys, 0, sizeof(vec4)*channel->mNumRotationKeys);
+
+			animation.position_times = (double *)malloc(sizeof(double)*channel->mNumPositionKeys);
+			memset(animation.position_times, 0, sizeof(double)*channel->mNumPositionKeys);
+			
+			animation.scale_times = (double *)malloc(sizeof(double)*channel->mNumScalingKeys);
+			memset(animation.scale_keys, 0, sizeof(double)*channel->mNumScalingKeys);
+
+			animation.rotation_times = (double *)malloc(sizeof(double)*channel->mNumRotationKeys);
+			memset(animation.rotation_times, 0, sizeof(double)*channel->mNumRotationKeys);
+
 			for (int k = 0; k < channel->mNumPositionKeys; ++k)
 			{
 				aiVector3D a_position = channel->mPositionKeys[k].mValue;
 				vec3 position = {a_position.x, a_position.y, a_position.z};
 				glm_vec3_copy(position, animation.position_keys[k]);
+				animation.position_times[k] = channel->mPositionKeys[k].mTime;
 			}
 			for (int k = 0; k < channel->mNumScalingKeys; ++k)
 			{
 				aiVector3D a_scale = channel->mScalingKeys[k].mValue;
 				vec3 scale = {a_scale.x, a_scale.y, a_scale.z};
 				glm_vec3_copy(scale, animation.scale_keys[k]);
+				animation.scale_times[k] = channel->mScalingKeys[k].mTime;
 			}
 			for (int k = 0; k < channel->mNumRotationKeys; ++k)
 			{
 				aiQuaternion a_rotation = channel->mRotationKeys[k].mValue;
 				vec4 rotation = {a_rotation.x, a_rotation.y, a_rotation.z, a_rotation.w};
 				glm_vec4_copy(rotation, animation.rotation_keys[k]);
+				animation.rotation_times[k] = channel->mRotationKeys[k].mTime;
 			}
-			fwrite(&animation, sizeof(Animation), 1, fp);
+
+			size_t total_bytes = 0;
+
+			total_bytes += fwrite(&animation.bone_id, 1, sizeof(int), fp);
+			total_bytes += fwrite(animation.current_transform, 1, sizeof(mat4), fp);
+			total_bytes += fwrite(&animation.current_timestamp, 1, sizeof(float), fp);
+			total_bytes += fwrite(&animation.duration, 1, sizeof(double), fp);
+			total_bytes += fwrite(&animation.num_rotation_keys, 1, sizeof(int), fp);
+			total_bytes += fwrite(&animation.num_position_keys, 1, sizeof(int), fp);
+			total_bytes += fwrite(&animation.num_scale_keys, 1, sizeof(int), fp);
+			total_bytes += fwrite(animation.rotation_keys, 1, sizeof(vec4)*animation.num_rotation_keys, fp);
+			total_bytes += fwrite(animation.scale_keys, 1, sizeof(vec3)*animation.num_scale_keys, fp);
+			total_bytes += fwrite(animation.position_keys, 1, sizeof(vec3)*animation.num_position_keys, fp);
+			total_bytes += fwrite(animation.rotation_times, 1, sizeof(double)*animation.num_rotation_keys, fp);
+			total_bytes += fwrite(animation.scale_times, 1, sizeof(double)*animation.num_scale_keys, fp);
+			total_bytes += fwrite(animation.position_times, 1, sizeof(double)*animation.num_position_keys, fp);
+			free(animation.position_keys);
+			free(animation.scale_keys);
+			free(animation.rotation_keys);
+
+			free(animation.position_times);
+			free(animation.scale_times);
+			free(animation.rotation_times);
 		}
 	}	
+	fwrite("END_ANIMATIONS", strlen("END_ANIMATIONS"), 1, fp);
 }
 
 BoneID get_max_weight(aiBone **bones, int num_bones, float cap, int vertex_id)
@@ -236,12 +284,10 @@ unsigned int write_vertex_data(FILE *fp, const aiScene *scene)
 	fwrite("VERTEX_DATA:", strlen("VERTEX_DATA:"), 1, fp);
 	unsigned int total_bytes = write_meshes(fp, scene, scene->mRootNode);
 	fwrite("END_VERTEX_DATA", strlen("END_VERTEX_DATA"), 1, fp);
-	fwrite("ANIMATIONS:", strlen("ANIMATIONS:"), 1, fp);
 	if (scene->HasAnimations())
 	{
 		write_animations(fp, scene, scene->mRootNode);
 	}
-	fwrite("END_ANIMATIONS", strlen("END_ANIMATIONS"), 1, fp);
 
 	return total_bytes;
 }

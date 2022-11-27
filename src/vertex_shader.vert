@@ -33,12 +33,13 @@ uniform mat4 local_space;
 uniform mat4 world_space;
 uniform mat4 view_space;
 uniform mat4 projection_space;
-uniform mat4 bone_matrices[MAX_BONES];
+//uniform mat4 bone_matrices[MAX_BONES];
+uniform mat4 animation_transform;
 
 void main()
 {
 	mat3 normal_world_space = mat3(transpose(inverse(world_space)));
-	vec4 total_bone_influence = vec4(0.0);
+	/*vec4 total_bone_influence = vec4(0.0);
 	for (int i = 0; i < 4; ++i)
 	{
 		if (bone_ids[i] == -1)
@@ -52,9 +53,9 @@ void main()
 	{
 		total_bone_influence = vec4(v_position, 1.0);
 	}
-	total_bone_influence = vec4(v_position, 1.0);
-	gl_Position = projection_space * view_space * world_space * total_bone_influence;
+	total_bone_influence = vec4(v_position, 1.0);*/
+	gl_Position = projection_space * view_space * world_space * animation_transform * vec4(v_position, 1.0);
 	v_normal = normalize(normal_world_space * normal);
-	frag_position = vec3(world_space * total_bone_influence);//vec4(v_position, 1.0));
+	frag_position = vec3(world_space * animation_transform * vec4(v_position, 1.0));
 	//frag_position = normal;
 }

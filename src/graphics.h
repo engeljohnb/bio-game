@@ -54,14 +54,19 @@ typedef struct
  * 		corresponding changes to file_convert/file_convert.cpp */
 typedef struct
 {
+	int		bone_id;
 	mat4		current_transform;
 	float		current_timestamp;
+	double		duration;
 	int		num_rotation_keys;
 	int		num_position_keys;
 	int		num_scale_keys;
 	vec4		*rotation_keys;
 	vec3		*scale_keys;
 	vec3		*position_keys;
+	double		*rotation_times;
+	double		*scale_times;
+	double		*position_times;
 } Animation;
 
 typedef struct
@@ -110,11 +115,9 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
 B_Mesh B_create_mesh(B_Vertex 		*vertices, 
 		    unsigned int 	*faces, 
 		    mat4 		*bones, 
-		    Animation		*animations,
 		    unsigned int 	num_vertices, 
 		    unsigned int 	num_faces, 
-		    unsigned int 	num_bones,
-		    unsigned int 	num_animations);
+		    unsigned int 	num_bones);
 
 B_Model create_cube(void);
 B_Model load_model_from_file(const char *filename);
