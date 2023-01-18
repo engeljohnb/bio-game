@@ -32,7 +32,7 @@ PointLight create_point_light(vec3 position, vec3 color, float intensity)
 	light.intensity = intensity;
 	return light;
 }
-
+/*
 B_Mesh B_create_mesh(B_Vertex 		*vertices, 
 		     unsigned int 	*faces, 
 		     unsigned int 	num_vertices,
@@ -77,6 +77,7 @@ B_Mesh B_create_mesh(B_Vertex 		*vertices,
 	glEnableVertexAttribArray(4);
 	return mesh;
 }
+*/
 /*
 B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
 {
@@ -380,9 +381,12 @@ void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight poi
 			B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
 			B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
 			B_set_uniform_vec4(shader, "color", color);
-			B_set_uniform_mat4(shader, "view_space", camera.view_space);
+			mat4 projection_view;
+			glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
+			//B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
+			//B_set_uniform_mat4(shader, "view_space", camera.view_space);
+			B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 			B_set_uniform_mat4(shader, "world_space", model->world_space);
-			B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
 			if (model->current_animation != NULL)
 			{
 				for (int j = 0; j < model->current_animation->num_bones; ++j)

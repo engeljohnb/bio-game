@@ -30,8 +30,9 @@ const int MAX_BONES = 25;
 out vec3 v_normal;
 out vec3 frag_position;
 uniform mat4 world_space;
-uniform mat4 view_space;
-uniform mat4 projection_space;
+//uniform mat4 view_space;
+//uniform mat4 projection_space;
+uniform mat4 projection_view_space;
 uniform mat4 bone_matrices[25];
 
 void main()
@@ -50,7 +51,8 @@ void main()
 		vec3 local_normal = normal * mat3(bone_matrices[bone_ids[i]]) * bone_weights[i];
 		final_normal += local_normal;
 	}
-	gl_Position = projection_space * view_space * world_space * final_position;
+	//gl_Position = projection_space * view_space * world_space * final_position;
+	gl_Position = projection_view_space * world_space * final_position;
 	v_normal = normalize(normal_world_space * final_normal);
 	frag_position = vec3(world_space * final_position);
 	//frag_position = final_normal;

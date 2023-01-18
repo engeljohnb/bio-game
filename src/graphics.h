@@ -86,8 +86,6 @@ typedef struct VertexData
 
 typedef struct B_Mesh
 {
-	B_Vertex 	*vertices;
-	unsigned int	*faces;
 	int		active;
 	int 		num_vertices;
 	int		num_faces;	
@@ -109,7 +107,6 @@ typedef struct B_Model
 	struct B_Model 	**children;
 	struct B_Model 	*parent;
 	Animation	*current_animation;
-	//mat4		final_bone_transforms[MAX_BONES];
 } B_Model;
 
 typedef struct
