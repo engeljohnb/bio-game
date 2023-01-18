@@ -79,6 +79,7 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 	turn(actor_state->front, command_state.look_x, command_state.look_y, VEC3_Z_UP, NULL);
 	turn(actor_state->right, command_state.look_x, command_state.look_y, VEC3_X_DOWN, NULL);
 	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
+	//glm_vec3_copy(actor_state->position, actor_state->prev_position);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 }
 
@@ -87,6 +88,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	ActorState state;
 	memset(&state, 0, sizeof(ActorState));
 	memset(&state.command_state, 0, sizeof(CommandState));
+	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(facing, state.front);
 	state.speed = 0;

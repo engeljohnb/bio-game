@@ -18,13 +18,14 @@
 
 #ifndef __GRAPHICS_H__
 #define __GRAPHICS_H__
-#define MAX_MESHES 16
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include "camera.h"
 #include "window.h"
 
 #define TRIANGLE_SIZE sizeof(float)*27
+#define MAX_MESHES 1
+#define MAX_BONES 25
 
 typedef struct 
 {
@@ -37,61 +38,70 @@ typedef unsigned int B_Shader;
 
 typedef struct
 {
-	int 	id;
-	float	weight;
-} BoneID;
-
-typedef struct
-{
-	vec3	position;
-	vec3	normal;
-	vec3	tex_coords;	
-	int	bone_ids[4];
-	float	bone_weights[4];
+	GLfloat	position[3];
+	GLfloat	normal[3];
+	GLfloat tex_coords[3];
+	GLint	bone_ids[4];
+	GLfloat	bone_weights[4];
 } B_Vertex;
 
-/* REMEMBER:	If you change anything (even the order of the members) in this struct, you'll have to make
- * 		corresponding changes to file_convert/file_convert.cpp */
-typedef struct
+typedef struct Bone
 {
-	int		bone_id;
-	mat4		current_transform;
-	float		current_timestamp;
-	double		duration;
-	int		num_rotation_keys;
+	int		id;
+	char		name[256];
 	int		num_position_keys;
+	int		num_rotation_keys;
 	int		num_scale_keys;
+	float		*position_times;
+	float		*rotation_times;
+	float		*scale_times;
+	vec3		*position_keys;
 	vec4		*rotation_keys;
 	vec3		*scale_keys;
-	vec3		*position_keys;
-	double		*rotation_times;
-	double		*scale_times;
-	double		*position_times;
+	struct Bone	**children;
+	int		num_children;
+	mat4		offset;
+	mat4		local_space;
+	mat4		world_space;
+	mat4		current_local;
+	mat4		current_transform;	
+} Bone;
+
+typedef struct Animation
+{
+	int		num_bones;
+	float		current_time;
+	float		duration;
+	Bone		*bone_array[MAX_BONES];
+	Bone		*bone_hierarchy;
 } Animation;
 
-typedef struct
+typedef struct B_Mesh
 {
 	B_Vertex 	*vertices;
 	unsigned int	*faces;
-	mat4		*bones;
-	Animation	*animations;
 	int		active;
 	int 		num_vertices;
 	int		num_faces;	
-	int		num_bones;
-	int		num_animations;
 	unsigned int 	vao;
 	unsigned int	vbo;
 	unsigned int	ebo;
 	
 } B_Mesh;
 
-typedef struct
+typedef struct B_Model
 {
-	int	valid;
-	mat4	local_space;
-	mat4	world_space;
-	B_Mesh 	meshes[MAX_MESHES];
+	//int		valid;
+	char		name[256];
+	mat4		local_space;
+	mat4		world_space;
+	mat4		original_position;
+	B_Mesh 		*meshes[MAX_MESHES];
+	int		num_children;
+	struct B_Model 	**children;
+	struct B_Model 	*parent;
+	Animation	*current_animation;
+	//mat4		final_bone_transforms[MAX_BONES];
 } B_Model;
 
 typedef struct
@@ -99,6 +109,7 @@ typedef struct
 	Camera		camera;
 	B_Window	window;
 	B_Shader	shader;	
+	float		delta_t;
 	PointLight	point_light;
 } Renderer;
 
@@ -114,10 +125,8 @@ B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
 
 B_Mesh B_create_mesh(B_Vertex 		*vertices, 
 		    unsigned int 	*faces, 
-		    mat4 		*bones, 
 		    unsigned int 	num_vertices, 
-		    unsigned int 	num_faces, 
-		    unsigned int 	num_bones);
+		    unsigned int 	num_faces);
 
 B_Model create_cube(void);
 B_Model load_model_from_file(const char *filename);
@@ -129,7 +138,7 @@ void B_set_uniform_float(B_Shader shader, char *name, float value);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
-void B_blit_model(B_Model model, Camera camera, B_Shader shader, PointLight point_light);
-void B_free_model(B_Model model);
+void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light);
+void B_free_model(B_Model *model);
 
 #endif

@@ -21,6 +21,7 @@
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
 #include "graphics.h"
+#include "asset_loading.h"
 #include "actor_state.h"
 #include "actor.h"
 #include "input.h"
@@ -30,11 +31,12 @@ Actor create_player(unsigned int id)
 {
 	Actor player;
 	memset(&player, 0, sizeof(Actor));
-	memset(&player.model, 0, sizeof(B_Model));
+	player.model = NULL;
 	player.actor_state = create_actor_state(id, VEC3_ZERO, VEC3_Z_UP);
-	player.model = load_model_from_file("assets/monkey.bgm");
+	player.model = B_load_model_from_file("assets/monkey.gltf");
+	player.animations = B_load_animations_from_file("assets/monkey.gltf", &player.num_animations);
+	player.model->current_animation = player.animations[0];
 	player.id = id;
-	player.model.valid = 1;
 	player.command_config = default_command_config();
 	return player;
 }
@@ -47,7 +49,8 @@ Actor create_default_npc(unsigned int id)
 	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3_Z_UP);
 	actor.id = id;
 	actor.command_config = default_command_config();
-	actor.model = load_model_from_file("assets/monkey.bgm");
+	actor.model = malloc(sizeof(B_Model));
+	actor.model = B_load_model_from_file("assets/monkey.gltf");
 	return actor;
 }
 
@@ -63,12 +66,31 @@ void my_rotate(vec3 forward, vec3 up, mat4 result)
 	glm_mat4_copy(rotation, result);
 }
 
-void update_actor(Actor *actor, ActorState actor_state)
+void update_model(B_Model *model, ActorState actor_state)
 {
-	memcpy(&actor->actor_state, &actor_state, sizeof(ActorState));
-	glm_mat4_identity(actor->model.world_space);
-	glm_translate(actor->model.world_space, actor_state.position);
-	glm_mat4_mul(actor->model.world_space, actor_state.command_state.euler, actor->model.world_space);
+	glm_mat4_copy(model->original_position, model->world_space);
+
+	glm_translate(model->world_space, actor_state.position);
+
+	if (memcmp(actor_state.command_state.euler, GLM_MAT4_ZERO, sizeof(mat4)) != 0)
+	{
+		glm_mat4_mul(model->world_space, actor_state.command_state.euler, model->world_space);
+	}
+	if (model->parent != NULL)
+	{
+		glm_mat4_mul(model->parent->world_space, model->local_space, model->world_space);
+	}
+	/*if (model->current_animation != NULL)
+	{
+		glm_mat4_mul(model->current_animation->bone_array[0]->current_transform, model->world_space, model->world_space);
+		print_mat4(model->current_animation->bone_array[0]->current_transform);
+		fprintf(stderr, "\n");
+	}*/
+	
+	for (int i = 0; i < model->num_children; ++i)
+	{
+		update_model(model->children[i], actor_state);
+	}
 }
 
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
@@ -76,10 +98,6 @@ void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
 	B_clear_window(renderer.window);
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
-		if (!(all_actors[i].model.valid))
-		{
-			continue;
-		}
 		B_blit_model(all_actors[i].model, renderer.camera, renderer.shader, renderer.point_light);
 	}
 	B_flip_window(renderer.window);
@@ -88,4 +106,9 @@ void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
 void free_actor(Actor actor)
 {
 	B_free_model(actor.model);
+	for (int i = 0; i < actor.num_animations; ++i)
+	{
+		BG_FREE(actor.animations[i]);
+	}
+	BG_FREE(actor.animations);
 }

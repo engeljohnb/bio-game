@@ -32,10 +32,13 @@ typedef struct
 	unsigned int	id;
 	CommandConfig	command_config;
 	ActorState	actor_state;
-	B_Model		model;
+	B_Model		*model;
+	Animation	**animations;
+	int		num_animations;
 } Actor;
 
 Actor create_player(unsigned int id);
+void update_model(B_Model *model, ActorState actor_state);
 void update_actor(Actor *actor, ActorState actor_state);
 void free_actor(Actor actor);
 Actor create_default_npc(unsigned int id);

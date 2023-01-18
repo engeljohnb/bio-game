@@ -23,6 +23,7 @@
 #include <memmem.h>
 
 #define VEC3(x, y, z) (vec3){x, y, z}
+#define VEC4(x, y, z, w) (vec4){x, y, z, w}
 #define RAD(a) a*0.0174532925
 #define VEC3_ZERO (vec3){0.0, 0.0, 0.0}
 #define VEC3_X_UP (vec3){1.0, 0.0, 0.0}
@@ -31,7 +32,7 @@
 #define VEC3_X_DOWN (vec3){-1.0, 0.0, 0.0}
 #define VEC3_Y_DOWN (vec3){0.0, -1.0, 0.0}
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
-#define BG_FREE(ptr) _bg_free(ptr, __FILE__, __LINE__)
+#define BG_FREE(ptr) _bg_free(ptr)
 
 
 int B_load_file(const char *filename, char *buff, int size);
@@ -70,7 +71,10 @@ int vec3_equal(float a[3], float b[3]);
 int vec3_zero(float a[3]);
 int valid(void *ptr);
 void turn(vec3 front, float x, float y, vec3 axis, mat4 dest);
-int _bg_free(void *ptr, const char *filename, unsigned int line);
+
+/* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
+ * I'm just too lazy to go back and change each call. */
+int _bg_free(void *ptr);
 float absf(float value);
 void print_vec3(vec3 vector);
 void print_mat4(mat4 mat);

@@ -15,7 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -226,17 +225,12 @@ int valid(void *ptr)
 	return (ptr != NULL);
 }
 
-int _bg_free(void *ptr, const char *filename, unsigned int line)
+int _bg_free(void *ptr)
 {
 	if (valid(ptr))
 	{
 		free(ptr);
 		ptr = NULL;
-	}
-	else
-	{
-		fprintf(stderr, "WARNING: Attempt to free invalid pointer in file %s at line %u.\n", filename, line);
-		return -1;
 	}
 	return 0;
 }

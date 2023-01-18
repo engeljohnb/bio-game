@@ -29,33 +29,29 @@ layout (location = 4) in vec4 bone_weights;
 const int MAX_BONES = 25;
 out vec3 v_normal;
 out vec3 frag_position;
-uniform mat4 local_space;
 uniform mat4 world_space;
 uniform mat4 view_space;
 uniform mat4 projection_space;
-//uniform mat4 bone_matrices[MAX_BONES];
-uniform mat4 animation_transform;
+uniform mat4 bone_matrices[25];
 
 void main()
 {
 	mat3 normal_world_space = mat3(transpose(inverse(world_space)));
-	/*vec4 total_bone_influence = vec4(0.0);
+	vec4 final_position = vec4(v_position, 1.0f);
+	vec3 final_normal = vec3(normal);
 	for (int i = 0; i < 4; ++i)
 	{
-		if (bone_ids[i] == -1)
+		if ((bone_ids[i] < 0) || (bone_ids[i] >= 25))
 		{
 			continue;
 		}
-		vec4 bone_influence = bone_matrices[bone_ids[i]] * vec4(v_position, 1.0);
-		total_bone_influence += bone_influence * bone_weights[i];
+		vec4 local_position = bone_matrices[bone_ids[i]] * vec4(v_position, 1.0);
+		final_position += local_position * bone_weights[i];
+		vec3 local_normal = normal * mat3(bone_matrices[bone_ids[i]]) * bone_weights[i];
+		final_normal += local_normal;
 	}
-	if (total_bone_influence == vec4(0.0))
-	{
-		total_bone_influence = vec4(v_position, 1.0);
-	}
-	total_bone_influence = vec4(v_position, 1.0);*/
-	gl_Position = projection_space * view_space * world_space * animation_transform * vec4(v_position, 1.0);
-	v_normal = normalize(normal_world_space * normal);
-	frag_position = vec3(world_space * animation_transform * vec4(v_position, 1.0));
-	//frag_position = normal;
+	gl_Position = projection_space * view_space * world_space * final_position;
+	v_normal = normalize(normal_world_space * final_normal);
+	frag_position = vec3(world_space * final_position);
+	//frag_position = final_normal;
 }

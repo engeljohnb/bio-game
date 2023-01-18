@@ -36,10 +36,11 @@
 #include "utils.h"
 #include "debug.h"
 
-/* UP NEXT:
- * 	The model loader loads animations (I think -- if stuff starts breaking, don't just assume the loader's working correctly),
- * 	so now the next step is learning how to use the data to interpolate between the different animation keys. In other words:
- * 	make the monkey move. */
+/* UP NEXT: 
+ * 	I've investigated that thing where the bone matrices appear screwy in renderdoc so thoroughly that I'm forced to move on assuming
+ * 	it's just a bug in renderdoc, because I have no way to fix it and it doesn't seem to affect the output of the program right now.
+ *
+ * 	But the skeletal animation still doesn't work */
 
 void server_loop(const char *port)
 {
@@ -283,7 +284,8 @@ void game_loop(const char *server_name, const char *port)
 		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			update_actor(&all_actors[i], all_actors[i].actor_state);
+			//update_actor(&all_actors[i], all_actors[i].actor_state);
+			update_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		render_game(all_actors, num_players, renderer);
