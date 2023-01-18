@@ -62,49 +62,53 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; ++i)
 	{
+		VertexData vertex_data;
+		memset(&vertex_data, 0, sizeof(VertexData));
 		B_Mesh *b_mesh = malloc(sizeof(B_Mesh));
 		C_STRUCT aiMesh *a_mesh = scene->mMeshes[node->mMeshes[i]];
 		memset(b_mesh, 0, sizeof(B_Mesh));
+		vertex_data.num_vertices = a_mesh->mNumVertices;
 		b_mesh->num_vertices = a_mesh->mNumVertices;
-		b_mesh->vertices = (B_Vertex *)malloc(sizeof(B_Vertex) * a_mesh->mNumVertices);
-		memset(b_mesh->vertices, 0, sizeof(B_Vertex) * a_mesh->mNumVertices);
+		vertex_data.vertices = (B_Vertex *)malloc(sizeof(B_Vertex) * a_mesh->mNumVertices);
+		memset(vertex_data.vertices, 0, sizeof(B_Vertex) * a_mesh->mNumVertices);
+		vertex_data.faces = NULL;
 		for (unsigned int j = 0; j < a_mesh->mNumVertices; ++j)
 		{
-			b_mesh->vertices[j].position[0] = a_mesh->mVertices[j].x;
-			b_mesh->vertices[j].position[1] = a_mesh->mVertices[j].y;
-			b_mesh->vertices[j].position[2] = a_mesh->mVertices[j].z;
+			vertex_data.vertices[j].position[0] = a_mesh->mVertices[j].x;
+			vertex_data.vertices[j].position[1] = a_mesh->mVertices[j].y;
+			vertex_data.vertices[j].position[2] = a_mesh->mVertices[j].z;
 
 			if (a_mesh->mNormals != NULL)
 			{
-				b_mesh->vertices[j].normal[0] = a_mesh->mNormals[j].x;
-				b_mesh->vertices[j].normal[1] = a_mesh->mNormals[j].y;
-				b_mesh->vertices[j].normal[2] = a_mesh->mNormals[j].z;
+				vertex_data.vertices[j].normal[0] = a_mesh->mNormals[j].x;
+				vertex_data.vertices[j].normal[1] = a_mesh->mNormals[j].y;
+				vertex_data.vertices[j].normal[2] = a_mesh->mNormals[j].z;
 			}
 			else
 			{
-				b_mesh->vertices[j].normal[0] = 0.0f;
-				b_mesh->vertices[j].normal[1] = 0.0f;
-				b_mesh->vertices[j].normal[2] = 0.0f;
+				vertex_data.vertices[j].normal[0] = 0.0f;
+				vertex_data.vertices[j].normal[1] = 0.0f;
+				vertex_data.vertices[j].normal[2] = 0.0f;
 			}
 
 			if (a_mesh->mTextureCoords[0] != NULL)
 			{
 				/* This is weird. Double check the assimp docs once you start using textures */
-				b_mesh->vertices[j].tex_coords[0] = a_mesh->mTextureCoords[0][j].x;
-				b_mesh->vertices[j].tex_coords[1] = a_mesh->mTextureCoords[0][j].y;
-				b_mesh->vertices[j].tex_coords[2] = 0.0f;
+				vertex_data.vertices[j].tex_coords[0] = a_mesh->mTextureCoords[0][j].x;
+				vertex_data.vertices[j].tex_coords[1] = a_mesh->mTextureCoords[0][j].y;
+				vertex_data.vertices[j].tex_coords[2] = 0.0f;
 			}
 			else
 			{
-				b_mesh->vertices[j].tex_coords[0] = 0.0f;
-				b_mesh->vertices[j].tex_coords[1] = 0.0f;
-				b_mesh->vertices[j].tex_coords[2] = 0.0f;
+				vertex_data.vertices[j].tex_coords[0] = 0.0f;
+				vertex_data.vertices[j].tex_coords[1] = 0.0f;
+				vertex_data.vertices[j].tex_coords[2] = 0.0f;
 			}
 
 			for (int k = 0; k < 4; ++k)
 			{
-				b_mesh->vertices[j].bone_ids[k] = -1;
-				b_mesh->vertices[j].bone_weights[k] = 0.0f;
+				vertex_data.vertices[j].bone_ids[k] = -1;
+				vertex_data.vertices[j].bone_weights[k] = 0.0f;
 			}
 			if (a_mesh->mNumBones)
 			{
@@ -115,8 +119,8 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B
 					{
 						if (a_mesh->mBones[k]->mWeights[l].mVertexId == j)
 						{
-							b_mesh->vertices[j].bone_ids[index_counter] = (GLint)k;
-							b_mesh->vertices[j].bone_weights[index_counter] = a_mesh->mBones[k]->mWeights[l].mWeight;
+							vertex_data.vertices[j].bone_ids[index_counter] = (GLint)k;
+							vertex_data.vertices[j].bone_weights[index_counter] = a_mesh->mBones[k]->mWeights[l].mWeight;
 							index_counter++;
 						} 
 					}
@@ -135,20 +139,23 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B
 					num_elements++;
 				}
 			} 
+			vertex_data.num_faces = num_elements;
 			b_mesh->num_faces = num_elements;
-			b_mesh->faces = (unsigned int *)malloc(sizeof(unsigned int) * num_elements);
+			vertex_data.faces = (unsigned int *)malloc(sizeof(unsigned int) * num_elements);
 			int index_counter = 0;
 			for (unsigned int j = 0; j < a_mesh->mNumFaces; ++j)
 			{
 				C_STRUCT aiFace face = a_mesh->mFaces[j];
 				for (unsigned int k = 0; k < face.mNumIndices; ++k)
 				{
-					b_mesh->faces[index_counter++] = face.mIndices[k];
+					vertex_data.faces[index_counter++] = face.mIndices[k];
 				}
 			}
 		}
 		b_mesh->active = 1;
-		B_setup_mesh_gl(b_mesh);
+		B_send_mesh_to_gpu(b_mesh, &vertex_data);
+		BG_FREE(vertex_data.vertices);
+		BG_FREE(vertex_data.faces);
 		model->meshes[i] = b_mesh;
 	}
 }
@@ -424,7 +431,6 @@ void print_bone_hierarchy_iter(Bone *bone, int layer)
 	}
 	char *begin_name = (char *)string + current_index;
 	memcpy(begin_name, bone->name, strnlen(bone->name, 255));
-	fprintf(stderr, "%s\n", string);
 	for (int i = 0; i < bone->num_children; ++i)
 	{
 		print_bone_hierarchy_iter(bone->children[i], layer+1);
@@ -478,7 +484,7 @@ Animation **B_load_animations_from_file(const char *filename, int *num_animation
 	return animations;
 }
 
-void B_setup_mesh_gl(B_Mesh *mesh)
+void B_send_mesh_to_gpu(B_Mesh *mesh, VertexData *vertex_data)
 {
 	glGenVertexArrays(1, &mesh->vao);
 	glBindVertexArray(mesh->vao);
@@ -487,10 +493,13 @@ void B_setup_mesh_gl(B_Mesh *mesh)
 
 	glGenBuffers(1, &mesh->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-	glBufferData(GL_ARRAY_BUFFER, mesh->num_vertices*stride, mesh->vertices, GL_DYNAMIC_DRAW);
-	glGenBuffers(1, &mesh->ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->num_faces*sizeof(unsigned int), mesh->faces, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_data->num_vertices*stride, vertex_data->vertices, GL_DYNAMIC_DRAW);
+	if (vertex_data->faces != NULL)
+	{
+		glGenBuffers(1, &mesh->ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertex_data->num_faces*sizeof(unsigned int), vertex_data->faces, GL_DYNAMIC_DRAW);
+	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(GLfloat)*3));

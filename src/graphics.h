@@ -76,6 +76,14 @@ typedef struct Animation
 	Bone		*bone_hierarchy;
 } Animation;
 
+typedef struct VertexData
+{
+	B_Vertex 	*vertices;
+	unsigned int	*faces;
+	int		num_vertices;
+	int		num_faces;
+} VertexData;
+
 typedef struct B_Mesh
 {
 	B_Vertex 	*vertices;

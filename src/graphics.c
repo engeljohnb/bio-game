@@ -513,12 +513,8 @@ void B_free_mesh(B_Mesh *mesh)
 	{
 		glDeleteBuffers(1, &(mesh->ebo));
 		glDeleteBuffers(1, &(mesh->vbo));
-		BG_FREE(mesh->vertices);
-		if (mesh->faces)
-		{
-			BG_FREE(mesh->faces);
-		}
 	}
+	BG_FREE(mesh);
 }
 
 void B_free_model(B_Model *model)
