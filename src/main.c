@@ -211,6 +211,7 @@ void game_loop(const char *server_name, const char *port)
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
+	command_state.toggle_anti_aliasing = 1;
 	float delta_t = 15.0;
 	float frame_time = 0;
 	int running = 1;

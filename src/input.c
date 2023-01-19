@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cglm/cglm.h>
+#include <glad/glad.h>
 #include "input.h"
 #include "utils.h"
 
@@ -33,6 +34,7 @@ CommandConfig default_command_config(void)
 	config.backward = SDLK_s;
 	config.x_inverted = 1;
 	config.y_inverted = 1;
+	config.toggle_anti_aliasing = SDLK_t;
 	return config;
 }
 
@@ -95,6 +97,18 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 				else if (key == config.right)
 				{
 					command_state->movement &= ~M_RIGHT;
+				}
+				else if (key == config.toggle_anti_aliasing)
+				{
+					command_state->toggle_anti_aliasing = !command_state->toggle_anti_aliasing;
+					if (command_state->toggle_anti_aliasing)
+					{
+						glEnable(GL_MULTISAMPLE);
+					}
+					else
+					{
+						glDisable(GL_MULTISAMPLE);
+					}
 				}
 				break;
 			}

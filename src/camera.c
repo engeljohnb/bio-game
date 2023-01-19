@@ -60,7 +60,7 @@ void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
 	vec3 camera_direction;
 	glm_vec3_copy(camera->front, camera_direction);
 	glm_vec3_negate(camera_direction);
-	glm_vec3_scale(camera_direction, 35, camera_direction);
+	glm_vec3_scale(camera_direction, 15, camera_direction);
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 

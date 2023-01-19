@@ -32,189 +32,6 @@ PointLight create_point_light(vec3 position, vec3 color, float intensity)
 	light.intensity = intensity;
 	return light;
 }
-/*
-B_Mesh B_create_mesh(B_Vertex 		*vertices, 
-		     unsigned int 	*faces, 
-		     unsigned int 	num_vertices,
-		     unsigned int 	num_faces)
-{
-	B_Mesh mesh;
-	memset(&mesh, 0, sizeof(B_Mesh));
-	mesh.active = 1;
-
-	mesh.num_vertices = num_vertices;
-	mesh.num_faces = num_faces;
-
-	mesh.vertices = (B_Vertex *)malloc(mesh.num_vertices * sizeof(B_Vertex));
-	memset(mesh.vertices, 0, sizeof(B_Vertex)*mesh.num_vertices);
-	mesh.vertices = memcpy(mesh.vertices, vertices, mesh.num_vertices*sizeof(B_Vertex));
-
-	mesh.faces = (unsigned int *)malloc(sizeof(unsigned int) * num_faces);
-	memset(mesh.faces, 0, sizeof(unsigned int) * num_faces);
-	mesh.faces = memcpy(mesh.faces, faces, mesh.num_faces*sizeof(unsigned int));
-
-	glGenVertexArrays(1, &mesh.vao);
-	glBindVertexArray(mesh.vao);
-
-	glGenBuffers(1, &mesh.vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices*sizeof(B_Vertex), mesh.vertices, GL_DYNAMIC_DRAW);
-	glGenBuffers(1, &mesh.ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_faces*sizeof(unsigned int), mesh.faces, GL_DYNAMIC_DRAW);
-
-	size_t stride = (sizeof(vec3)*3) + sizeof(ivec4) + sizeof(vec4);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)));
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)*2));
-	glVertexAttribPointer(3, 4, GL_INT, GL_FALSE, stride, (void*)(sizeof(vec3)*3));
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(vec3)*3+sizeof(ivec4)));
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	return mesh;
-}
-*/
-/*
-B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes)
-{
-	B_Model model;
-	memset(model.meshes, 0, sizeof(B_Mesh)*MAX_MESHES);
-	for (int i = 0; i < MAX_MESHES; ++i)
-	{
-		model.meshes[i].active = 0;
-	}
-
-	unsigned int mesh_count = num_meshes;
-	for (unsigned int i = 0; i < mesh_count; ++i)
-	{
-
-		model.meshes[i] = meshes[i];
-	}
-	glm_mat4_identity(model.world_space);
-	glm_mat4_identity(model.local_space);
-	return model;
-}
-
-B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces)
-{
-	B_Model model;
-	memset(model.meshes, 0, sizeof(B_Mesh)*MAX_MESHES);
-	for (int i = 0; i < MAX_MESHES; ++i)
-	{
-		model.meshes[i].active = 0;
-	}
-	B_Mesh mesh = B_create_mesh(vertices, faces, num_vertices, num_faces);
-	model.meshes[0] = mesh;
-	glm_mat4_identity(model.world_space);
-	glm_mat4_identity(model.local_space);
-	return model;
-}
-
-B_Model create_cube(void)
-{
-		float _vertices_[] = {
-			    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
-			     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
-			     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
-			    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
-			    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 
-			
-			    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-			
-			    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			
-			     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			
-			    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			
-			    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f,
-			    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f, 0.0f
-			};
-
-	B_Model cube = B_create_model_from((B_Vertex *)_vertices_, NULL, 36, 0);
-	return cube;
-}
-
-B_Model load_model_from_file(const char *filename)
-{
-	B_Model model;
-	memset(&model, -1, sizeof(B_Model));
-	FILE *fp = fopen(filename, "r");
-	if (!fp)
-	{
-		fprintf(stderr, "Error: could not read file %s\n", filename);
-		return model;
-	}
-	fseek(fp, 0L, SEEK_END);
-	int total_length = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
-	uint8_t buff[total_length];
-	memset(buff, 0, total_length);
-	fread(buff, total_length, 1, fp);
-	fclose(fp);
-
-	unsigned int num_meshes = 0;
-	unsigned int num_faces = 0;
-	unsigned int *vertex_sizes = 0;
-	unsigned int *face_sizes = 0;
-	uint8_t **vertex_data = get_data_after_punctuated(buff, "B_MESH:", "END_MESHES", total_length, &num_meshes, &vertex_sizes);
-	uint8_t **face_data = get_data_after_punctuated(buff, "B_FACES:", "END_FACES", total_length, &num_faces, &face_sizes);
-	if (num_meshes > MAX_MESHES)
-	{
-		fprintf(stderr, "WARNING: mesh loaded from %s contains more meshes than maximum supported.\n", filename);
-		num_meshes = MAX_MESHES;
-	}
-
-	B_Mesh meshes[num_meshes];
-	for (unsigned int i = 0; i < num_meshes; ++i)
-	{
-		meshes[i] = B_create_mesh((B_Vertex *)vertex_data[i], 
-				          (unsigned int *)face_data[i], 
-			                  vertex_sizes[i]/sizeof(B_Vertex), 
-					  face_sizes[i]/sizeof(unsigned int));
-	}
-	model = B_create_model(meshes, num_meshes);
-	BG_FREE(vertex_sizes);
-	BG_FREE(face_sizes);
-	for (unsigned int i = 0; i < num_meshes; ++i)
-	{
-		BG_FREE(vertex_data[i]);
-		BG_FREE(face_data[i]);
-	}
-	BG_FREE(vertex_data);
-	BG_FREE(face_data);
-	return model;
-}
-*/
 
 int get_animation_position_index(Bone *bone, float current_time)
 {
@@ -321,8 +138,6 @@ void advance_animation(Bone *bone, float current_time)
 	int scale_index_1 = scale_index_0 + 1;
 	int rotation_index_0 = get_animation_rotation_index(bone, current_time);
 	int rotation_index_1 = rotation_index_0 + 1;
-
-	//bone->current_timestamp = current_time;
 
 	float position_time_factor = glm_percent(bone->position_times[position_index_0], bone->position_times[position_index_1], current_time);
 	float scale_time_factor = glm_percent(bone->scale_times[scale_index_0], bone->scale_times[scale_index_1], current_time);
@@ -439,6 +254,7 @@ void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight poi
 	{
 		B_blit_model(model->children[i], camera, shader, point_light);
 	}
+
 }
 
 int B_check_shader(unsigned int id, const char *name, int status)

@@ -37,6 +37,7 @@ typedef struct
 	unsigned int	id;
 	float		look_x;
 	float		look_y;
+	int		toggle_anti_aliasing;
 	vec3		move_direction;
 	mat4		euler;
 } CommandState;
@@ -52,6 +53,7 @@ typedef struct
 	int		forward;
 	int 		backward;
 	int		alt_quit;
+	int		toggle_anti_aliasing;
 } CommandConfig;
 
 CommandConfig default_command_config(void);
