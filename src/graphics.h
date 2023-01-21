@@ -49,6 +49,18 @@ typedef struct Bone
 {
 	int		id;
 	char		name[256];
+	int		*children;
+	int		num_children;
+	mat4		inverse_bind;
+	mat4		world_space;
+	mat4		current_local;
+	mat4		current_transform;	
+} Bone;
+
+typedef struct AnimationNode
+{
+	int		id;
+	char		name[256];
 	int		num_position_keys;
 	int		num_rotation_keys;
 	int		num_scale_keys;
@@ -58,22 +70,18 @@ typedef struct Bone
 	vec3		*position_keys;
 	vec4		*rotation_keys;
 	vec3		*scale_keys;
-	struct Bone	**children;
 	int		num_children;
-	mat4		offset;
-	mat4		local_space;
-	mat4		world_space;
-	mat4		current_local;
-	mat4		current_transform;	
-} Bone;
+	int		*children;
+	mat4		inverse_bind;
+	mat4		current_transform;
+} AnimationNode;
 
 typedef struct Animation
 {
-	int		num_bones;
+	int		num_nodes;
 	float		current_time;
 	float		duration;
-	Bone		*bone_array[MAX_BONES];
-	Bone		*bone_hierarchy;
+	AnimationNode	**node_array;
 } Animation;
 
 typedef struct VertexData
@@ -106,6 +114,9 @@ typedef struct B_Model
 	int		num_children;
 	struct B_Model 	**children;
 	struct B_Model 	*parent;
+	Bone		**bone_array;
+	Bone		*bone_hierarchy;
+	int		num_bones;
 	Animation	*current_animation;
 } B_Model;
 

@@ -37,10 +37,7 @@
 #include "debug.h"
 
 /* UP NEXT: 
- * 	I've investigated that thing where the bone matrices appear screwy in renderdoc so thoroughly that I'm forced to move on assuming
- * 	it's just a bug in renderdoc, because I have no way to fix it and it doesn't seem to affect the output of the program right now.
- *
- * 	But the skeletal animation still doesn't work */
+ * 	For some reason, in B_load_animation_nodes, the root bone "Bone" is not included in the list of bones ai_bones */
 
 void server_loop(const char *port)
 {

@@ -33,12 +33,12 @@ PointLight create_point_light(vec3 position, vec3 color, float intensity)
 	return light;
 }
 
-int get_animation_position_index(Bone *bone, float current_time)
+int get_animation_position_index(AnimationNode *node, float current_time)
 {
 	int animation_index = -1;
-	for (int i = 0; i < bone->num_position_keys-1; ++i)
+	for (int i = 0; i < node->num_position_keys-1; ++i)
 	{
-		if (bone->position_times[i+1] > current_time)
+		if (node->position_times[i+1] > current_time)
 		{
 			animation_index = i;
 			break;
@@ -52,12 +52,12 @@ int get_animation_position_index(Bone *bone, float current_time)
 	return animation_index;
 }
 
-int get_animation_scale_index(Bone *bone, float current_time)
+int get_animation_scale_index(AnimationNode *node, float current_time)
 {
 	int animation_index = -1;
-	for (int i = 0; i < bone->num_scale_keys-1; ++i)
+	for (int i = 0; i < node->num_scale_keys-1; ++i)
 	{
-		if (bone->scale_times[i+1] > current_time)
+		if (node->scale_times[i+1] > current_time)
 		{
 			animation_index = i;
 			break;
@@ -70,12 +70,12 @@ int get_animation_scale_index(Bone *bone, float current_time)
 	return animation_index;
 }
 
-int get_animation_rotation_index(Bone *bone, float current_time)
+int get_animation_rotation_index(AnimationNode *node, float current_time)
 {
 	int animation_index = -1;
-	for (int i = 0; i < bone->num_rotation_keys-1; ++i)
+	for (int i = 0; i < node->num_rotation_keys-1; ++i)
 	{
-		if (bone->rotation_times[i+1] > current_time)
+		if (node->rotation_times[i+1] > current_time)
 		{
 			animation_index = i;
 			break;
@@ -88,77 +88,79 @@ int get_animation_rotation_index(Bone *bone, float current_time)
 	return animation_index;
 }
 
-void advance_animation_position(Bone *bone, float current_time)
+void advance_animation_position(AnimationNode *node, float current_time)
 {
-	if (!bone->num_position_keys)
+	if (!node->num_position_keys)
 	{
 		return;
 	}
-	int position_index_0 = get_animation_position_index(bone, current_time);
+	int position_index_0 = get_animation_position_index(node, current_time);
 	int position_index_1 = position_index_0 + 1;
-	float position_time_factor = glm_percent(bone->position_times[position_index_0], bone->position_times[position_index_1], current_time);
+	float position_time_factor = glm_percent(node->position_times[position_index_0], node->position_times[position_index_1], current_time);
 
 	vec3 position_0;
 	vec3 position_1;
 	vec3 position;
-	glm_vec3_copy(bone->position_keys[position_index_0], position_0);
-	glm_vec3_copy(bone->position_keys[position_index_1], position_1);
+	glm_vec3_copy(node->position_keys[position_index_0], position_0);
+	glm_vec3_copy(node->position_keys[position_index_1], position_1);
 	glm_vec3_lerp(position_0, position_1, position_time_factor, position);
 
 	mat4 final_transform;
 
 	glm_mat4_identity(final_transform);
 	glm_translate(final_transform, position);
-	glm_mat4_mul(final_transform, bone->offset, final_transform);
-	glm_mat4_copy(final_transform, bone->current_local);
+	glm_mat4_mul(final_transform, node->inverse_bind, final_transform);
+	glm_mat4_copy(final_transform, node->current_transform);
 }
 
-void update_bone_tree(Animation *animation, Bone *bone, mat4 parent_transform)
+void update_bone_tree(AnimationNode **node_array, AnimationNode *node, 
+		      Bone **bone_array, Bone *bone, 
+		      mat4 parent_transform)
 {
 	mat4 current_model_space;
-	glm_mat4_mul(parent_transform, bone->current_local, current_model_space);
+	glm_mat4_mul(parent_transform, node->current_transform, current_model_space);
 	for (int i = 0; i < bone->num_children; ++i)
 	{
-		update_bone_tree(animation, animation->bone_array[bone->children[i]->id], current_model_space);
+		update_bone_tree(node_array, node_array[node->children[i]], bone_array, bone_array[bone->children[i]], current_model_space);
 	}
-	glm_mat4_mul(current_model_space, bone->offset, bone->current_transform);
+	glm_mat4_mul(current_model_space, bone->inverse_bind, bone->current_transform);
 }
 
-void advance_animation(Bone *bone, float current_time)
+void advance_animation(AnimationNode *node, float current_time)
 {
-	if ((bone->num_position_keys == 0) ||
-	    (bone->num_rotation_keys == 0) ||
-	    (bone->num_scale_keys == 0))
+	if ((node->num_position_keys == 0) ||
+	    (node->num_rotation_keys == 0) ||
+	    (node->num_scale_keys == 0))
 	{
 		return;
 	}
-	int position_index_0 = get_animation_position_index(bone, current_time);
+	int position_index_0 = get_animation_position_index(node, current_time);
 	int position_index_1 = position_index_0 + 1;
-	int scale_index_0 = get_animation_scale_index(bone, current_time);
+	int scale_index_0 = get_animation_scale_index(node, current_time);
 	int scale_index_1 = scale_index_0 + 1;
-	int rotation_index_0 = get_animation_rotation_index(bone, current_time);
+	int rotation_index_0 = get_animation_rotation_index(node, current_time);
 	int rotation_index_1 = rotation_index_0 + 1;
 
-	float position_time_factor = glm_percent(bone->position_times[position_index_0], bone->position_times[position_index_1], current_time);
-	float scale_time_factor = glm_percent(bone->scale_times[scale_index_0], bone->scale_times[scale_index_1], current_time);
-	float rotation_time_factor = glm_percent(bone->rotation_times[rotation_index_0], bone->rotation_times[rotation_index_1], current_time);
+	float position_time_factor = glm_percent(node->position_times[position_index_0], node->position_times[position_index_1], current_time);
+	float scale_time_factor = glm_percent(node->scale_times[scale_index_0], node->scale_times[scale_index_1], current_time);
+	float rotation_time_factor = glm_percent(node->rotation_times[rotation_index_0], node->rotation_times[rotation_index_1], current_time);
 
 	vec3 scale_0;
 	vec3 scale_1;
 	vec3 scale;
-	glm_vec3_copy(bone->scale_keys[scale_index_0], scale_0);
-	glm_vec3_copy(bone->scale_keys[scale_index_1], scale_1);
+	glm_vec3_copy(node->scale_keys[scale_index_0], scale_0);
+	glm_vec3_copy(node->scale_keys[scale_index_1], scale_1);
 
 	vec3 position_0;
 	vec3 position_1;
 	vec3 position;
-	glm_vec3_copy(bone->position_keys[position_index_0], position_0);
-	glm_vec3_copy(bone->position_keys[position_index_1], position_1);
+	glm_vec3_copy(node->position_keys[position_index_0], position_0);
+	glm_vec3_copy(node->position_keys[position_index_1], position_1);
 
 	vec4 rotation_0_vec;
 	vec4 rotation_1_vec;
-	glm_vec4_copy(bone->rotation_keys[rotation_index_0], rotation_0_vec);
-	glm_vec4_copy(bone->rotation_keys[rotation_index_1], rotation_1_vec);
+	glm_vec4_copy(node->rotation_keys[rotation_index_0], rotation_0_vec);
+	glm_vec4_copy(node->rotation_keys[rotation_index_1], rotation_1_vec);
 	versor rotation_0;
 	versor rotation_1;
 	versor rotation;
@@ -173,13 +175,12 @@ void advance_animation(Bone *bone, float current_time)
 
 	mat4 final_transform;
 	glm_mat4_identity(final_transform);
-//	glm_mat4_copy(bone->local_space, final_transform);
 
 	glm_scale(final_transform, scale);
 	glm_mat4_mul(final_transform, rotation_mat4, final_transform);
 	glm_translate(final_transform, position);
 
-	glm_mat4_copy(final_transform, bone->current_local);
+	glm_mat4_copy(final_transform, node->current_transform);
 	return;
 }
 
@@ -198,26 +199,25 @@ void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight poi
 			B_set_uniform_vec4(shader, "color", color);
 			mat4 projection_view;
 			glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
-			//B_set_uniform_mat4(shader, "projection_space", camera.projection_space);
-			//B_set_uniform_mat4(shader, "view_space", camera.view_space);
 			B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 			B_set_uniform_mat4(shader, "world_space", model->world_space);
 			if (model->current_animation != NULL)
 			{
-				for (int j = 0; j < model->current_animation->num_bones; ++j)
+				for (int j = 0; j < model->current_animation->num_nodes; ++j)
 				{
-					int id = model->current_animation->bone_array[j]->id;
-					advance_animation(model->current_animation->bone_array[id], current_time);
+					advance_animation(model->current_animation->node_array[j], current_time);
 				}
-				update_bone_tree(model->current_animation, model->current_animation->bone_hierarchy, GLM_MAT4_IDENTITY);
-				for (int j = 0; j < model->current_animation->num_bones; ++j)
+				update_bone_tree(model->current_animation->node_array, model->current_animation->node_array[0], 
+						 model->bone_array, model->bone_array[0], 
+						 GLM_MAT4_IDENTITY);
+				for (int j = 0; j < model->current_animation->num_nodes; ++j)
 				{
-					int id = model->current_animation->bone_array[j]->id;
+					int id = model->bone_array[j]->id;
 					char string[128] = {0};
 					snprintf(string, 128, "bone_matrices[%i]", id);
-					B_set_uniform_mat4(shader, string, model->current_animation->bone_array[id]->current_transform);
+					B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
 				}
-				for (int j = model->current_animation->num_bones; j < MAX_BONES; ++j)
+				for (int j = model->num_bones; j < MAX_BONES; ++j)
 				{
 					char string[128] = {0};
 					snprintf(string, 128, "bone_matrices[%i]", j);
