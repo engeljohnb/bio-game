@@ -113,7 +113,7 @@ void advance_animation_position(AnimationNode *node, float current_time)
 	glm_mat4_copy(final_transform, node->current_transform);
 }
 
-void update_bone_tree(AnimationNode **node_array, AnimationNode *node, 
+void apply_animation(AnimationNode **node_array, AnimationNode *node, 
 		      Bone **bone_array, Bone *bone, 
 		      mat4 parent_transform)
 {
@@ -121,7 +121,7 @@ void update_bone_tree(AnimationNode **node_array, AnimationNode *node,
 	glm_mat4_mul(parent_transform, node->current_transform, current_model_space);
 	for (int i = 0; i < bone->num_children; ++i)
 	{
-		update_bone_tree(node_array, node_array[node->children[i]], bone_array, bone_array[bone->children[i]], current_model_space);
+		apply_animation(node_array, node_array[node->children[i]], bone_array, bone_array[bone->children[i]], current_model_space);
 	}
 	glm_mat4_mul(current_model_space, bone->inverse_bind, bone->current_transform);
 }
@@ -186,70 +186,67 @@ void advance_animation(AnimationNode *node, float current_time)
 
 void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light)
 {
-	for (int i = 0; i < MAX_MESHES; ++i)
+	if (model->mesh->active)
 	{
-		if (model->meshes[i]->active)
+		static float current_time = 0.0f;
+		glBindVertexArray(model->mesh->vao);
+		vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+		B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
+		B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
+		B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
+		B_set_uniform_vec4(shader, "color", color);
+		mat4 projection_view;
+		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
+		B_set_uniform_mat4(shader, "projection_view_space", projection_view);
+		B_set_uniform_mat4(shader, "world_space", model->world_space);
+		if (model->current_animation != NULL)
 		{
-			static float current_time = 0.0f;
-			glBindVertexArray(model->meshes[i]->vao);
-			vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-			B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
-			B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
-			B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
-			B_set_uniform_vec4(shader, "color", color);
-			mat4 projection_view;
-			glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
-			B_set_uniform_mat4(shader, "projection_view_space", projection_view);
-			B_set_uniform_mat4(shader, "world_space", model->world_space);
-			if (model->current_animation != NULL)
+			for (int i = 0; i < model->current_animation->num_nodes; ++i)
 			{
-				for (int j = 0; j < model->current_animation->num_nodes; ++j)
-				{
-					advance_animation(model->current_animation->node_array[j], current_time);
-				}
-				update_bone_tree(model->current_animation->node_array, model->current_animation->node_array[0], 
-						 model->bone_array, model->bone_array[0], 
-						 GLM_MAT4_IDENTITY);
-				for (int j = 0; j < model->current_animation->num_nodes; ++j)
-				{
-					int id = model->bone_array[j]->id;
-					char string[128] = {0};
-					snprintf(string, 128, "bone_matrices[%i]", id);
-					B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
-				}
-				for (int j = model->num_bones; j < MAX_BONES; ++j)
-				{
-					char string[128] = {0};
-					snprintf(string, 128, "bone_matrices[%i]", j);
-					B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-				}
-				current_time += 15.0;
-				if (current_time >= model->current_animation->duration)
-				{
-					current_time = 0.0f;
-				}
+				advance_animation(model->current_animation->node_array[i], current_time);
 			}
-			else
+			apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
+					 model->bone_array, model->bone_array[0], 
+					 GLM_MAT4_IDENTITY);
+			for (int i = 0; i < model->current_animation->num_nodes; ++i)
 			{
-				for (int j = 0; j < MAX_BONES; ++j)
-				{
-					char string[128] = {0};
-					snprintf(string, 128, "bone_matrices[%i]", j);
-					B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-				}
+				int id = model->bone_array[i]->id;
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", id);
+				B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
 			}
-
-			glUseProgram(shader);
-			if (model->meshes[i]->num_faces)
+			for (int i = model->num_bones; i < MAX_BONES; ++i)
 			{
-				glDrawElements(GL_TRIANGLES, model->meshes[i]->num_faces, GL_UNSIGNED_INT, 0);
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", i);
+				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
 			}
-			else
+			current_time += 15.0;
+			if (current_time >= model->current_animation->duration)
 			{
-				glDrawArrays(GL_TRIANGLES, 0, model->meshes[i]->num_vertices);
+				current_time = 0.0f;
 			}
 		}
+		else
+		{
+			for (int i = 0; i < MAX_BONES; ++i)
+			{
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", i);
+				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
 			}
+		}
+
+		glUseProgram(shader);
+		if (model->mesh->num_faces)
+		{
+			glDrawElements(GL_TRIANGLES, model->mesh->num_faces, GL_UNSIGNED_INT, 0);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertices);
+		}
+	}
 	for (int i = 0; i < model->num_children; ++i)
 	{
 		B_blit_model(model->children[i], camera, shader, point_light);
@@ -339,10 +336,12 @@ void B_free_mesh(B_Mesh *mesh)
 
 void B_free_model(B_Model *model)
 {
-	for (int i = 0; i < MAX_MESHES; ++i)
+	B_free_mesh(model->mesh);
+	for (int i = 0; i < model->num_bones; ++i)
 	{
-		B_free_mesh(model->meshes[i]);
+		free_bone(model->bone_array[i]);
 	}
+	BG_FREE(model->bone_array);
 	for (int i = 0; i < model->num_children; ++i)
 	{
 		B_free_model(model->children[i]);
@@ -351,6 +350,38 @@ void B_free_model(B_Model *model)
 	{
 		BG_FREE(model->children);
 	}
+	
+	BG_FREE(model);
+}
+
+void free_animation_node(AnimationNode *node)
+{
+	BG_FREE(node->position_times);
+	BG_FREE(node->scale_times);
+	BG_FREE(node->rotation_times);
+
+	BG_FREE(node->position_keys);
+	BG_FREE(node->rotation_keys);
+	BG_FREE(node->scale_keys);
+
+	BG_FREE(node->children);
+	BG_FREE(node);
+}
+
+void free_animation(Animation *animation)
+{
+	for (int i = 0; i < animation->num_nodes; ++i)
+	{
+		free_animation_node(animation->node_array[i]);
+	}
+	BG_FREE(animation->node_array);
+	BG_FREE(animation);
+}
+
+void free_bone(Bone *bone)
+{
+	BG_FREE(bone->children);
+	BG_FREE(bone);
 }
 
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value)

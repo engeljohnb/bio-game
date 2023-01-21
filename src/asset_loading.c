@@ -155,7 +155,7 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B
 	B_send_mesh_to_gpu(b_mesh, &vertex_data);
 	BG_FREE(vertex_data.vertices);
 	BG_FREE(vertex_data.faces);
-	model->meshes[0] = b_mesh;
+	model->mesh = b_mesh;
 	model->bone_array = B_load_bones(scene, a_mesh);
 	model->current_animation = NULL;
 }
@@ -311,7 +311,6 @@ C_STRUCT aiNode *B_get_root_bone(C_STRUCT aiNode *root)
 
 void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *current_bone, Bone *parent, C_STRUCT aiBone **bones, int num_bones)
 {
-	// If it's it has meshes, it's not a bone
 	if (!is_bone(node))
 	{
 		exit(-1);
@@ -371,34 +370,6 @@ void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *curr
 	}
 }
 
-
-void print_bone_hierarchy_iter(Bone **bone_array, Bone *bone, int layer)
-{
-	if (bone == NULL)
-	{
-		fprintf(stderr, "print_bone_hierarchy error: invalid bone\n");
-		return;
-	}
-
-	int current_index = 0;
-	char string[512] = {0};
-	for (int i = 0; i < layer; ++i)
-	{
-		string[current_index++] = ' ';
-		string[current_index++] = ' ';
-	}
-	char *begin_name = (char *)string + current_index;
-	memcpy(begin_name, bone->name, strnlen(bone->name, 255));
-	for (int i = 0; i < bone->num_children; ++i)
-	{
-		print_bone_hierarchy_iter(bone_array, bone_array[bone->children[i]], layer+1);
-	}
-}
-
-void print_bone_hierarchy(Bone **bone_array, Bone *root)
-{
-	print_bone_hierarchy_iter(bone_array, root, 0);
-}
 void create_bone_array(Bone *bone_array[], Bone *bone_node)
 {
 	bone_array[bone_node->id] = bone_node;
@@ -612,25 +583,3 @@ void B_send_mesh_to_gpu(B_Mesh *mesh, VertexData *vertex_data)
 	glEnableVertexAttribArray(4);
 }
 
-void print_hierarchy_iter(C_STRUCT aiNode *node, int layer)
-{
-	int current_index = 0;
-	char string[512] = {0};
-	for (int i = 0; i < layer; ++i)
-	{
-		string[current_index++] = ' ';
-		string[current_index++] = ' ';
-	}
-	char *begin_name = (char *)string + current_index;
-	memcpy(begin_name, node->mName.data, strnlen(node->mName.data, 256));
-	for (unsigned int i = 0; i < node->mNumChildren; ++i)
-	{
-		print_hierarchy_iter(node->mChildren[i], layer+1);
-	}
-
-}
-
-void print_hierarchy(C_STRUCT aiNode *root)
-{
-	print_hierarchy_iter(root, 0);
-}

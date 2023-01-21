@@ -23,8 +23,6 @@
 #include "camera.h"
 #include "window.h"
 
-#define TRIANGLE_SIZE sizeof(float)*27
-#define MAX_MESHES 1
 #define MAX_BONES 25
 
 typedef struct 
@@ -45,6 +43,19 @@ typedef struct
 	GLfloat	bone_weights[4];
 } B_Vertex;
 
+/* A Bone is the joint information for an animated B_Model. The inverse_bind
+ * transforms from the bone's local space to model space. Parent bone is not stored
+ * because I never use it. Child bones are stored as indices:
+ *
+ * B_Model *model = /// Load model ///;
+ * Bone *root_bone = model->bone_array[0];
+ * for (int i = 0; i < root_bone->num_children; ++i)
+ * {
+ * 	Bone *child_bone = model->bone_array[root_bone->children[i]]);
+ * }
+ *
+ * Root bone should be the first bone in the B_Model's bone_array. */
+
 typedef struct Bone
 {
 	int		id;
@@ -57,6 +68,23 @@ typedef struct Bone
 	mat4		current_transform;	
 } Bone;
 
+/* In every Animation struct, there's a corresponding AnimationNode 
+ * for each bone in the animated model. So obviously a single animation can only
+ * be applied to different models if the models have the same bone hierarchy layout.
+ * current_transform is the transformation to be applied to the animated model's corresponding
+ * bone -- current_transform is in the bone's local space.
+ *
+ * AnimationNodes are arranged hierarchically like Bones. The children of each node are 
+ * stored as indices. Example:
+ *
+ * Animation *animation = /// Load animation ///;
+ * AnimationNode *root_node = animation->node_array[0];
+ * for (int i = 0; i < root_node->num_children; ++i)
+ * {
+ * 	AnimationNode *child_node = animation->node_array[root_node->children[i]];
+ * }
+ * 
+ * Root node should be the first node in the Animation struct's node_array. */
 typedef struct AnimationNode
 {
 	int		id;
@@ -76,14 +104,22 @@ typedef struct AnimationNode
 	mat4		current_transform;
 } AnimationNode;
 
+
+/* An Animation struct stores the current time and duration of the animation, and everything else is stored in
+ * the AnimationNode array. Each AnimationNode represents the transform to be applied to one
+ * specific bone of the animated model.
+ *
+ * The root animation node should be the first in the node_array, unless I've done something wrong. */
 typedef struct Animation
 {
-	int		num_nodes;
 	float		current_time;
 	float		duration;
+	int		num_nodes;
 	AnimationNode	**node_array;
 } Animation;
 
+
+/* VertexData is created when a model is loaded, sent to the GPU, then discarded. See src/asset_loading.c: B_load_ai_mesh_iter */
 typedef struct VertexData
 {
 	B_Vertex 	*vertices;
@@ -91,6 +127,8 @@ typedef struct VertexData
 	int		num_vertices;
 	int		num_faces;
 } VertexData;
+
+/* A B_Mesh is the vertex data needed to render a model. */
 
 typedef struct B_Mesh
 {
@@ -103,19 +141,25 @@ typedef struct B_Mesh
 	
 } B_Mesh;
 
+/* A B_Model is all the graphical information required for an actor, including animations.
+ * Models can be arranged hierarchically: each model can have one parent and any number of children.
+ * The bone_array stores all the bones (joints) for an animated model. The root bone should be the first
+ * in the array.
+ *
+ * Every model has one mesh. If you load a gltf file with multiple meshes in the same model, each mesh
+ * will be divided up into its own model (unless I've done something wrong with the model loader). */
+
 typedef struct B_Model
 {
-	//int		valid;
 	char		name[256];
 	mat4		local_space;
 	mat4		world_space;
 	mat4		original_position;
-	B_Mesh 		*meshes[MAX_MESHES];
+	B_Mesh 		*mesh;
 	int		num_children;
 	struct B_Model 	**children;
 	struct B_Model 	*parent;
 	Bone		**bone_array;
-	Bone		*bone_hierarchy;
 	int		num_bones;
 	Animation	*current_animation;
 } B_Model;
@@ -129,23 +173,15 @@ typedef struct
 	PointLight	point_light;
 } Renderer;
 
+/* Calculates the transform to be applied to the corresponding bone in an animated B_Model (B_Model->bone_array[id]). The
+ * transformation is actually applied to each bone in apply_animation. */
+void advance_animation(AnimationNode *node, float current_time);
 
-B_Model B_create_triangle(void);
-void get_triangle_data(B_Vertex *buffer);
+/* This is where the current_transform of each AnimationNode is applied to each Bone in the animated B_Model. */
+void apply_animation(AnimationNode **node_array, AnimationNode *node, 
+		      Bone **bone_array, Bone *bone, 
+		      mat4 parent_transform);
 
-/* Creates a simple, single-mesh model from vertex and face data */
-B_Model B_create_model_from(B_Vertex *vertices, unsigned int *faces, unsigned int num_vertices, unsigned int num_faces);
-
-/* Creates a model from existing meshes. Usually called in conjunction with B_create_mesh */
-B_Model B_create_model(B_Mesh *meshes, unsigned int num_meshes);
-
-B_Mesh B_create_mesh(B_Vertex 		*vertices, 
-		    unsigned int 	*faces, 
-		    unsigned int 	num_vertices, 
-		    unsigned int 	num_faces);
-
-B_Model create_cube(void);
-B_Model load_model_from_file(const char *filename);
 PointLight create_point_light(vec3 position, vec3 color, float intensity);
 int B_check_shader(unsigned int id, const char *name, int status);
 unsigned int B_setup_shader(const char *vert_path, const char *frag_path);
@@ -156,5 +192,7 @@ void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
 void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light);
 void B_free_model(B_Model *model);
+void free_animation(Animation *animation);
+void free_bone(Bone *bone);
 
 #endif

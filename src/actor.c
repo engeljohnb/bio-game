@@ -108,7 +108,7 @@ void free_actor(Actor actor)
 	B_free_model(actor.model);
 	for (int i = 0; i < actor.num_animations; ++i)
 	{
-		BG_FREE(actor.animations[i]);
+		free_animation(actor.animations[i]);
 	}
 	BG_FREE(actor.animations);
 }

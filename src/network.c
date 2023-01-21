@@ -38,9 +38,11 @@ int _B_listen_for_message(B_Connection connection, B_Message *message, unsigned 
 	{
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
 		{
+			BG_FREE(data);
 			return 0;
 		}
 		fprintf(stderr, "B_listen_for_message recvfrom %s line %i error: %s\n", file, line, strerror(errno));
+		BG_FREE(data);
 		return  -1;
 	}
 

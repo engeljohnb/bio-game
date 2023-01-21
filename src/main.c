@@ -62,9 +62,9 @@ void server_loop(const char *port)
 		B_Message message;
 		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
-		int message_return = 0;
 		while ((num_states < num_players) || (!num_states))
 		{
+			int message_return = 0;
 			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
@@ -135,6 +135,10 @@ void server_loop(const char *port)
 					num_states++;
 				}
 			}
+			if (message_return > 0)
+			{
+				free_message(message);
+			}
 		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
@@ -156,10 +160,7 @@ void server_loop(const char *port)
 				B_send_to_address(server_connection, addresses[i], ACTOR_STATE, &(players[j]), sizeof(ActorState));
 			}
 		}
-		if (message_return > 0)
-		{
-			free_message(message);
-		}	
+			
 	}
 	B_close_connection(server_connection);
 }
