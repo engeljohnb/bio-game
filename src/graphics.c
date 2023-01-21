@@ -176,9 +176,9 @@ void advance_animation(AnimationNode *node, float current_time)
 	mat4 final_transform;
 	glm_mat4_identity(final_transform);
 
-	glm_scale(final_transform, scale);
-	glm_mat4_mul(final_transform, rotation_mat4, final_transform);
 	glm_translate(final_transform, position);
+	glm_mat4_mul(final_transform, rotation_mat4, final_transform);
+	glm_scale(final_transform, scale);
 
 	glm_mat4_copy(final_transform, node->current_transform);
 	return;

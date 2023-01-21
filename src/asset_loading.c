@@ -319,18 +319,18 @@ void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *curr
 	memset(current_bone, 0, sizeof(Bone));
 	strncpy(current_bone->name, node->mName.data, 255);
 
-	assimp_to_cglm_mat4(node->mTransformation, current_bone->current_local);
+	mat4 local_space;
+	assimp_to_cglm_mat4(node->mTransformation, local_space);
 
 	if (parent != NULL)
 	{
-		glm_mat4_mul(parent->world_space, current_bone->current_local, current_bone->world_space);
+		glm_mat4_mul(parent->world_space, local_space, current_bone->world_space);
 	}
 	else
 	{
 		glm_mat4_identity(current_bone->world_space);
 	}
 
-	glm_mat4_copy(current_bone->current_local, current_bone->current_transform);
 	current_bone->id = -1;
 	for (int i = 0; i < num_bones; ++i)
 	{
@@ -338,6 +338,7 @@ void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *curr
 		{
 			current_bone->id = i;
 			assimp_to_cglm_mat4(bones[i]->mOffsetMatrix, current_bone->inverse_bind);
+			glm_mat4_mul(local_space, current_bone->inverse_bind, current_bone->current_transform);
 			break;
 		}
 	}

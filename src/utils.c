@@ -255,7 +255,7 @@ void print_mat4(mat4 mat)
 	fprintf(stderr, "%f\t", mat[3][0]);
 	fprintf(stderr, "%f\t", mat[3][1]);
 	fprintf(stderr, "%f\t", mat[3][2]);
-	fprintf(stderr, "%f\t\n", mat[3][3]);
+	fprintf(stderr, "%f\t\n\n", mat[3][3]);
 }
 void print_vec3(vec3 vector)
 {

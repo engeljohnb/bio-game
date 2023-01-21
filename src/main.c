@@ -37,7 +37,7 @@
 #include "debug.h"
 
 /* UP NEXT: 
- * 	For some reason, in B_load_animation_nodes, the root bone "Bone" is not included in the list of bones ai_bones */
+ * 	Figure out why my monkey's stretched.*/
 
 void server_loop(const char *port)
 {

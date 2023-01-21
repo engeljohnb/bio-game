@@ -64,7 +64,6 @@ typedef struct Bone
 	int		num_children;
 	mat4		inverse_bind;
 	mat4		world_space;
-	mat4		current_local;
 	mat4		current_transform;	
 } Bone;
 
