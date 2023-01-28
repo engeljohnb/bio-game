@@ -22,6 +22,7 @@
 #include <glad/glad.h>
 #include "camera.h"
 #include "window.h"
+#include "rendering.h"
 
 #define MAX_BONES 25
 
@@ -32,8 +33,8 @@ typedef struct
 	float 	intensity;
 } PointLight;
 
-typedef unsigned int B_Shader;
 
+//TODO: Change the name of this struct. Maybe A_Vertex for "Actor Vertex"
 typedef struct
 {
 	GLfloat	position[3];
@@ -185,10 +186,6 @@ PointLight create_point_light(vec3 position, vec3 color, float intensity);
 int B_check_shader(unsigned int id, const char *name, int status);
 unsigned int B_setup_shader(const char *vert_path, const char *frag_path);
 Renderer create_default_renderer(B_Window window);
-void B_set_uniform_float(B_Shader shader, char *name, float value);
-void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
-void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
-void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
 void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light);
 void B_free_model(B_Model *model);
 void free_animation(Animation *animation);

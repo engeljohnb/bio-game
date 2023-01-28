@@ -3,7 +3,8 @@
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -15,25 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef __B_WINDOW_H__
-#define __B_WINDOW_H__
-#include <SDL2/SDL.h>
+#version 410 core
 
-typedef struct
+layout (location = 0) in vec3 v_position;
+
+void main()
 {
-	SDL_Window 	*sdl_window;
-	SDL_GLContext   gl_context;
-	int 		width;
-	int 		height;
-	vec3 		background_color;
+	gl_Position = vec4(v_position, 1.0f);
+}
 
-} B_Window;
-
-void B_init(void);
-void B_quit(void);
-B_Window B_create_window(void);
-void B_free_window(B_Window window);
-void B_clear_window(B_Window);
-void B_flip_window(B_Window);
-
-#endif

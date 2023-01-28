@@ -34,10 +34,15 @@
 #include "input.h"
 #include "time.h"
 #include "utils.h"
+#include "tessellation.h"
 #include "debug.h"
 
 /* UP NEXT: 
- * 	Figure out why my monkey's stretched.*/
+ * 	Why can't I calculate the normals right?
+ * 	Make the monkey move faster.
+ * 	Loose the monkey's hat and animation for now. */
+
+//TODO: Change all the exit(0)'s to exit(-1)'s
 
 void server_loop(const char *port)
 {
@@ -214,6 +219,12 @@ void game_loop(const char *server_name, const char *port)
 	float frame_time = 0;
 	int running = 1;
 	int frames = 0;
+
+	T_Mesh terrain_mesh = B_create_terrain_mesh(64, 64);
+	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
+							   "src/terrain_shader.frag",
+							   "src/terrain_shader.ctess",
+							   "src/terrain_shader.etess");
 	while (running)
 	{
 		unsigned int num_states = 0;
@@ -283,11 +294,13 @@ void game_loop(const char *server_name, const char *port)
 		}
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			//update_actor(&all_actors[i], all_actors[i].actor_state);
 			update_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
+		B_clear_window(renderer.window);
+		B_draw_terrain(terrain_mesh, GLM_MAT4_IDENTITY, terrain_shader, &renderer.camera);
 		render_game(all_actors, num_players, renderer);
+		B_flip_window(renderer.window);
 		if (message_return > 0)
 		{
 			free_message(message);
