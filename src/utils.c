@@ -225,6 +225,14 @@ int valid(void *ptr)
 	return (ptr != NULL);
 }
 
+
+void *_bg_malloc(size_t size)
+{
+	void *ptr = malloc(size);
+	memset(ptr, 0, size);
+	return ptr;
+}
+
 int _bg_free(void *ptr)
 {
 	if (valid(ptr))
@@ -257,7 +265,9 @@ void print_mat4(mat4 mat)
 	fprintf(stderr, "%f\t", mat[3][2]);
 	fprintf(stderr, "%f\t\n\n", mat[3][3]);
 }
+
 void print_vec3(vec3 vector)
 {
 	fprintf(stderr, "%f %f %f\n", vector[0], vector[1], vector[2]);
 }
+

@@ -58,7 +58,7 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 {
 	if (command_state.movement)
 	{
-		actor_state->speed += 0.0001*delta_t;
+		actor_state->speed += 0.005*delta_t;
 	}
 	else	
 	{
@@ -92,7 +92,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(facing, state.front);
 	state.speed = 0;
-	state.max_speed = 0.3;
+	state.max_speed = 3.0;
 	state.active = 1;
 	state.id = id;
 	return state;

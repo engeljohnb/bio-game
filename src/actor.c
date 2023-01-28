@@ -95,12 +95,12 @@ void update_model(B_Model *model, ActorState actor_state)
 
 void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer)
 {
-	B_clear_window(renderer.window);
+//	B_clear_window(renderer.window);
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
 		B_blit_model(all_actors[i].model, renderer.camera, renderer.shader, renderer.point_light);
 	}
-	B_flip_window(renderer.window);
+//	B_flip_window(renderer.window);
 }
 
 void free_actor(Actor actor)

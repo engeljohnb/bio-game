@@ -19,6 +19,7 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 #include <cglm/cglm.h>
+#include <glad/glad.h>
 #include <stdint.h>
 #include <memmem.h>
 
@@ -33,7 +34,8 @@
 #define VEC3_Y_DOWN (vec3){0.0, -1.0, 0.0}
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
 #define BG_FREE(ptr) _bg_free(ptr)
-
+//TODO: Change all heap allocations to use this macro.
+#define BG_MALLOC(type, count) (type *)_bg_malloc(sizeof(type)*count)
 
 int B_load_file(const char *filename, char *buff, int size);
 int maxi(int a, int b);
@@ -78,4 +80,5 @@ int _bg_free(void *ptr);
 float absf(float value);
 void print_vec3(vec3 vector);
 void print_mat4(mat4 mat);
+void *_bg_malloc(size_t size);
 #endif

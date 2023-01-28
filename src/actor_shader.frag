@@ -18,7 +18,7 @@
 
 
 
-#version 330 core
+#version 410 core
 #define MAX_LIGHTS 1
 
 struct PointLight
