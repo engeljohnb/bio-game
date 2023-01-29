@@ -1,6 +1,7 @@
 #version 410 core
 
 layout (vertices=4) out;
+out float tessellation_levels[];
 
 in gl_PerVertex
 {
@@ -14,14 +15,16 @@ void main()
 {
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 
+	float tessellation_level = 16.0f;
     	if (gl_InvocationID == 0)
    	{
-		gl_TessLevelOuter[0] = 16.0;
-		gl_TessLevelOuter[1] = 16.0;
-		gl_TessLevelOuter[2] = 16.0;
-		gl_TessLevelOuter[3] = 16.0;
+		gl_TessLevelOuter[0] = tessellation_level;
+		gl_TessLevelOuter[1] = tessellation_level;
+		gl_TessLevelOuter[2] = tessellation_level;
+		gl_TessLevelOuter[3] = tessellation_level;
 
-		gl_TessLevelInner[0] = 16.0;
-		gl_TessLevelInner[1] = 16.0;
+		gl_TessLevelInner[0] = tessellation_level;
+		gl_TessLevelInner[1] = tessellation_level;
     	}
+	tessellation_levels[gl_InvocationID] = tessellation_level;
 }

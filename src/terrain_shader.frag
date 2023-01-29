@@ -30,6 +30,6 @@ void main()
 	result += calculate_point_light(point_light);
 
 	frag_color = result*vec4(f_color, 1.0);
-	//frag_color = vec4(f_normal, 1.0);
+//	frag_color = vec4(f_normal, 1.0);
 
 }

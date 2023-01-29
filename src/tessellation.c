@@ -4,8 +4,6 @@
 #include "utils.h"
 #include "tessellation.h"
 #include "utils.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 /*T_Mesh B_create_terrain_mesh(void)
 {
