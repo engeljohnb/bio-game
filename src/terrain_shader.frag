@@ -1,9 +1,11 @@
 #version 410 core
 
+//layout (location = 0) out vec3 frag_color;
+out vec4 frag_color;
 in vec3 f_position;
 in vec3 f_color;
 in vec3 f_normal;
-out vec4 frag_color;
+//out vec4 frag_color;
 
 struct PointLight
 {
@@ -29,7 +31,7 @@ void main()
 	vec4 result = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	result += calculate_point_light(point_light);
 
-	frag_color = result*vec4(f_color, 1.0);
-//	frag_color = vec4(f_normal, 1.0);
+//	frag_color = result*vec4(f_color, 1.0);
+	frag_color = vec4(f_normal, 1.0f);
 
 }

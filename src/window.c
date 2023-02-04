@@ -50,7 +50,7 @@ B_Window B_create_window(void)
 	gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 	glViewport(0, 0, window_width, window_height);
 	glEnable(GL_DEPTH_TEST);
-
+	glDisable(GL_BLEND);
 
 	window.sdl_window = sdl_window;
 	window.gl_context = gl_context;

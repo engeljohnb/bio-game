@@ -221,10 +221,14 @@ void game_loop(const char *server_name, const char *port)
 	int frames = 0;
 
 	T_Mesh terrain_mesh = B_create_terrain_mesh(64, 64);
-	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
+	B_Shader terrain_geo_shader = B_compile_terrain_shader("src/terrain_shader.vert",
 							   "src/terrain_shader.frag",
+							   "src/terrain_shader.geo",
 							   "src/terrain_shader.ctess",
 							   "src/terrain_shader.etess");
+	B_Shader terrain_lighting_shader = B_setup_shader("src/terrain_lighting_shader.vert",
+							  "src/terrain_lighting_shader.frag");
+							
 	while (running)
 	{
 		unsigned int num_states = 0;
@@ -298,8 +302,9 @@ void game_loop(const char *server_name, const char *port)
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		B_clear_window(renderer.window);
-		B_draw_terrain(terrain_mesh, GLM_MAT4_IDENTITY, terrain_shader, &renderer.camera);
-		render_game(all_actors, num_players, renderer);
+		//render_game(all_actors, num_players, renderer);
+		B_draw_terrain_geo_pass(terrain_mesh, terrain_geo_shader, &renderer.camera);
+		B_draw_terrain_lighting_pass(terrain_mesh, terrain_lighting_shader);
 		B_flip_window(renderer.window);
 		if (message_return > 0)
 		{
