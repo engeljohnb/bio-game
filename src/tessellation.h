@@ -14,6 +14,7 @@ typedef struct
 	int		num_vertices;
 	int		num_columns;
 	unsigned int	normal_texture;
+	unsigned int	position_texture;
 } T_Mesh;
 
 typedef struct

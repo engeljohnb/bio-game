@@ -3,9 +3,7 @@
 layout (quads, equal_spacing, cw) in;
 in float tessellation_levels[];
 
-//out vec3 f_normal;
-//out vec3 f_position;
-
+uniform float width;
 uniform int patches_per_column;
 
 // By Morgan McGuire @morgan3d, http://graphicscodex.com
@@ -166,13 +164,12 @@ void main()
 	float u = gl_TessCoord.x*SCALE;
 	float v = gl_TessCoord.y*SCALE;
 
-
 	float x_index = float(int(gl_PrimitiveID) % patches_per_column);
 	float y_index = round(gl_PrimitiveID / patches_per_column);
-	float x_offset = x_index*SCALE;
-	float y_offset = y_index*SCALE;
+	float x_offset = (x_index*SCALE) - (SCALE*float(patches_per_column)/2);
+	float y_offset = (y_index*SCALE) - (SCALE*float(patches_per_column)/2);
 
 	float height = fbm(vec2(u + x_offset, v + y_offset)) * 100;
-	vec4 pos = vec4(u + x_offset, height, v+ y_offset, 1.0);
+	vec4 pos = vec4(u + x_offset, height-80.0f, v+ y_offset, 1.0);
 	gl_Position = pos;
 }

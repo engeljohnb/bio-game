@@ -73,29 +73,30 @@ T_Mesh B_send_terrain_mesh_to_gpu(T_Vertex *vertices, int num_vertices, int num_
 
 	glGenFramebuffers(1, &mesh.g_buffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
+
 	glGenTextures(1, &mesh.normal_texture);
 	glBindTexture(GL_TEXTURE_2D, mesh.normal_texture);
 	// TODO: B_get_screen_width()
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, NULL);
-
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mesh.normal_texture, 0);
 
-	unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, attachments);
+	glGenTextures(1, &mesh.position_texture);
+	glBindTexture(GL_TEXTURE_2D, mesh.position_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, mesh.position_texture, 0);
+
+	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, attachments);
 	unsigned int depth_buffer;
         glGenRenderbuffers(1, &depth_buffer);
         glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1920, 1080);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
-        // finally check if framebuffer is complete
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-                fprintf(stderr, "Not compltet!\n");
-        }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 
 	// Mesh VAO
 	glGenVertexArrays(1, &mesh.vao);
@@ -187,9 +188,12 @@ void B_draw_terrain_lighting_pass(T_Mesh mesh, B_Shader shader)
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shader);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, mesh.position_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh.normal_texture);
-	B_set_uniform_int(shader, "f_texture", 0);
+	B_set_uniform_int(shader, "f_position_texture", 1);
+	B_set_uniform_int(shader, "f_normal_texture", 0);
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(mesh.lighting_vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
@@ -205,7 +209,7 @@ void B_draw_terrain_geo_pass(T_Mesh mesh, B_Shader shader, Camera *camera)
 	glm_mat4_mul(camera->projection_space, camera->view_space, projection_view);
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
-	B_set_uniform_float(shader, "tessellation_level", 8);
+	B_set_uniform_float(shader, "tessellation_level", 16);
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -38,9 +38,7 @@
 #include "debug.h"
 
 /* UP NEXT: 
- * 	Why can't I calculate the normals right?
- * 	Make the monkey move faster.
- * 	Loose the monkey's hat and animation for now. */
+ * 	Get the monkey back on screen */
 
 //TODO: Change all the exit(0)'s to exit(-1)'s
 
@@ -302,9 +300,9 @@ void game_loop(const char *server_name, const char *port)
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		B_clear_window(renderer.window);
-		//render_game(all_actors, num_players, renderer);
 		B_draw_terrain_geo_pass(terrain_mesh, terrain_geo_shader, &renderer.camera);
 		B_draw_terrain_lighting_pass(terrain_mesh, terrain_lighting_shader);
+		render_game(all_actors, num_players, renderer);
 		B_flip_window(renderer.window);
 		if (message_return > 0)
 		{

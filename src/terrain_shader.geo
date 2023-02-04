@@ -17,7 +17,7 @@ void main()
 		vec3 b = vec3(gl_in[1].gl_Position);
 		vec3 c = vec3(gl_in[2].gl_Position);
 		f_normal = normalize(cross((b-a), (c-a)));
-		f_position = vec3(gl_in[i].gl_Position);	
+		f_position = vec3(gl_in[i].gl_Position);
 		EmitVertex();
 	}
 	EndPrimitive();
