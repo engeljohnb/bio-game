@@ -164,15 +164,6 @@ typedef struct B_Model
 	Animation	*current_animation;
 } B_Model;
 
-typedef struct
-{
-	Camera		camera;
-	B_Window	window;
-	B_Shader	shader;	
-	float		delta_t;
-	PointLight	point_light;
-} Renderer;
-
 /* Calculates the transform to be applied to the corresponding bone in an animated B_Model (B_Model->bone_array[id]). The
  * transformation is actually applied to each bone in apply_animation. */
 void advance_animation(AnimationNode *node, float current_time);
@@ -184,9 +175,8 @@ void apply_animation(AnimationNode **node_array, AnimationNode *node,
 
 PointLight create_point_light(vec3 position, vec3 color, float intensity);
 int B_check_shader(unsigned int id, const char *name, int status);
-unsigned int B_setup_shader(const char *vert_path, const char *frag_path);
 Renderer create_default_renderer(B_Window window);
-void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light);
+void B_blit_model(B_Model *model, Camera camera, B_Shader shader);
 void B_free_model(B_Model *model);
 void free_animation(Animation *animation);
 void free_bone(Bone *bone);

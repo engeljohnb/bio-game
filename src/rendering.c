@@ -1,6 +1,130 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rendering.h"
+#include "utils.h"
+
+B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo)
+{
+	GLfloat texture_vertices[] = { 
+	// position		// tex_coords
+	 -1.0f, -1.0f, 0.0f ,   0.0f, 0.0f,
+	 -1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
+	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
+	  -1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+	  1.0f, 1.0f, 0.0f,     1.0f, 1.0f };
+
+	size_t stride = sizeof(GLfloat)*5;
+
+	B_Texture _normal_texture = 0;
+	B_Texture _position_texture = 0;
+	unsigned int _lighting_vao = 0;
+	unsigned int _lighting_vbo = 0;
+	B_Framebuffer g_buffer = 0;
+
+	glGenVertexArrays(1, &_lighting_vao);
+	glBindVertexArray(_lighting_vao);
+	glGenBuffers(1, &_lighting_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _lighting_vbo);
+	glBufferData(GL_ARRAY_BUFFER, 6*stride, texture_vertices, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(GLfloat)*3));
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glGenFramebuffers(1, &g_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, g_buffer);
+
+	glGenTextures(1, &_normal_texture);
+	glBindTexture(GL_TEXTURE_2D, _normal_texture);
+	// TODO: B_get_screen_width()
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _normal_texture, 0);
+
+	glGenTextures(1, &_position_texture);
+	glBindTexture(GL_TEXTURE_2D, _position_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _position_texture, 0);
+
+	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, attachments);
+	unsigned int depth_buffer;
+        glGenRenderbuffers(1, &depth_buffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1920, 1080);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	*position_texture = _position_texture;
+	*normal_texture = _normal_texture;
+	*lighting_vao = _lighting_vao;
+	*lighting_vbo = _lighting_vbo;
+	return g_buffer;
+}
+
+Renderer create_default_renderer(B_Window window)
+{
+	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN);
+	B_Shader shader = B_setup_shader("src/actor_shader.vert", "src/actor_shader.frag");
+
+	Renderer renderer;
+	renderer.camera = camera;
+	renderer.window = window;
+	renderer.shader = shader;
+	renderer.g_buffer = B_generate_g_buffer(&renderer.normal_texture, &renderer.position_texture, 
+						&renderer.lighting_vao, &renderer.lighting_vbo);
+	return renderer;
+}
+
+void B_render_lighting(Renderer renderer, B_Shader shader)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(shader);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, renderer.position_texture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, renderer.normal_texture);
+	B_set_uniform_int(shader, "f_position_texture", 1);
+	B_set_uniform_int(shader, "f_normal_texture", 0);
+	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
+	glBindVertexArray(renderer.lighting_vao);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
+}
+
+//TODO: Name this function B_compile_actor_shader and maybe move it to actor.c
+unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
+{	
+	unsigned int program_id = glCreateProgram();
+	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
+	unsigned int fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+
+	char vertex_buffer[65536] = {0};
+	B_load_file(vert_path, vertex_buffer, 65536);
+	char fragment_buffer[65536] = {0};
+	B_load_file(frag_path, fragment_buffer, 65536);
+	const char *vertex_source = vertex_buffer;
+	const char *fragment_source = fragment_buffer;
+
+	glShaderSource(vertex_id, 1, &vertex_source, NULL);
+	glCompileShader(vertex_id);
+	B_check_shader(vertex_id, vert_path, GL_COMPILE_STATUS);
+
+	glShaderSource(fragment_id, 1, &fragment_source, NULL);
+	glCompileShader(fragment_id);
+	B_check_shader(fragment_id, frag_path, GL_COMPILE_STATUS);
+
+	glAttachShader(program_id, vertex_id);
+	glAttachShader(program_id, fragment_id);
+	glLinkProgram(program_id);
+	B_check_shader(program_id, "shader program", GL_LINK_STATUS);
+	return program_id;
+}
 
 int B_check_shader(unsigned int id, const char *name, int status)
 {

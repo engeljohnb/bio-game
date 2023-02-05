@@ -19,40 +19,14 @@
 
 
 #version 410 core
-#define MAX_LIGHTS 1
 
-struct PointLight
-{
-	vec3 position;
-	vec3 color;
-	float intensity;
-};
-
-in vec3 v_normal;
-in vec3 frag_position;
-uniform vec4 color;
-uniform PointLight point_lights[MAX_LIGHTS];
-
-out vec4 frag_color;
-
-vec4 calculate_point_light(PointLight point_light)
-{
-	vec3 direction = normalize(point_light.position - frag_position);
-	float angle = max(dot(direction, v_normal), 0.0f); 
-	return vec4(point_light.color * point_light.intensity * angle, 1.0f);
-	
-}
+layout (location = 0) out vec3 frag_normal;
+layout (location = 1) out vec3 frag_position;
+in vec3 f_normal;
+in vec3 f_position;
 
 void main()
 {
-	vec4 result = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	for (int i = 0; i < MAX_LIGHTS; ++i)
-	{
-		result += calculate_point_light(point_lights[i]);
-	}
-	frag_color = result*color;
-	//frag_color = vec4(frag_position, 1.0);
-	//frag_color = vec4( 0.5*(frag_position + vec3(1.0, 1.0, 1.0)), 1 );
-
-	
+	frag_normal = f_normal;
+	frag_position = f_position * 0.01;
 }

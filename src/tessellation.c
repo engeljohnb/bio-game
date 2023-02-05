@@ -5,21 +5,7 @@
 #include "tessellation.h"
 #include "utils.h"
 
-/*T_Mesh B_create_terrain_mesh(void)
-{
-	int width = 0;
-	int height = 0;
-	int num_channels = 0;
-	T_Vertex *vertices = generate_t_vertices(width, height);
-	uint8_t *texture_data = stbi_load(height_map_file, &width, &height, &num_channels, 0);
-	
-	T_Mesh mesh = B_send_terrain_mesh_to_gpu(vertices, 20*20, texture_data, width, height, 20);
-	BG_FREE(vertices);
-	BG_FREE(texture_data);
-	return mesh;
-}*/
-
-T_Mesh B_create_terrain_mesh(int width, int height)
+T_Mesh B_create_terrain_mesh(B_Framebuffer g_buffer, int width, int height)
 {
 	int num_vertices = width*height*4;
 	T_Vertex vertices[num_vertices];
@@ -44,16 +30,16 @@ T_Mesh B_create_terrain_mesh(int width, int height)
 		vertices[i+3].position[2] = -1.0;
 	}
 
-	T_Mesh mesh = B_send_terrain_mesh_to_gpu(vertices, num_vertices, height);
+	T_Mesh mesh = B_send_terrain_mesh_to_gpu(g_buffer, vertices, num_vertices, height);
 	return mesh;
 }
 
-T_Mesh B_send_terrain_mesh_to_gpu(T_Vertex *vertices, int num_vertices, int num_columns)
+T_Mesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertices, int num_vertices, int num_columns)
 {
 	T_Mesh mesh = {0};
 	size_t stride = sizeof(GLfloat)*3 + sizeof(GLfloat)*2;
 
-	T_Vertex texture_vertices[6] = { 
+/*	T_Vertex texture_vertices[6] = { 
 		{{ -1.0f, -1.0f, 0.0f} ,   {0.0f, 0.0f}},
 		{{ -1.0f, 1.0f, 0.0f},	   {0.0f, 1.0f}},
 		{{  1.0f, -1.0f, 0.0f},    {1.0f, 0.0f}},
@@ -71,7 +57,7 @@ T_Mesh B_send_terrain_mesh_to_gpu(T_Vertex *vertices, int num_vertices, int num_
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
-	glGenFramebuffers(1, &mesh.g_buffer);
+	mesh.g_buffer = g_buffer;
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 
 	glGenTextures(1, &mesh.normal_texture);
@@ -97,7 +83,7 @@ T_Mesh B_send_terrain_mesh_to_gpu(T_Vertex *vertices, int num_vertices, int num_
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1920, 1080);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+*/
 	// Mesh VAO
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -115,6 +101,7 @@ T_Mesh B_send_terrain_mesh_to_gpu(T_Vertex *vertices, int num_vertices, int num_
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 	mesh.num_vertices = num_vertices;
 	mesh.num_columns = num_columns;
+	mesh.g_buffer = g_buffer;
 	return mesh;
 }
 
@@ -182,24 +169,7 @@ unsigned int B_compile_terrain_shader(const char *vert_path, const char *frag_pa
 	return program_id;
 }
 
-void B_draw_terrain_lighting_pass(T_Mesh mesh, B_Shader shader)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(shader);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, mesh.position_texture);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, mesh.normal_texture);
-	B_set_uniform_int(shader, "f_position_texture", 1);
-	B_set_uniform_int(shader, "f_normal_texture", 0);
-	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
-	glBindVertexArray(mesh.lighting_vao);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
-}
-
-void B_draw_terrain_geo_pass(T_Mesh mesh, B_Shader shader, Camera *camera)
+void B_draw_terrain(T_Mesh mesh, B_Shader shader, Camera *camera)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);

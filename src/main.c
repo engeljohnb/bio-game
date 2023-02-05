@@ -41,6 +41,11 @@
  * 	Get the monkey back on screen */
 
 //TODO: Change all the exit(0)'s to exit(-1)'s
+//TODO: Don't forget to put license info at the top of new files.
+//TODO: Rearrange the beginning of game_loop so things are layed out sensibly and not just vomited all out at once.
+//TODO: Change unsigned int g_buffer to B_FameBuffer g_buffer
+//TODO: Get rid of the draw_actor_geo_pass draw_actor_lighting_pass stuff. Just draw_actor, then once everything's drawn, lighthing_pass.
+
 
 void server_loop(const char *port)
 {
@@ -194,6 +199,7 @@ void game_loop(const char *server_name, const char *port)
 	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
  	B_Window window = B_create_window();	
 	Renderer renderer = create_default_renderer(window);
+
 	Actor all_actors[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
@@ -218,14 +224,14 @@ void game_loop(const char *server_name, const char *port)
 	int running = 1;
 	int frames = 0;
 
-	T_Mesh terrain_mesh = B_create_terrain_mesh(64, 64);
+	T_Mesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 64, 64);
 	B_Shader terrain_geo_shader = B_compile_terrain_shader("src/terrain_shader.vert",
 							   "src/terrain_shader.frag",
 							   "src/terrain_shader.geo",
 							   "src/terrain_shader.ctess",
 							   "src/terrain_shader.etess");
-	B_Shader terrain_lighting_shader = B_setup_shader("src/terrain_lighting_shader.vert",
-							  "src/terrain_lighting_shader.frag");
+	B_Shader lighting_shader = B_setup_shader("src/terrain_lighting_shader.vert",
+					          "src/terrain_lighting_shader.frag");
 							
 	while (running)
 	{
@@ -274,6 +280,7 @@ void game_loop(const char *server_name, const char *port)
 					break;
 			}
 		}
+
 		frame_time += B_get_frame_time(delta_t);
 		if (message_return <= 0)
 		{
@@ -294,16 +301,18 @@ void game_loop(const char *server_name, const char *port)
 		{
 			frame_time = 0;
 		}
+
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		B_clear_window(renderer.window);
-		B_draw_terrain_geo_pass(terrain_mesh, terrain_geo_shader, &renderer.camera);
-		B_draw_terrain_lighting_pass(terrain_mesh, terrain_lighting_shader);
-		render_game(all_actors, num_players, renderer);
+		B_draw_terrain(terrain_mesh, terrain_geo_shader, &renderer.camera);
+		B_draw_actors(all_actors, num_players, renderer);
+		B_render_lighting(renderer, lighting_shader);
 		B_flip_window(renderer.window);
+
 		if (message_return > 0)
 		{
 			free_message(message);

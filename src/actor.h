@@ -42,5 +42,5 @@ void update_model(B_Model *model, ActorState actor_state);
 void update_actor(Actor *actor, ActorState actor_state);
 void free_actor(Actor actor);
 Actor create_default_npc(unsigned int id);
-void render_game(Actor *all_actors, unsigned int num_actors, Renderer renderer);
+void B_draw_actors(Actor *all_actors, unsigned int num_actors, Renderer renderer);
 #endif

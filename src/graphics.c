@@ -184,13 +184,14 @@ void advance_animation(AnimationNode *node, float current_time)
 	return;
 }
 
-void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight point_light)
+void B_blit_model(B_Model *model, Camera camera, B_Shader shader)
 {
 	if (model->mesh->active)
 	{
 		static float current_time = 0.0f;
 		glBindVertexArray(model->mesh->vao);
 		vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+		PointLight point_light = create_point_light(VEC3(0,0,0), VEC3(1,1,1), 1.0);
 		B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
 		B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
 		B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
@@ -249,54 +250,11 @@ void B_blit_model(B_Model *model, Camera camera, B_Shader shader, PointLight poi
 	}
 	for (int i = 0; i < model->num_children; ++i)
 	{
-		B_blit_model(model->children[i], camera, shader, point_light);
+		B_blit_model(model->children[i], camera, shader);
 	}
 
 }
 
-
-//TODO: Name this function B_compile_actor_shader and maybe move it to actor.c
-unsigned int B_setup_shader(const char *vert_path, const char *frag_path)
-{	
-	unsigned int program_id = glCreateProgram();
-	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
-	unsigned int fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
-
-	char vertex_buffer[65536] = {0};
-	B_load_file(vert_path, vertex_buffer, 65536);
-	char fragment_buffer[65536] = {0};
-	B_load_file(frag_path, fragment_buffer, 65536);
-	const char *vertex_source = vertex_buffer;
-	const char *fragment_source = fragment_buffer;
-
-	glShaderSource(vertex_id, 1, &vertex_source, NULL);
-	glCompileShader(vertex_id);
-	B_check_shader(vertex_id, vert_path, GL_COMPILE_STATUS);
-
-	glShaderSource(fragment_id, 1, &fragment_source, NULL);
-	glCompileShader(fragment_id);
-	B_check_shader(fragment_id, frag_path, GL_COMPILE_STATUS);
-
-	glAttachShader(program_id, vertex_id);
-	glAttachShader(program_id, fragment_id);
-	glLinkProgram(program_id);
-	B_check_shader(program_id, "shader program", GL_LINK_STATUS);
-	return program_id;
-}
-
-Renderer create_default_renderer(B_Window window)
-{
-	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN);
-	PointLight point_light = create_point_light(VEC3(4.0, 4.0, 0.0), VEC3(1.0, 1.0, 1.0),1.0);
-	B_Shader shader = B_setup_shader("src/actor_shader.vert", "src/actor_shader.frag");
-
-	Renderer renderer;
-	renderer.camera = camera;
-	renderer.window = window;
-	renderer.shader = shader;
-	renderer.point_light = point_light;
-	return renderer;
-}
 
 void B_free_mesh(B_Mesh *mesh)
 {

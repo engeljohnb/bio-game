@@ -27,8 +27,8 @@ layout (location = 3) in ivec4 bone_ids;
 layout (location = 4) in vec4 bone_weights;
 
 const int MAX_BONES = 25;
-out vec3 v_normal;
-out vec3 frag_position;
+out vec3 f_normal;
+out vec3 f_position;
 uniform mat4 world_space;
 uniform mat4 projection_view_space;
 uniform mat4 bone_matrices[25];
@@ -50,7 +50,6 @@ void main()
 		final_normal += local_normal;
 	}
 	gl_Position = projection_view_space * world_space * final_position;
-	v_normal = normalize(normal_world_space * final_normal);
-	frag_position = vec3(world_space * final_position);
-	//frag_position = final_normal;
+	f_normal = normalize(normal_world_space * final_normal);
+	f_position = vec3(world_space * final_position);
 }
