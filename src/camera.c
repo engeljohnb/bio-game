@@ -68,8 +68,8 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
 {
 	glm_vec3_copy(player.position, camera->position);
-        turn(camera->front, player.command_state.look_x, player.command_state.look_y, VEC3_Z_DOWN, euler_dest);
-        turn(camera->right, player.command_state.look_x, player.command_state.look_y, VEC3_X_DOWN, NULL);
+        turn(camera->front, player.command_state.look_x, 0, VEC3_Z_DOWN, euler_dest);
+        turn(camera->right, player.command_state.look_x, 0, VEC3_X_DOWN, NULL);
 	mat4 translate;
 	glm_mat4_identity(translate);
 	vec3 up;
@@ -77,7 +77,6 @@ void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
 
 	vec3 camera_direction;
 	glm_vec3_copy(camera->front, camera_direction);
-	//glm_vec3_negate(camera_direction);
 	glm_vec3_scale(camera_direction, 35, camera_direction);
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);

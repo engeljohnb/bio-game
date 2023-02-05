@@ -38,7 +38,8 @@
 #include "debug.h"
 
 /* UP NEXT: 
- * 	Figure out color */
+ * 	Fix the monkey movement.
+ * 	Then figure out color */
 
 void server_loop(const char *port)
 {
@@ -307,6 +308,8 @@ void game_loop(const char *server_name, const char *port)
 		{
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
+
+		// Render
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		B_clear_window(renderer.window);
 		B_draw_terrain(terrain_mesh, terrain_shader, &renderer.camera);

@@ -17,5 +17,12 @@
 
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
+#include <glad/glad.h>
+#include <cglm/cglm.h>
+#include "utils.h"
+unsigned int B_compile_vec_draw_shader(const char *vert_path, const char *frag_path);
+void B_send_vec_draw_to_gpu(void);
+void init_vec_draw(void);
+void draw_vec(vec3 vec, unsigned int g_buffer);
 void log_actor_state(ActorState actor_state);
 #endif
