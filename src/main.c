@@ -35,7 +35,6 @@
 #include "time.h"
 #include "utils.h"
 #include "terrain.h"
-#include "debug.h"
 
 /* UP NEXT: 
  * 	Fix the monkey movement.
