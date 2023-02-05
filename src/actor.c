@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
-#include "graphics.h"
+#include "actor_rendering.h"
 #include "asset_loading.h"
 #include "actor_state.h"
 #include "actor.h"
@@ -45,11 +45,11 @@ Actor create_default_npc(unsigned int id)
 {
 	Actor actor;
 	memset(&actor, 0, sizeof(Actor));
-	memset(&actor.model, 0, sizeof(B_Model));
+	memset(&actor.model, 0, sizeof(ActorModel));
 	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3_Z_UP);
 	actor.id = id;
 	actor.command_config = default_command_config();
-	actor.model = malloc(sizeof(B_Model));
+	actor.model = BG_MALLOC(ActorModel, 1);
 	actor.model = B_load_model_from_file("assets/monkey.gltf");
 	return actor;
 }
@@ -66,7 +66,7 @@ void my_rotate(vec3 forward, vec3 up, mat4 result)
 	glm_mat4_copy(rotation, result);
 }
 
-void update_model(B_Model *model, ActorState actor_state)
+void update_actor_model(ActorModel *model, ActorState actor_state)
 {
 	glm_mat4_copy(model->original_position, model->world_space);
 
@@ -80,25 +80,19 @@ void update_model(B_Model *model, ActorState actor_state)
 	{
 		glm_mat4_mul(model->parent->world_space, model->local_space, model->world_space);
 	}
-	/*if (model->current_animation != NULL)
-	{
-		glm_mat4_mul(model->current_animation->bone_array[0]->current_transform, model->world_space, model->world_space);
-		print_mat4(model->current_animation->bone_array[0]->current_transform);
-		fprintf(stderr, "\n");
-	}*/
 	
 	for (int i = 0; i < model->num_children; ++i)
 	{
-		update_model(model->children[i], actor_state);
+		update_actor_model(model->children[i], actor_state);
 	}
 }
 
-void B_draw_actors(Actor *all_actors, unsigned int num_actors, Renderer renderer)
+void B_draw_actors(Actor *all_actors, B_Shader shader, unsigned int num_actors, Renderer renderer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, renderer.g_buffer);
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
-		B_blit_model(all_actors[i].model, renderer.camera, renderer.shader);
+		B_draw_actor_model(all_actors[i].model, renderer.camera, shader);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -112,3 +106,4 @@ void free_actor(Actor actor)
 	}
 	BG_FREE(actor.animations);
 }
+

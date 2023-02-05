@@ -34,7 +34,6 @@
 #define VEC3_Y_DOWN (vec3){0.0, -1.0, 0.0}
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
 #define BG_FREE(ptr) _bg_free(ptr)
-//TODO: Change all heap allocations to use this macro.
 #define BG_MALLOC(type, count) (type *)_bg_malloc(sizeof(type)*count)
 
 int B_load_file(const char *filename, char *buff, int size);
@@ -75,7 +74,9 @@ int valid(void *ptr);
 void turn(vec3 front, float x, float y, vec3 axis, mat4 dest);
 
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
- * I'm just too lazy to go back and change each call. */
+ * I'm just too lazy to go back and change each call.
+ *
+ * Besides, having BG_MALLOC and BG_FREE both be macros has a nice symmetry to it. */
 int _bg_free(void *ptr);
 float absf(float value);
 void print_vec3(vec3 vector);

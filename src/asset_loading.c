@@ -58,17 +58,16 @@ void assimp_to_cglm_mat4(C_STRUCT aiMatrix4x4 source, mat4 dest)
 	glm_mat4_copy(mat, dest);
 }
 
-void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B_Model *model)
+void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorModel *model)
 {
 	VertexData vertex_data;
 	memset(&vertex_data, 0, sizeof(VertexData));
-	B_Mesh *b_mesh = malloc(sizeof(B_Mesh));
+	ActorMesh *b_mesh = BG_MALLOC(ActorMesh, 1);
 	C_STRUCT aiMesh *a_mesh = scene->mMeshes[node->mMeshes[0]];
-	memset(b_mesh, 0, sizeof(B_Mesh));
+
 	vertex_data.num_vertices = a_mesh->mNumVertices;
 	b_mesh->num_vertices = a_mesh->mNumVertices;
-	vertex_data.vertices = (B_Vertex *)malloc(sizeof(B_Vertex) * a_mesh->mNumVertices);
-	memset(vertex_data.vertices, 0, sizeof(B_Vertex) * a_mesh->mNumVertices);
+	vertex_data.vertices = BG_MALLOC(A_Vertex, a_mesh->mNumVertices);
 	vertex_data.faces = NULL;
 	for (unsigned int j = 0; j < a_mesh->mNumVertices; ++j)
 	{
@@ -140,7 +139,7 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B
 		} 
 		vertex_data.num_faces = num_elements;
 		b_mesh->num_faces = num_elements;
-		vertex_data.faces = (unsigned int *)malloc(sizeof(unsigned int) * num_elements);
+		vertex_data.faces = BG_MALLOC(unsigned int, num_elements);
 		int index_counter = 0;
 		for (unsigned int j = 0; j < a_mesh->mNumFaces; ++j)
 		{
@@ -186,7 +185,7 @@ C_STRUCT aiNode *B_get_root_model(C_STRUCT aiNode *root)
 	return return_node;
 }
 
-void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B_Model *model, B_Model *parent)
+void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorModel *model, ActorModel *parent)
 {
 	strncpy(model->name, node->mName.data, 255);
 	B_load_ai_mesh_iter(scene, node, model);
@@ -194,19 +193,18 @@ void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, B_Mode
 	if (node->mNumChildren)
 	{
 		model->num_children = node->mNumChildren;
-		model->children = (B_Model **)malloc(sizeof(B_Model *) * node->mNumChildren);
+		model->children = BG_MALLOC(ActorModel*, node->mNumChildren);
 		for (unsigned int i = 0; i < node->mNumChildren; ++i)
 		{
-			model->children[i] = (B_Model *)malloc(sizeof(B_Model));
-			memset(model->children[i], 0, sizeof(B_Model));
+			model->children[i] = BG_MALLOC(ActorModel, 1);
 			B_load_ai_mesh(scene, node->mChildren[i], model->children[i], model);
 		}
 	}
 }
 
-void B_apply_node_transformations(C_STRUCT aiNode *node, B_Model *model, mat4 parent_transform)
+void B_apply_node_transformations(C_STRUCT aiNode *node, ActorModel *model, mat4 parent_transform)
 {
-	B_Model *child = model;
+	ActorModel *child = model;
 	mat4 local_space;
 	mat4 world_space;
 	assimp_to_cglm_mat4(node->mTransformation, local_space);
@@ -231,7 +229,7 @@ void B_apply_node_transformations(C_STRUCT aiNode *node, B_Model *model, mat4 pa
 
 }
 
-void B_load_ai_scene(const C_STRUCT aiScene *scene, B_Model *model)
+void B_load_ai_scene(const C_STRUCT aiScene *scene, ActorModel *model)
 {
 	C_STRUCT aiNode *root_model = B_get_root_model(scene->mRootNode);
 	B_load_ai_mesh(scene, root_model, model, NULL);
@@ -240,11 +238,10 @@ void B_load_ai_scene(const C_STRUCT aiScene *scene, B_Model *model)
 	B_apply_node_transformations(scene->mRootNode, model, GLM_MAT4_IDENTITY);	
 }
 
-B_Model *B_load_model_from_file(const char *filename)
+ActorModel *B_load_model_from_file(const char *filename)
 {
-	B_Model *model = NULL;
-	model = (B_Model *)malloc(sizeof(B_Model));
-	memset(model, 0, sizeof(B_Model));
+	ActorModel *model = NULL;
+	model = BG_MALLOC(ActorModel, 1);
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	B_load_ai_scene(scene, model);
 	aiReleaseImport(scene);
@@ -351,8 +348,7 @@ void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *curr
 	int num_children = count_child_bones(node);
 	int child_index = 0;
 	current_bone->num_children = num_children;
-	current_bone->children = (int *)malloc(sizeof(int)*num_children);
-	memset(current_bone->children, 0, sizeof(int)*num_children);
+	current_bone->children = BG_MALLOC(int, num_children);
 	for (unsigned int i = 0; i < node->mNumChildren; ++i)
 	{
 		for (int j = 0; j < num_bones; ++j)
@@ -391,12 +387,10 @@ Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh)
 		return NULL;
 	}
 
-	Bone **bone_array = (Bone **)malloc(sizeof(Bone*) * mesh->mNumBones);
-	memset(bone_array, 0, sizeof(Bone*) * mesh->mNumBones);
-
+	Bone **bone_array = BG_MALLOC(Bone*, mesh->mNumBones);
 	for (unsigned int i = 0; i < mesh->mNumBones; ++i)
 	{
-		bone_array[i] = (Bone *)malloc(sizeof(Bone));
+		bone_array[i] = BG_MALLOC(Bone, 1);
 	}	
 
 	B_load_bone_array_iter(B_get_root_bone(scene->mRootNode), bone_array, bone_array[0], NULL, mesh->mBones, mesh->mNumBones);
@@ -433,10 +427,8 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 			current_node->num_rotation_keys = channels[i]->mNumRotationKeys;
 			current_node->num_scale_keys = channels[i]->mNumScalingKeys;
 
-			current_node->position_keys = (vec3 *)malloc(sizeof(vec3) * channels[i]->mNumPositionKeys);
-			current_node->position_times = (float *)malloc(sizeof(float) * channels[i]->mNumPositionKeys);
-			memset(current_node->position_keys, 0, sizeof(vec3));
-			memset(current_node->position_times, 0, sizeof(float));
+			current_node->position_keys = BG_MALLOC(vec3, channels[i]->mNumPositionKeys);
+			current_node->position_times = BG_MALLOC(float, channels[i]->mNumPositionKeys);
 			for (unsigned int j = 0; j < channels[i]->mNumPositionKeys; ++j)
 			{
 				current_node->position_keys[j][0] = channels[i]->mPositionKeys[j].mValue.x;
@@ -445,10 +437,8 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 				current_node->position_times[j] = channels[i]->mPositionKeys[j].mTime;
 			}
 
-			current_node->rotation_keys = (vec4 *)malloc(sizeof(vec4) * channels[i]->mNumRotationKeys);
-			current_node->rotation_times = (float *)malloc(sizeof(float) * channels[i]->mNumRotationKeys);
-			memset(current_node->rotation_keys, 0, sizeof(vec4) * channels[i]->mNumRotationKeys);
-			memset(current_node->rotation_times, 0, sizeof(float) * channels[i]->mNumRotationKeys);
+			current_node->rotation_keys = BG_MALLOC(vec4, channels[i]->mNumRotationKeys);
+			current_node->rotation_times = BG_MALLOC(float, channels[i]->mNumRotationKeys);
 			for (unsigned int j = 0; j < channels[i]->mNumRotationKeys; ++j)
 			{
 				current_node->rotation_keys[j][0] = channels[i]->mRotationKeys[j].mValue.x;
@@ -458,10 +448,8 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 				current_node->rotation_times[j] = channels[i]->mRotationKeys[j].mTime;
 			}
 
-			current_node->scale_keys = (vec3 *)malloc(sizeof(vec3) * channels[i]->mNumScalingKeys);
-			current_node->scale_times = (float *)malloc(sizeof(float) * channels[i]->mNumScalingKeys);
-			memset(current_node->scale_keys, 0, sizeof(vec3) * channels[i]->mNumScalingKeys);
-			memset(current_node->scale_times, 0, sizeof(float) * channels[i]->mNumScalingKeys);
+			current_node->scale_keys = BG_MALLOC(vec3, channels[i]->mNumScalingKeys);
+			current_node->scale_times = BG_MALLOC(float, channels[i]->mNumScalingKeys);
 			for (unsigned int j = 0; j < channels[i]->mNumScalingKeys; ++j)
 			{
 				current_node->scale_keys[j][0] = channels[i]->mScalingKeys[j].mValue.x;
@@ -470,8 +458,7 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 				current_node->scale_times[j] = channels[i]->mScalingKeys[j].mTime;
 			}
 
-			current_node->children = (int *)malloc(sizeof(int)*ai_node->mNumChildren);
-			memset(current_node->children, 0, sizeof(int)*ai_node->mNumChildren);
+			current_node->children = BG_MALLOC(int, ai_node->mNumChildren);
 			current_node->num_children = ai_node->mNumChildren;
 			int child_index = 0;
 			for (int j = 0; j < num_channels; ++j)
@@ -516,18 +503,17 @@ Animation *B_load_animation(const C_STRUCT aiScene *scene, C_STRUCT aiAnimation 
 	{
 		return NULL;
 	}
-	Animation *animation = (Animation *)malloc(sizeof(Animation));
-	memset(animation, 0, sizeof(Animation));
+
+	Animation *animation = BG_MALLOC(Animation, 1);
 
 	C_STRUCT aiNode *model = B_get_root_model(scene->mRootNode);
 	C_STRUCT aiMesh *mesh = scene->mMeshes[model->mMeshes[0]];
 	C_STRUCT aiBone **bones = mesh->mBones;
 
-	animation->node_array = (AnimationNode **)malloc(sizeof(AnimationNode*) * ai_animation->mNumChannels);
-	memset(animation->node_array, 0, sizeof(AnimationNode*) * ai_animation->mNumChannels);
+	animation->node_array = BG_MALLOC(AnimationNode*, ai_animation->mNumChannels);
 	for (unsigned int i = 0; i < ai_animation->mNumChannels; ++i)
 	{
-		animation->node_array[i] = (AnimationNode *)malloc(sizeof(AnimationNode));
+		animation->node_array[i] = BG_MALLOC(AnimationNode, 1);
 	}
 	B_load_animation_nodes(B_get_root_bone(scene->mRootNode), 
 			       ai_animation->mChannels, (int)ai_animation->mNumChannels, 
@@ -544,7 +530,7 @@ Animation **B_load_animations_from_file(const char *filename, int *num_animation
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
 	*num_animations = scene->mNumAnimations;
-	Animation **animations = (Animation **)malloc(sizeof(Animation *) * scene->mNumAnimations);
+	Animation **animations = BG_MALLOC(Animation*, scene->mNumAnimations);
 	for (unsigned int i = 0; i < scene->mNumAnimations; ++i)
 	{
 		animations[i] = B_load_animation(scene, scene->mAnimations[i]);
@@ -554,7 +540,7 @@ Animation **B_load_animations_from_file(const char *filename, int *num_animation
 	return animations;
 }
 
-void B_send_mesh_to_gpu(B_Mesh *mesh, VertexData *vertex_data)
+void B_send_mesh_to_gpu(ActorMesh *mesh, VertexData *vertex_data)
 {
 	glGenVertexArrays(1, &mesh->vao);
 	glBindVertexArray(mesh->vao);

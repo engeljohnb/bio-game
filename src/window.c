@@ -22,6 +22,15 @@
 #include <glad/glad.h>
 #include "window.h"
 
+int g_window_width = -1;
+int g_window_height = -1;
+
+void B_get_window_size(int *width, int *height)
+{
+	*width = g_window_width;
+	*height = g_window_height;
+}
+
 void B_init(void)
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -68,6 +77,9 @@ B_Window B_create_window(void)
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 	SDL_WarpMouseInWindow(window.sdl_window, window_width/2, window_height/2);
 	SDL_ShowCursor(SDL_DISABLE);
+
+	g_window_width = window.width;
+	g_window_height = window.height;
 	return window;
 }
 

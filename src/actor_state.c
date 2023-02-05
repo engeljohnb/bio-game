@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "graphics.h"
+#include "actor_rendering.h"
 #include "utils.h"
 #include "actor_state.h"
 #include "actor.h"

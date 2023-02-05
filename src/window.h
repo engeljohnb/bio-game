@@ -35,5 +35,5 @@ B_Window B_create_window(void);
 void B_free_window(B_Window window);
 void B_clear_window(B_Window);
 void B_flip_window(B_Window);
-
+void B_get_window_size(int *width, int *height);
 #endif

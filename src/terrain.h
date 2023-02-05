@@ -16,31 +16,33 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-
-
-#ifndef __CAMERA_H__
-#define __CAMERA_H__
-
-#include <cglm/cglm.h>
-#include "actor_state.h"
-#include "window.h"
-#include "input.h"
+#ifndef __TERRAIN_H__
+#define __TERRAINN_H__
+#include <glad/glad.h>
+#include "rendering.h"
+#include "camera.h"
 
 typedef struct
 {
-	vec3	position;
-	vec3 	move_direction;
-	vec3	front;
-	vec3	right;
-	mat4	view_space;
-	mat4	projection_space;
-} Camera;
+	unsigned int	vao;
+	unsigned int	vbo;
+	unsigned int	g_buffer;
+	unsigned int	lighting_vao;
+	unsigned int	lighting_vbo;
+	int		num_vertices;
+	int		num_columns;
+	unsigned int	normal_texture;
+	unsigned int	position_texture;
+} TerrainMesh;
 
+typedef struct
+{
+	GLfloat		position[3];
+	GLfloat		tex_coords[2];
+} T_Vertex;
 
-Camera create_camera(B_Window window, vec3 position, vec3 front);
-//void update_camera(Camera *camera, CommandState command_state, float delta_t);
-void update_camera(Camera *camera, ActorState player, mat4 euler_dest);
-void look_at(Camera *camera, vec3 target);
-
+T_Vertex *generate_t_vertices(int width, int height);
+TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertices, int num_vertices, int num_columns);
+void B_draw_terrain(TerrainMesh mesh, B_Shader shader, Camera *camera);
+TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer, int width, int height);
 #endif

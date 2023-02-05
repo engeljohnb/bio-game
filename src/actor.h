@@ -19,7 +19,7 @@
 #ifndef __ACTORS_H__
 #define __ACTORS_H__
 #include <SDL2/SDL.h>
-#include "graphics.h"
+#include "actor_rendering.h"
 #include "actor_state.h"
 #include "input.h"
 
@@ -32,15 +32,15 @@ typedef struct
 	unsigned int	id;
 	CommandConfig	command_config;
 	ActorState	actor_state;
-	B_Model		*model;
+	ActorModel	*model;
 	Animation	**animations;
 	int		num_animations;
 } Actor;
 
 Actor create_player(unsigned int id);
-void update_model(B_Model *model, ActorState actor_state);
+void update_actor_model(ActorModel *model, ActorState actor_state);
 void update_actor(Actor *actor, ActorState actor_state);
+void B_draw_actors(Actor *all_actors, B_Shader shader, unsigned int num_actors, Renderer renderer);
 void free_actor(Actor actor);
 Actor create_default_npc(unsigned int id);
-void B_draw_actors(Actor *all_actors, unsigned int num_actors, Renderer renderer);
 #endif

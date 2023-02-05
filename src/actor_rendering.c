@@ -21,8 +21,79 @@
 #include "actor.h"
 #include "camera.h"
 #include "window.h"
-#include "graphics.h"
+#include "actor_rendering.h"
 #include "utils.h"
+
+void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
+{
+	if (model->mesh->active)
+	{
+		static float current_time = 0.0f;
+		glBindVertexArray(model->mesh->vao);
+		vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+		PointLight point_light = create_point_light(VEC3(0,0,0), VEC3(1,1,1), 1.0);
+		B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
+		B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
+		B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
+		B_set_uniform_vec4(shader, "color", color);
+		mat4 projection_view;
+		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
+		B_set_uniform_mat4(shader, "projection_view_space", projection_view);
+		B_set_uniform_mat4(shader, "world_space", model->world_space);
+		if (model->current_animation != NULL)
+		{
+			for (int i = 0; i < model->current_animation->num_nodes; ++i)
+			{
+				advance_animation(model->current_animation->node_array[i], current_time);
+			}
+			apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
+					 model->bone_array, model->bone_array[0], 
+					 GLM_MAT4_IDENTITY);
+			for (int i = 0; i < model->current_animation->num_nodes; ++i)
+			{
+				int id = model->bone_array[i]->id;
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", id);
+				B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
+			}
+			for (int i = model->num_bones; i < MAX_BONES; ++i)
+			{
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", i);
+				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
+			}
+			current_time += 15.0;
+			if (current_time >= model->current_animation->duration)
+			{
+				current_time = 0.0f;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < MAX_BONES; ++i)
+			{
+				char string[128] = {0};
+				snprintf(string, 128, "bone_matrices[%i]", i);
+				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
+			}
+		}
+
+		glUseProgram(shader);
+		if (model->mesh->num_faces)
+		{
+			glDrawElements(GL_TRIANGLES, model->mesh->num_faces, GL_UNSIGNED_INT, 0);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertices);
+		}
+	}
+	for (int i = 0; i < model->num_children; ++i)
+	{
+		B_draw_actor_model(model->children[i], camera, shader);
+	}
+
+}
 
 PointLight create_point_light(vec3 position, vec3 color, float intensity)
 {
@@ -47,7 +118,7 @@ int get_animation_position_index(AnimationNode *node, float current_time)
 	if (animation_index < 0)
 	{
 		fprintf(stderr, "get_animation_position_index error: could not get animation position index\n");
-		exit(0);
+		exit(-1);
 	}
 	return animation_index;
 }
@@ -184,79 +255,7 @@ void advance_animation(AnimationNode *node, float current_time)
 	return;
 }
 
-void B_blit_model(B_Model *model, Camera camera, B_Shader shader)
-{
-	if (model->mesh->active)
-	{
-		static float current_time = 0.0f;
-		glBindVertexArray(model->mesh->vao);
-		vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-		PointLight point_light = create_point_light(VEC3(0,0,0), VEC3(1,1,1), 1.0);
-		B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
-		B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
-		B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
-		B_set_uniform_vec4(shader, "color", color);
-		mat4 projection_view;
-		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
-		B_set_uniform_mat4(shader, "projection_view_space", projection_view);
-		B_set_uniform_mat4(shader, "world_space", model->world_space);
-		if (model->current_animation != NULL)
-		{
-			for (int i = 0; i < model->current_animation->num_nodes; ++i)
-			{
-				advance_animation(model->current_animation->node_array[i], current_time);
-			}
-			apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
-					 model->bone_array, model->bone_array[0], 
-					 GLM_MAT4_IDENTITY);
-			for (int i = 0; i < model->current_animation->num_nodes; ++i)
-			{
-				int id = model->bone_array[i]->id;
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", id);
-				B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
-			}
-			for (int i = model->num_bones; i < MAX_BONES; ++i)
-			{
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", i);
-				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-			}
-			current_time += 15.0;
-			if (current_time >= model->current_animation->duration)
-			{
-				current_time = 0.0f;
-			}
-		}
-		else
-		{
-			for (int i = 0; i < MAX_BONES; ++i)
-			{
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", i);
-				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-			}
-		}
-
-		glUseProgram(shader);
-		if (model->mesh->num_faces)
-		{
-			glDrawElements(GL_TRIANGLES, model->mesh->num_faces, GL_UNSIGNED_INT, 0);
-		}
-		else
-		{
-			glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertices);
-		}
-	}
-	for (int i = 0; i < model->num_children; ++i)
-	{
-		B_blit_model(model->children[i], camera, shader);
-	}
-
-}
-
-
-void B_free_mesh(B_Mesh *mesh)
+void B_free_mesh(ActorMesh *mesh)
 {
 	if (mesh->active)
 	{
@@ -266,7 +265,7 @@ void B_free_mesh(B_Mesh *mesh)
 	BG_FREE(mesh);
 }
 
-void B_free_model(B_Model *model)
+void B_free_model(ActorModel *model)
 {
 	B_free_mesh(model->mesh);
 	for (int i = 0; i < model->num_bones; ++i)

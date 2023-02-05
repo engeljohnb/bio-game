@@ -33,8 +33,6 @@ typedef struct
 	float 	intensity;
 } PointLight;
 
-
-//TODO: Change the name of this struct. Maybe A_Vertex for "Actor Vertex"
 typedef struct
 {
 	GLfloat	position[3];
@@ -42,20 +40,20 @@ typedef struct
 	GLfloat tex_coords[3];
 	GLint	bone_ids[4];
 	GLfloat	bone_weights[4];
-} B_Vertex;
+} A_Vertex;
 
-/* A Bone is the joint information for an animated B_Model. The inverse_bind
+/* A Bone is the joint information for an animated ActorModel. The inverse_bind
  * transforms from the bone's local space to model space. Parent bone is not stored
  * because I never use it. Child bones are stored as indices:
  *
- * B_Model *model = /// Load model ///;
+ * ActorModel *model = /// Load model ///;
  * Bone *root_bone = model->bone_array[0];
  * for (int i = 0; i < root_bone->num_children; ++i)
  * {
  * 	Bone *child_bone = model->bone_array[root_bone->children[i]]);
  * }
  *
- * Root bone should be the first bone in the B_Model's bone_array. */
+ * Root bone should be the first bone in the ActorModel's bone_array. */
 
 typedef struct Bone
 {
@@ -122,15 +120,15 @@ typedef struct Animation
 /* VertexData is created when a model is loaded, sent to the GPU, then discarded. See src/asset_loading.c: B_load_ai_mesh_iter */
 typedef struct VertexData
 {
-	B_Vertex 	*vertices;
+	A_Vertex 	*vertices;
 	unsigned int	*faces;
 	int		num_vertices;
 	int		num_faces;
 } VertexData;
 
-/* A B_Mesh is the vertex data needed to render a model. */
+/* A ActorMesh is the vertex data needed to render a model. */
 
-typedef struct B_Mesh
+typedef struct ActorMesh
 {
 	int		active;
 	int 		num_vertices;
@@ -139,9 +137,9 @@ typedef struct B_Mesh
 	unsigned int	vbo;
 	unsigned int	ebo;
 	
-} B_Mesh;
+} ActorMesh;
 
-/* A B_Model is all the graphical information required for an actor, including animations.
+/* A ActorModel is all the graphical information required for an actor, including animations.
  * Models can be arranged hierarchically: each model can have one parent and any number of children.
  * The bone_array stores all the bones (joints) for an animated model. The root bone should be the first
  * in the array.
@@ -149,26 +147,26 @@ typedef struct B_Mesh
  * Every model has one mesh. If you load a gltf file with multiple meshes in the same model, each mesh
  * will be divided up into its own model (unless I've done something wrong with the model loader). */
 
-typedef struct B_Model
+typedef struct ActorModel
 {
-	char		name[256];
-	mat4		local_space;
-	mat4		world_space;
-	mat4		original_position;
-	B_Mesh 		*mesh;
-	int		num_children;
-	struct B_Model 	**children;
-	struct B_Model 	*parent;
-	Bone		**bone_array;
-	int		num_bones;
-	Animation	*current_animation;
-} B_Model;
+	char			name[256];
+	mat4			local_space;
+	mat4			world_space;
+	mat4			original_position;
+	ActorMesh		*mesh;
+	int			num_children;
+	struct ActorModel 	**children;
+	struct ActorModel 	*parent;
+	Bone			**bone_array;
+	int			num_bones;
+	Animation		*current_animation;
+} ActorModel;
 
-/* Calculates the transform to be applied to the corresponding bone in an animated B_Model (B_Model->bone_array[id]). The
+/* Calculates the transform to be applied to the corresponding bone in an animated ActorModel (ActorModel->bone_array[id]). The
  * transformation is actually applied to each bone in apply_animation. */
 void advance_animation(AnimationNode *node, float current_time);
 
-/* This is where the current_transform of each AnimationNode is applied to each Bone in the animated B_Model. */
+/* This is where the current_transform of each AnimationNode is applied to each Bone in the animated ActorModel. */
 void apply_animation(AnimationNode **node_array, AnimationNode *node, 
 		      Bone **bone_array, Bone *bone, 
 		      mat4 parent_transform);
@@ -176,8 +174,8 @@ void apply_animation(AnimationNode **node_array, AnimationNode *node,
 PointLight create_point_light(vec3 position, vec3 color, float intensity);
 int B_check_shader(unsigned int id, const char *name, int status);
 Renderer create_default_renderer(B_Window window);
-void B_blit_model(B_Model *model, Camera camera, B_Shader shader);
-void B_free_model(B_Model *model);
+void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader);
+void B_free_model(ActorModel *model);
 void free_animation(Animation *animation);
 void free_bone(Bone *bone);
 

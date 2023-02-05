@@ -114,7 +114,7 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 		fprintf(stderr, "get_data_after_punctuated error: data end key %s not found\n", end_key);
 		data_end = data+data_length;
 	}
-	/* TODO: Write an uglier for loop than this */
+	// This is the ugliest for loop I've ever seen
 	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128))) != NULL; ++i)
 	{
 		start += strnlen(search_key, 128);
@@ -122,8 +122,8 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 		num_elements++;
 	}
 
-	uint8_t **return_data = (uint8_t **)malloc(sizeof(uint8_t*)*num_elements);
-	*element_sizes = malloc(sizeof(unsigned int)*num_elements);
+	uint8_t **return_data = BG_MALLOC(uint8_t*, num_elements);
+	*element_sizes = BG_MALLOC(unsigned int, num_elements);
 	data_iter = data;
 	for (int i = 0; i < num_elements; ++i)
 	{
@@ -141,7 +141,7 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 			end = data_end;
 		}
 		int length = end - start;
-		return_data[i] = (uint8_t *)malloc(length);
+		return_data[i] = BG_MALLOC(uint8_t, length);
 		return_data[i] = memcpy(return_data[i], start, length);
 
 		(*element_sizes)[i] = length;
@@ -158,7 +158,6 @@ uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_leng
 	uint8_t *start;
 	uint8_t *end;
 	int num_elements = 0;
-	/* TODO: Write an uglier for loop than this */
 	for (int i = 0; (start = memmem(data_iter, data_end-data_iter, search_key, strnlen(search_key, 128))) != NULL; ++i)
 	{
 		start += strnlen(search_key, 128);
@@ -166,8 +165,8 @@ uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_leng
 		num_elements++;
 	}
 
-	uint8_t **return_data = (uint8_t **)malloc(sizeof(uint8_t*)*num_elements);
-	*element_sizes = (unsigned int *)malloc(sizeof(unsigned int)*num_elements);
+	uint8_t **return_data = BG_MALLOC(uint8_t*, num_elements);
+	*element_sizes = BG_MALLOC(unsigned int, num_elements);
 	data_iter = data;
 	for (int i = 0; i < num_elements; ++i)
 	{
@@ -181,7 +180,7 @@ uint8_t **get_data_after(uint8_t *data, char *search_key, unsigned int data_leng
 			end = data_end;
 		}
 		int length = end - start;
-		return_data[i] = (uint8_t *)malloc(length);
+		return_data[i] = BG_MALLOC(uint8_t, length);
 		return_data[i] = memcpy(return_data[i], start, length);
 		(*element_sizes)[i] = length;
 		

@@ -29,23 +29,16 @@
 #include "actor_state.h"
 #include "window.h"
 #include "camera.h"
-#include "graphics.h"
+#include "actor_rendering.h"
 #include "actor.h"
 #include "input.h"
 #include "time.h"
 #include "utils.h"
-#include "tessellation.h"
+#include "terrain.h"
 #include "debug.h"
 
 /* UP NEXT: 
- * 	Get the monkey back on screen */
-
-//TODO: Change all the exit(0)'s to exit(-1)'s
-//TODO: Don't forget to put license info at the top of new files.
-//TODO: Rearrange the beginning of game_loop so things are layed out sensibly and not just vomited all out at once.
-//TODO: Change unsigned int g_buffer to B_FameBuffer g_buffer
-//TODO: Get rid of the draw_actor_geo_pass draw_actor_lighting_pass stuff. Just draw_actor, then once everything's drawn, lighthing_pass.
-
+ * 	Figure out color */
 
 void server_loop(const char *port)
 {
@@ -177,7 +170,7 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 {
 	B_Message message;
 	memset(&message, 0, sizeof(B_Message));
-	NewPlayerPackage *package = malloc(sizeof(NewPlayerPackage));
+	NewPlayerPackage *package = BG_MALLOC(NewPlayerPackage, 1);
 	while (message.type != ID_ASSIGNMENT)
 	{
 		B_listen_for_message(connection, &message, NON_BLOCKING);
@@ -196,15 +189,17 @@ NewPlayerPackage *confirm_join_request(B_Connection connection)
 
 void game_loop(const char *server_name, const char *port)
 {
-	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
  	B_Window window = B_create_window();	
 	Renderer renderer = create_default_renderer(window);
+	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
 
+	// Player init
 	Actor all_actors[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		memset(&all_actors[i], 0, sizeof(Actor));
 	}
+
 	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
 	NewPlayerPackage *package = confirm_join_request(server_connection);
 	unsigned int player_id = package->my_id;
@@ -215,23 +210,29 @@ void game_loop(const char *server_name, const char *port)
 	}
 	BG_FREE(package);
 	all_actors[player_id] = create_player(player_id);
+
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
 	command_state.toggle_anti_aliasing = 1;
-	float delta_t = 15.0;
-	float frame_time = 0;
-	int running = 1;
-	int frames = 0;
 
-	T_Mesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 64, 64);
-	B_Shader terrain_geo_shader = B_compile_terrain_shader("src/terrain_shader.vert",
+	// Environment init
+	TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 64, 64);
+
+	// Compile shaders
+	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
 							   "src/terrain_shader.frag",
 							   "src/terrain_shader.geo",
 							   "src/terrain_shader.ctess",
 							   "src/terrain_shader.etess");
-	B_Shader lighting_shader = B_setup_shader("src/terrain_lighting_shader.vert",
-					          "src/terrain_lighting_shader.frag");
+	B_Shader actor_shader = B_compile_actor_shader("src/actor_shader.vert",
+					               "src/actor_shader.frag");
+	B_Shader lighting_shader = B_compile_actor_shader("src/terrain_lighting_shader.vert",
+					          	  "src/terrain_lighting_shader.frag");
+	float delta_t = 15.0;
+	float frame_time = 0;
+	int running = 1;
+	int frames = 0;
 							
 	while (running)
 	{
@@ -304,12 +305,12 @@ void game_loop(const char *server_name, const char *port)
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			update_model(all_actors[i].model, all_actors[i].actor_state);
+			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
 		B_clear_window(renderer.window);
-		B_draw_terrain(terrain_mesh, terrain_geo_shader, &renderer.camera);
-		B_draw_actors(all_actors, num_players, renderer);
+		B_draw_terrain(terrain_mesh, terrain_shader, &renderer.camera);
+		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 		B_render_lighting(renderer, lighting_shader);
 		B_flip_window(renderer.window);
 
@@ -318,12 +319,18 @@ void game_loop(const char *server_name, const char *port)
 			free_message(message);
 		}
 	}
+
 	for (unsigned int i = 0; i < num_players; ++i)
 	{
 		free_actor(all_actors[i]);
 	}
+
 	B_close_connection(server_connection);
 	B_free_window(window);
+	free_renderer(renderer);
+	B_free_shader(terrain_shader);
+	B_free_shader(actor_shader);
+	B_free_shader(lighting_shader);
 }
 
 /* Just sets up and dives right into the main loop 

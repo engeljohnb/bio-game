@@ -23,15 +23,15 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>       
 #include <assimp/postprocess.h> 
-#include "graphics.h"
+#include "actor_rendering.h"
 
 /* Since I'm not a good programmer, there are some kinks you need to work around to load a model properly.
  * Mostly, you need to make sure the root bone for any skinned mesh has translation (0,0,0), rotation (0,0,0), and scale (1,1,1). 
  * I'll fix it later if I can figure out what's wrong, but I've been stuck on this for a week and need to move on already.
  *
  * Also, only one skinned mesh, and it must not be the child of another mesh. */
-B_Model *B_load_model_from_file(const char *filename);
-void B_send_mesh_to_gpu(B_Mesh *mesh, VertexData *vertex_data);
+ActorModel *B_load_model_from_file(const char *filename);
+void B_send_mesh_to_gpu(ActorMesh *mesh, VertexData *vertex_data);
 Animation **B_load_animations_from_file(const char *filename, int *num_animations);
 void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *current_bone, Bone *parent, C_STRUCT aiBone **bones, int num_bones);
 Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh);
