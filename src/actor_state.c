@@ -29,15 +29,16 @@
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state)
 {
 	glm_vec3_zero(command_state->move_direction);
+	// TODO: Why is actor_state->front pointing the wrong way?
 	if (command_state->movement & M_BACKWARD)
 	{
-		vec3 backward;
-		glm_vec3_negate_to(actor_state->front, backward);
-		glm_vec3_add(backward, command_state->move_direction, command_state->move_direction);
+		glm_vec3_add(actor_state->front, command_state->move_direction, command_state->move_direction);
 	}
 	if (command_state->movement & M_FORWARD)
 	{
-		glm_vec3_add(actor_state->front, command_state->move_direction, command_state->move_direction);
+		vec3 forward;
+		glm_vec3_negate_to(actor_state->front, forward);
+		glm_vec3_add(forward, command_state->move_direction, command_state->move_direction);
 	}
 	
 	if (command_state->movement & M_LEFT)
@@ -75,9 +76,12 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 		actor_state->speed = 0;
 	}
 
+	mat4 rotation_dest;
+	get_rotation_matrix(command_state.look_x, command_state.look_y, rotation_dest);
+	glm_mat4_mulv3(rotation_dest, VEC3_Z_DOWN, 0, actor_state->front);
+	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, actor_state->right);
+
 	vec3 velocity;
-	turn(actor_state->front, command_state.look_x, 0, VEC3_Z_UP, NULL);
-	turn(actor_state->right, command_state.look_x, 0, VEC3_X_DOWN, NULL);
 	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 }

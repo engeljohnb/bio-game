@@ -87,7 +87,7 @@ void B_draw_terrain(TerrainMesh mesh, B_Shader shader, Camera *camera)
 	glm_mat4_mul(camera->projection_space, camera->view_space, projection_view);
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
-	B_set_uniform_float(shader, "tessellation_level", 16);
+	B_set_uniform_float(shader, "tessellation_level", 16.0);
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

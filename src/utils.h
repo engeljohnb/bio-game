@@ -71,7 +71,9 @@ uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_k
 int vec3_equal(float a[3], float b[3]);
 int vec3_zero(float a[3]);
 int valid(void *ptr);
-void turn(vec3 front, float x, float y, vec3 axis, mat4 dest);
+void pitch(float angle, mat4 dest);
+void yaw(float angle, mat4 dest);
+void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
  * I'm just too lazy to go back and change each call.

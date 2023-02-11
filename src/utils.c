@@ -48,14 +48,36 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
-void turn(vec3 front, float x, float y, vec3 axis, mat4 dest)
+void yaw(float angle, mat4 dest)
 {
 	mat4 destination;
-	glm_mat4_identity(destination);
-	glm_euler(VEC3(RAD(y), RAD(x), 0), destination);
-	glm_vec3_copy(axis, front);
-	glm_mat4_mulv3(destination, front, 1, front);
-	glm_normalize(front);
+	float yaw = RAD(angle);
+	glm_euler(VEC3(0, yaw, 0), destination);
+	if (dest != NULL)
+	{
+		glm_mat4_copy(destination, dest);
+	}
+}
+
+void pitch(float angle, mat4 dest)
+{
+	mat4 destination;
+	float pitch = RAD(angle);
+	glm_euler(VEC3(pitch, 0, 0), destination);
+	if (dest != NULL)
+	{
+		glm_mat4_copy(destination, dest);
+	}
+}
+
+void get_rotation_matrix(float yaw, float pitch, mat4 dest)
+{
+	mat4 destination;
+
+	float yaw_rad = RAD(yaw);
+	float pitch_rad = RAD(pitch);
+
+	glm_euler_yxz(VEC3(pitch_rad, yaw_rad, 0), destination);
 	if (dest != NULL)
 	{
 		glm_mat4_copy(destination, dest);

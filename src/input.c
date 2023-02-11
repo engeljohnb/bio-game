@@ -39,9 +39,8 @@ CommandConfig default_command_config(void)
 }
 
 /* Sets a command state based on user input. */
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction)
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 {
-	glm_vec3_copy(move_direction, command_state->move_direction);
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -112,10 +111,11 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config,
 				}
 				break;
 			}
+
 			case SDL_MOUSEMOTION:
 			{
-				command_state->look_x += (float)event.motion.xrel*0.4;
-				command_state->look_y += (float)event.motion.yrel*0.4;
+				command_state->look_x += (float)event.motion.xrel*0.04;
+				command_state->look_y += (float)event.motion.yrel*0.04;
 				break;
 			}
 			default:

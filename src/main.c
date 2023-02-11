@@ -37,7 +37,7 @@
 #include "terrain.h"
 
 /* UP NEXT: 
- * 	Fix the monkey movement.
+ * 	Make the tessellation level proximity-dependent
  * 	Then figure out color */
 
 void server_loop(const char *port)
@@ -238,7 +238,7 @@ void game_loop(const char *server_name, const char *port)
 	{
 		unsigned int num_states = 0;
 		B_Message message;
-		B_update_command_state_ui(&command_state, all_actors[player_id].command_config, renderer.camera.front);
+		B_update_command_state_ui(&command_state, all_actors[player_id].command_config);
 		if (command_state.quit)
 		{
 			running = 0;
@@ -309,7 +309,7 @@ void game_loop(const char *server_name, const char *port)
 		}
 
 		// Render
-		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.euler);
+		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.pitch);
 		B_clear_window(renderer.window);
 		B_draw_terrain(terrain_mesh, terrain_shader, &renderer.camera);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);

@@ -72,9 +72,9 @@ void update_actor_model(ActorModel *model, ActorState actor_state)
 
 	glm_translate(model->world_space, actor_state.position);
 
-	if (memcmp(actor_state.command_state.euler, GLM_MAT4_ZERO, sizeof(mat4)) != 0)
+	if (memcmp(actor_state.command_state.pitch, GLM_MAT4_ZERO, sizeof(mat4)) != 0)
 	{
-		glm_mat4_mul(model->world_space, actor_state.command_state.euler, model->world_space);
+		glm_mat4_mul(model->world_space, actor_state.command_state.pitch, model->world_space);
 	}
 	if (model->parent != NULL)
 	{

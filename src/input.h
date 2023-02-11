@@ -39,7 +39,8 @@ typedef struct
 	float		look_y;
 	int		toggle_anti_aliasing;
 	vec3		move_direction;
-	mat4		euler;
+	mat4		pitch;
+	mat4		yaw;
 } CommandState;
 
 
@@ -57,5 +58,5 @@ typedef struct
 } CommandConfig;
 
 CommandConfig default_command_config(void);
-int B_update_command_state_ui(CommandState *command_state, CommandConfig config, vec3 move_direction);
+int B_update_command_state_ui(CommandState *command_state, CommandConfig config);
 #endif

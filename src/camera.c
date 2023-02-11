@@ -37,11 +37,15 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 	glm_vec3_copy(front, camera.front);
 	glm_vec3_copy(VEC3_X_UP, camera.right);
 
-	vec3 frontpos;
-	glm_vec3_add(front, position, frontpos);
-
 	glm_vec3_copy(VEC3_ZERO, camera.move_direction);
 
+	mat4 rotation_dest;
+	get_rotation_matrix(0, 0, rotation_dest);
+	glm_mat4_mulv3(rotation_dest, VEC3_Z_DOWN, 0, camera.front);
+	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, camera.right);
+
+	vec3 frontpos;
+	glm_vec3_add(front, position, frontpos);
 	glm_lookat(frontpos, position, VEC3_Y_UP, camera.view_space);
 	return camera;
 }
@@ -65,11 +69,14 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 }
 
-void update_camera(Camera *camera, ActorState player, mat4 euler_dest)
+void update_camera(Camera *camera, ActorState player, mat4 rotation_dest)
 {
 	glm_vec3_copy(player.position, camera->position);
-        turn(camera->front, player.command_state.look_x, 0, VEC3_Z_DOWN, euler_dest);
-        turn(camera->right, player.command_state.look_x, 0, VEC3_X_DOWN, NULL);
+
+	get_rotation_matrix(player.command_state.look_x, player.command_state.look_y, rotation_dest);
+	glm_mat4_mulv3(rotation_dest, VEC3_Z_DOWN, 0, camera->front);
+	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, camera->right);
+
 	mat4 translate;
 	glm_mat4_identity(translate);
 	vec3 up;
