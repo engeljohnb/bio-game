@@ -18,6 +18,7 @@
 #ifndef __B_WINDOW_H__
 #define __B_WINDOW_H__
 #include <SDL2/SDL.h>
+#include <cglm/cglm.h>
 
 typedef struct
 {

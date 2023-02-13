@@ -44,12 +44,14 @@ void main()
 		{
 			continue;
 		}
+	
 		vec4 local_position = bone_matrices[bone_ids[i]] * vec4(v_position, 1.0);
 		final_position += local_position * bone_weights[i];
 		vec3 local_normal = normal * mat3(bone_matrices[bone_ids[i]]) * bone_weights[i];
 		final_normal += local_normal;
 	}
+
 	gl_Position = projection_view_space * world_space * final_position;
 	f_normal = normalize(normal_world_space * final_normal);
-	f_position = vec3(world_space * final_position);
+	f_position = vec3(world_space * vec4(v_position, 1.0));
 }

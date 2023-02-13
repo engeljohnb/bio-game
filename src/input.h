@@ -30,6 +30,13 @@ enum MOVEMENT_DIRECTION
 	M_BACKWARD = 	0x08
 };
 
+enum RENDER_MODE
+{
+	MODE_SHOW_LIGHTING,
+	MODE_SHOW_POSITION,
+	MODE_SHOW_NORMALS 
+};
+
 typedef struct
 {
 	uint8_t		quit;
@@ -39,8 +46,8 @@ typedef struct
 	float		look_y;
 	int		toggle_anti_aliasing;
 	vec3		move_direction;
-	mat4		pitch;
-	mat4		yaw;
+	int		mode;	
+	mat4		camera_rotation;
 } CommandState;
 
 

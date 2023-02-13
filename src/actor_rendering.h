@@ -26,13 +26,6 @@
 
 #define MAX_BONES 25
 
-typedef struct 
-{
-	vec3 	position;
-	vec3 	color;
-	float 	intensity;
-} PointLight;
-
 typedef struct
 {
 	GLfloat	position[3];

@@ -29,7 +29,7 @@
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state)
 {
 	glm_vec3_zero(command_state->move_direction);
-	// TODO: Why is actor_state->front pointing the wrong way?
+	// NOTE: Why is actor_state->front pointing the wrong way?
 	if (command_state->movement & M_BACKWARD)
 	{
 		glm_vec3_add(actor_state->front, command_state->move_direction, command_state->move_direction);

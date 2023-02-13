@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "window.h"
 #include "rendering.h"
 #include "utils.h"
 
@@ -108,7 +109,7 @@ void free_renderer(Renderer renderer)
 	glDeleteFramebuffers(1, &renderer.g_buffer);
 }
 
-void B_render_lighting(Renderer renderer, B_Shader shader)
+void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -118,14 +119,18 @@ void B_render_lighting(Renderer renderer, B_Shader shader)
 	glBindTexture(GL_TEXTURE_2D, renderer.position_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, renderer.normal_texture);
+
 	B_set_uniform_int(shader, "f_position_texture", 1);
 	B_set_uniform_int(shader, "f_normal_texture", 0);
+	B_set_uniform_point_light(shader, "point_light", point_light);
+	B_set_uniform_int(shader, "mode", mode);
+
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(renderer.lighting_vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
 }
 
-unsigned int B_compile_actor_shader(const char *vert_path, const char *frag_path)
+unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path)
 {	
 	unsigned int program_id = glCreateProgram();
 	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
@@ -301,4 +306,24 @@ void B_set_uniform_int(B_Shader shader, char *name, int value)
 {
 	glUseProgram(shader);
 	glUniform1i(glGetUniformLocation(shader, name), value);
+}
+
+void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value)
+{
+	glUseProgram(shader);
+	char intensity_name[256] = {0};
+	char position_name[256] = {0};
+	char color_name[256] = {0};
+
+	char *intensity = &intensity_name[0];
+	char *position = &position_name[0];
+	char *color = &color_name[0];
+
+	cat_to(name, ".intensity", intensity, 256);
+	cat_to(name, ".position", position, 256);
+	cat_to(name, ".color", color, 256);
+	
+	glUniform1f(glGetUniformLocation(shader, intensity_name), value.intensity);
+	glUniform3f(glGetUniformLocation(shader, position_name), value.position[0], value.position[1], value.position[2]);
+	glUniform3f(glGetUniformLocation(shader, color_name), value.color[0], value.color[1], value.color[2]);
 }

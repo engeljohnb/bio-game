@@ -109,6 +109,19 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 						glDisable(GL_MULTISAMPLE);
 					}
 				}
+				//DEBUG
+				else if (key == SDLK_p)
+				{
+					command_state->mode = MODE_SHOW_POSITION;
+				}
+				else if (key == SDLK_n)
+				{
+					command_state->mode = MODE_SHOW_NORMALS;
+				}
+				else if (key == SDLK_i)
+				{
+					command_state->mode = MODE_SHOW_LIGHTING;
+				}
 				break;
 			}
 
@@ -116,6 +129,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 			{
 				command_state->look_x += (float)event.motion.xrel*0.04;
 				command_state->look_y += (float)event.motion.yrel*0.04;
+				get_rotation_matrix(command_state->look_x, command_state->look_y, command_state->camera_rotation);
 				break;
 			}
 			default:

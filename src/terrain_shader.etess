@@ -184,10 +184,11 @@ void main()
 
 	float x_index = float(int(gl_PrimitiveID) % patches_per_column);
 	float y_index = round(gl_PrimitiveID / patches_per_column);
-	float x_offset = (x_index*SCALE) - (SCALE*float(patches_per_column)/2);
-	float y_offset = (y_index*SCALE) - (SCALE*float(patches_per_column)/2);
+	float max_xy = SCALE*float(patches_per_column)/2;
+	float x_offset = (x_index*SCALE) - max_xy;
+	float y_offset = (y_index*SCALE) - max_xy;
 
-	float height = fbm(vec2(u + x_offset, v + y_offset)) * 100;
+	float height = fbm(vec2(u + x_offset, v + y_offset)/max_xy) * SCALE;
 	vec4 pos = vec4(u + x_offset, height-80.0f, v+ y_offset, 1.0);
 	gl_Position = pos;
 }

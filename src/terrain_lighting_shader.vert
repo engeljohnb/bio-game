@@ -20,7 +20,7 @@
 
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec2 v_tex_coords;
-
+uniform mat4 projection_view;
 out vec2 f_tex_coords;
 
 void main()

@@ -48,6 +48,14 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
+void cat_to(char *first, char *second, char *dest, size_t size)
+{
+	char first_copy[size];
+	strncpy(first_copy, first, size);
+	strncat(first_copy, second, size);
+	strncpy(dest, first_copy, size);
+}
+
 void yaw(float angle, mat4 dest)
 {
 	mat4 destination;

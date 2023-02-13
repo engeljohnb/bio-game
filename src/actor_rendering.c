@@ -30,11 +30,7 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 	{
 		static float current_time = 0.0f;
 		glBindVertexArray(model->mesh->vao);
-		vec4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-		PointLight point_light = create_point_light(VEC3(0,0,0), VEC3(1,1,1), 1.0);
-		B_set_uniform_vec3(shader, "point_lights[0].position", point_light.position);
-		B_set_uniform_vec3(shader, "point_lights[0].color", point_light.color);
-		B_set_uniform_float(shader, "point_lights[0].intensity", point_light.intensity);
+		vec4 color = {1.0f, 1.0f, 0.0f, 1.0f};
 		B_set_uniform_vec4(shader, "color", color);
 		mat4 projection_view;
 		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);

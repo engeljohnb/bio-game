@@ -35,9 +35,10 @@
 #include "time.h"
 #include "utils.h"
 #include "terrain.h"
+#include "asset_loading.h"
 
 /* UP NEXT: 
- * 	Make the tessellation level proximity-dependent
+ * 	Why is the monkey being lit differently from everything else?
  * 	Then figure out color */
 
 void server_loop(const char *port)
@@ -217,7 +218,7 @@ void game_loop(const char *server_name, const char *port)
 	command_state.toggle_anti_aliasing = 1;
 
 	// Environment init
-	TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 64, 64);
+	TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 4, 4);
 
 	// Compile shaders
 	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
@@ -225,10 +226,11 @@ void game_loop(const char *server_name, const char *port)
 							   "src/terrain_shader.geo",
 							   "src/terrain_shader.ctess",
 							   "src/terrain_shader.etess");
-	B_Shader actor_shader = B_compile_actor_shader("src/actor_shader.vert",
-					               "src/actor_shader.frag");
-	B_Shader lighting_shader = B_compile_actor_shader("src/terrain_lighting_shader.vert",
-					          	  "src/terrain_lighting_shader.frag");
+	B_Shader actor_shader = B_compile_simple_shader("src/actor_shader.vert",
+					                "src/actor_shader.frag");
+	B_Shader lighting_shader = B_compile_simple_shader("src/terrain_lighting_shader.vert",
+					          	   "src/terrain_lighting_shader.frag");
+
 	float delta_t = 15.0;
 	float frame_time = 0;
 	int running = 1;
@@ -254,13 +256,6 @@ void game_loop(const char *server_name, const char *port)
 				SDL_Delay(10);
 				break;
 			}
-			/*else if ((frames % 10) == 0)
-			{
-				message_return = 0;
-				free_message(message);
-				all_actors[player_id].actor_state.command_state = command_state;
-				break;
-			}*/
 			switch (message.type)
 			{
 				case ACTOR_STATE:
@@ -309,11 +304,20 @@ void game_loop(const char *server_name, const char *port)
 		}
 
 		// Render
-		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.pitch);
+		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
 		B_clear_window(renderer.window);
 		B_draw_terrain(terrain_mesh, terrain_shader, &renderer.camera);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		B_render_lighting(renderer, lighting_shader);
+
+		PointLight point_light;
+		memset(&point_light, 0, sizeof(PointLight));
+		// Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
+		// before sending to the GPU.
+		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0f, 50.0f, 0.0f), point_light.position);
+		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
+		point_light.intensity = 1.0f;
+
+		B_render_lighting(renderer, lighting_shader, point_light, command_state.mode);
 		B_flip_window(renderer.window);
 
 		if (message_return > 0)
