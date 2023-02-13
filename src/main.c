@@ -313,7 +313,6 @@ void game_loop(const char *server_name, const char *port)
 		memset(&point_light, 0, sizeof(PointLight));
 		// Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
 		// before sending to the GPU.
-		//glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0f, 50.0f, 0.0f), point_light.position);
 		glm_vec3_copy(GLM_VEC3_ZERO, point_light.position);
 		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
 		point_light.intensity = 1.0f;

@@ -66,8 +66,8 @@ void B_assign_all_color_textures(ActorModel *model, B_Texture texture)
 	}
 }
 
-//TODO B_free_Texture
-//TODO: Document that the texture data must be RGB.
+
+// Careful: The texture data MUST be RGB format.
 B_Texture B_send_texture_data_to_gpu(unsigned char *pixel_data, int width, int height)
 {
 	B_Texture texture = 0;
@@ -242,7 +242,6 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 		}
 	}
 
-	b_mesh->active = 1;
 	B_send_mesh_to_gpu(b_mesh, &vertex_data);
 	BG_FREE(vertex_data.vertices);
 	BG_FREE(vertex_data.faces);
@@ -681,5 +680,10 @@ void B_send_mesh_to_gpu(ActorMesh *mesh, VertexData *vertex_data)
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 	glEnableVertexAttribArray(4);
+}
+
+void B_free_texture(B_Texture texture)
+{
+	glDeleteTextures(1, &texture);
 }
 

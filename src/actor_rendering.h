@@ -123,7 +123,6 @@ typedef struct VertexData
 
 typedef struct ActorMesh
 {
-	int		active;
 	int 		num_vertices;
 	int		num_faces;	
 	unsigned int 	vao;
@@ -153,6 +152,7 @@ typedef struct ActorModel
 	Bone			**bone_array;
 	int			num_bones;
 	Animation		*current_animation;
+	/* The texture containing the local colors of the model (what do you call it? Albedo?) */
 	B_Texture		color_texture;
 } ActorModel;
 

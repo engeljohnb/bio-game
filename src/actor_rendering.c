@@ -22,73 +22,71 @@
 #include "camera.h"
 #include "window.h"
 #include "actor_rendering.h"
+#include "asset_loading.h"
 #include "utils.h"
 
 void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 {
-	// TODO: Is this "if" really necessary?
-	if (model->mesh->active)
+	static float current_time = 0.0f;
+	glBindVertexArray(model->mesh->vao);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, model->color_texture);
+	B_set_uniform_int(shader, "color_texture", 0);
+
+	mat4 projection_view;
+	glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
+	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
+	B_set_uniform_mat4(shader, "world_space", model->world_space);
+
+	if (model->current_animation != NULL)
 	{
-		static float current_time = 0.0f;
-		glBindVertexArray(model->mesh->vao);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, model->color_texture);
-		B_set_uniform_int(shader, "color_texture", 0);
-
-		mat4 projection_view;
-		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
-		B_set_uniform_mat4(shader, "projection_view_space", projection_view);
-		B_set_uniform_mat4(shader, "world_space", model->world_space);
-
-		if (model->current_animation != NULL)
+		for (int i = 0; i < model->current_animation->num_nodes; ++i)
 		{
-			for (int i = 0; i < model->current_animation->num_nodes; ++i)
-			{
-				advance_animation(model->current_animation->node_array[i], current_time);
-			}
-			apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
-					 model->bone_array, model->bone_array[0], 
-					 GLM_MAT4_IDENTITY);
-			for (int i = 0; i < model->current_animation->num_nodes; ++i)
-			{
-				int id = model->bone_array[i]->id;
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", id);
-				B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
-			}
-			for (int i = model->num_bones; i < MAX_BONES; ++i)
-			{
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", i);
-				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-			}
-			current_time += 15.0;
-			if (current_time >= model->current_animation->duration)
-			{
-				current_time = 0.0f;
-			}
+			advance_animation(model->current_animation->node_array[i], current_time);
 		}
-		else
+		apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
+				 model->bone_array, model->bone_array[0], 
+				 GLM_MAT4_IDENTITY);
+		for (int i = 0; i < model->current_animation->num_nodes; ++i)
 		{
-			for (int i = 0; i < MAX_BONES; ++i)
-			{
-				char string[128] = {0};
-				snprintf(string, 128, "bone_matrices[%i]", i);
-				B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
-			}
+			int id = model->bone_array[i]->id;
+			char string[128] = {0};
+			snprintf(string, 128, "bone_matrices[%i]", id);
+			B_set_uniform_mat4(shader, string, model->bone_array[id]->current_transform);
 		}
-
-		glUseProgram(shader);
-		if (model->mesh->num_faces)
+		for (int i = model->num_bones; i < MAX_BONES; ++i)
 		{
-			glDrawElements(GL_TRIANGLES, model->mesh->num_faces, GL_UNSIGNED_INT, 0);
+			char string[128] = {0};
+			snprintf(string, 128, "bone_matrices[%i]", i);
+			B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
 		}
-		else
+		current_time += 15.0;
+		if (current_time >= model->current_animation->duration)
 		{
-			glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertices);
+			current_time = 0.0f;
 		}
 	}
+	else
+	{
+		for (int i = 0; i < MAX_BONES; ++i)
+		{
+			char string[128] = {0};
+			snprintf(string, 128, "bone_matrices[%i]", i);
+			B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
+		}
+	}
+
+	glUseProgram(shader);
+	if (model->mesh->num_faces)
+	{
+		glDrawElements(GL_TRIANGLES, model->mesh->num_faces, GL_UNSIGNED_INT, 0);
+	}
+	else
+	{
+		glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertices);
+	}
+
 	for (int i = 0; i < model->num_children; ++i)
 	{
 		B_draw_actor_model(model->children[i], camera, shader);
@@ -258,16 +256,14 @@ void advance_animation(AnimationNode *node, float current_time)
 
 void B_free_mesh(ActorMesh *mesh)
 {
-	if (mesh->active)
-	{
-		glDeleteBuffers(1, &(mesh->ebo));
-		glDeleteBuffers(1, &(mesh->vbo));
-	}
+	glDeleteBuffers(1, &(mesh->ebo));
+	glDeleteBuffers(1, &(mesh->vbo));
 	BG_FREE(mesh);
 }
 
 void B_free_model(ActorModel *model)
 {
+	B_free_texture(model->color_texture);
 	B_free_mesh(model->mesh);
 	for (int i = 0; i < model->num_bones; ++i)
 	{
