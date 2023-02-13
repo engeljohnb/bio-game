@@ -153,6 +153,7 @@ typedef struct ActorModel
 	Bone			**bone_array;
 	int			num_bones;
 	Animation		*current_animation;
+	B_Texture		color_texture;
 } ActorModel;
 
 /* Calculates the transform to be applied to the corresponding bone in an animated ActorModel (ActorModel->bone_array[id]). The

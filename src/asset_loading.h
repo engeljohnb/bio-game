@@ -35,4 +35,6 @@ void B_send_mesh_to_gpu(ActorMesh *mesh, VertexData *vertex_data);
 Animation **B_load_animations_from_file(const char *filename, int *num_animations);
 void B_load_bone_array_iter(C_STRUCT aiNode *node, Bone **bone_array, Bone *current_bone, Bone *parent, C_STRUCT aiBone **bones, int num_bones);
 Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh);
+B_Texture B_send_texture_to_gpu(const char *filename);
+void B_assign_all_color_textures(ActorModel *model, B_Texture texture);
 #endif

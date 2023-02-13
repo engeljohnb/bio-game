@@ -42,6 +42,7 @@ typedef struct
 	float		delta_t;
 	B_Texture	normal_texture;
 	B_Texture	position_texture;
+	B_Texture	color_texture;
 	B_Framebuffer	g_buffer;
 	unsigned int	lighting_vao;
 	unsigned int	lighting_vbo;
@@ -55,7 +56,7 @@ typedef struct
 } PointLight;
 
 
-B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo);
+B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo);
 void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode);
 Renderer create_default_renderer(B_Window window);
 void free_renderer(Renderer renderer);

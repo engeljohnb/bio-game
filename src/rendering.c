@@ -22,7 +22,7 @@
 #include "rendering.h"
 #include "utils.h"
 
-B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo)
+B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo)
 {
 	GLfloat texture_vertices[] = { 
 	// position		// tex_coords
@@ -37,6 +37,7 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 
 	B_Texture _normal_texture = 0;
 	B_Texture _position_texture = 0;
+	B_Texture _color_texture = 0;
 	unsigned int _lighting_vao = 0;
 	unsigned int _lighting_vbo = 0;
 	B_Framebuffer g_buffer = 0;
@@ -73,8 +74,15 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _position_texture, 0);
 
-	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, attachments);
+	glGenTextures(1, &_color_texture);
+	glBindTexture(GL_TEXTURE_2D, _color_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _color_texture, 0);
+
+	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
 	unsigned int depth_buffer;
         glGenRenderbuffers(1, &depth_buffer);
         glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
@@ -84,6 +92,7 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 
 	*position_texture = _position_texture;
 	*normal_texture = _normal_texture;
+	*color_texture = _color_texture;
 	*lighting_vao = _lighting_vao;
 	*lighting_vbo = _lighting_vbo;
 	return g_buffer;
@@ -95,7 +104,7 @@ Renderer create_default_renderer(B_Window window)
 	Renderer renderer;
 	renderer.camera = camera;
 	renderer.window = window;
-	renderer.g_buffer = B_generate_g_buffer(&renderer.normal_texture, &renderer.position_texture, 
+	renderer.g_buffer = B_generate_g_buffer(&renderer.normal_texture, &renderer.position_texture, &renderer.color_texture,
 						&renderer.lighting_vao, &renderer.lighting_vbo);
 	return renderer;
 }
@@ -119,9 +128,12 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	glBindTexture(GL_TEXTURE_2D, renderer.position_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, renderer.normal_texture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, renderer.color_texture);
 
 	B_set_uniform_int(shader, "f_position_texture", 1);
 	B_set_uniform_int(shader, "f_normal_texture", 0);
+	B_set_uniform_int(shader, "f_color_texture", 2);
 	B_set_uniform_point_light(shader, "point_light", point_light);
 	B_set_uniform_int(shader, "mode", mode);
 

@@ -86,4 +86,6 @@ void print_mat4(mat4 mat);
 /* Appends second to first and stores the resulting string in dest. Size is the size of dest. */
 void cat_to(char *first, char *second, char *dest, size_t size);
 void *_bg_malloc(size_t size);
+int file_exists(const char *filename);
+char *get_directory_name(const char *file);
 #endif

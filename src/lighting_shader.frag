@@ -20,6 +20,8 @@
 #define SHOW_LIGHTING 0
 #define SHOW_POSITION 1
 #define SHOW_NORMALS 2
+#define SHOW_COLOR 3
+
 struct PointLight
 {
 	vec3 	position;
@@ -38,6 +40,8 @@ in vec2 f_tex_coords;
 out vec4 frag_color;
 uniform sampler2D f_normal_texture;
 uniform sampler2D f_position_texture;
+uniform sampler2D f_color_texture;
+
 uniform PointLight point_light;
 uniform int mode;
 
@@ -71,6 +75,7 @@ void main()
 {
 	vec3 position = vec3(texture(f_position_texture, f_tex_coords));
 	vec3 normal = vec3(texture(f_normal_texture, f_tex_coords));
+	vec3 color = vec3(texture(f_color_texture, f_tex_coords));
 	DirectionLight direction_light;
 	direction_light.direction = normalize(vec3(0.0f, 1.0f, 1.0f));
 	direction_light.intensity = 0.3;
@@ -87,18 +92,20 @@ void main()
 		}
 		else
 		{
-			frag_color = result;// * vec4(1.0, 0.0, 0.0, 1.0);
+			frag_color = result * vec4(color, 1.0);
 		}
 	}
 
 	else if (mode == SHOW_POSITION)
 	{ 
 		frag_color = vec4(position, 1.0);
-	/*	vec3 light_position = point_light.position * 0.01f;
-		frag_color = vec4(vec3(1/distance(light_position.xy, position.xy)), 1.0);*/
 	}
 	else if (mode == SHOW_NORMALS)
 	{
 		frag_color = vec4(normal, 1.0);
+	}
+	else if (mode == SHOW_COLOR)
+	{
+		frag_color = vec4(color, 1.0);
 	}
 }

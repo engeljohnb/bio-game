@@ -15,12 +15,103 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <unistd.h>
 #include <cglm/cglm.h>
 #include "asset_loading.h"
 #include <assimp/cimport.h>
 #include <assimp/scene.h>       
 #include <assimp/postprocess.h> 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "utils.h"
+
+char *B_get_texture_name(const char *parent_directory, const char *node_name)
+{
+	// First, remove all the numbers and dots -- we only need the base name.
+	char new_node_name[256] = {0};
+	strncpy(new_node_name, node_name, 256);
+	for (size_t i = 0; i < strnlen(new_node_name, 256); ++i)
+	{
+		if (new_node_name[i] == '.')
+		{
+			new_node_name[i] = '\0';
+		}
+		if ((new_node_name[i] >= '0') && (new_node_name[i] <= '9'))
+		{
+			new_node_name[i] = '\0';
+		}
+	}
+
+	char *final_name = BG_MALLOC(char, 512);
+	strncpy(final_name, parent_directory, 512);
+	strncat(final_name, "/", 512);
+	strncat(final_name, new_node_name, 512);
+	strncat(final_name, "_texture.jpg", 512);
+
+	if (file_exists(final_name))
+	{
+		return final_name;
+	}
+
+	BG_FREE(final_name);
+	return NULL;
+}
+
+void B_assign_all_color_textures(ActorModel *model, B_Texture texture)
+{
+	model->color_texture = texture;
+	for (int i = 0; i < model->num_children; ++i)
+	{
+		B_assign_all_color_textures(model->children[i], texture);
+	}
+}
+
+//TODO B_free_Texture
+//TODO: Document that the texture data must be RGB.
+B_Texture B_send_texture_data_to_gpu(unsigned char *pixel_data, int width, int height)
+{
+	B_Texture texture = 0;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	return texture;
+}
+
+B_Texture B_send_texture_to_gpu(const char *filename)
+{
+	B_Texture texture = 0;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	int width = 0;
+	int height = 0;
+	unsigned char *pixel_data = stbi_load(filename, &width, &height, NULL, 0);
+
+	if (pixel_data == NULL)
+	{
+		fprintf(stderr, "B_send_texture_to_gpu error: Could not load file %s\n", filename);
+		pixel_data = BG_MALLOC(unsigned char, 16*16);
+		width = 16;
+		height = 16;
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	if (pixel_data != NULL)
+	{
+		stbi_image_free(pixel_data);
+	}
+	else
+	{
+		BG_FREE(pixel_data);
+	}
+
+	return texture;
+}
 
 C_STRUCT aiMatrix4x4 cglm_to_assimp_mat4(mat4 source)
 {
@@ -150,6 +241,7 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 			}
 		}
 	}
+
 	b_mesh->active = 1;
 	B_send_mesh_to_gpu(b_mesh, &vertex_data);
 	BG_FREE(vertex_data.vertices);
@@ -185,10 +277,29 @@ C_STRUCT aiNode *B_get_root_model(C_STRUCT aiNode *root)
 	return return_node;
 }
 
-void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorModel *model, ActorModel *parent)
+B_Texture B_load_texture(const char *node_name, const char *parent_directory)
+{
+	char *filename = B_get_texture_name(parent_directory, node_name);
+	B_Texture texture = 0;
+	if (filename == NULL)
+	{
+		unsigned char *pixel_data = BG_MALLOC(unsigned char, 16*16);
+		texture = B_send_texture_data_to_gpu(pixel_data, 16, 16);
+		BG_FREE(pixel_data);
+	}
+	else
+	{
+		texture = B_send_texture_to_gpu(filename);
+		BG_FREE(filename);
+	}
+	return texture;
+}
+
+void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorModel *model, ActorModel *parent, const char *parent_directory)
 {
 	strncpy(model->name, node->mName.data, 255);
 	B_load_ai_mesh_iter(scene, node, model);
+	model->color_texture = B_load_texture(node->mName.data, parent_directory);
 	model->parent = parent;
 	if (node->mNumChildren)
 	{
@@ -197,7 +308,7 @@ void B_load_ai_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorM
 		for (unsigned int i = 0; i < node->mNumChildren; ++i)
 		{
 			model->children[i] = BG_MALLOC(ActorModel, 1);
-			B_load_ai_mesh(scene, node->mChildren[i], model->children[i], model);
+			B_load_ai_mesh(scene, node->mChildren[i], model->children[i], model, parent_directory);
 		}
 	}
 }
@@ -229,10 +340,10 @@ void B_apply_node_transformations(C_STRUCT aiNode *node, ActorModel *model, mat4
 
 }
 
-void B_load_ai_scene(const C_STRUCT aiScene *scene, ActorModel *model)
+void B_load_ai_scene(const C_STRUCT aiScene *scene, ActorModel *model, const char *parent_directory)
 {
 	C_STRUCT aiNode *root_model = B_get_root_model(scene->mRootNode);
-	B_load_ai_mesh(scene, root_model, model, NULL);
+	B_load_ai_mesh(scene, root_model, model, NULL, parent_directory);
 	mat4 root_transform;
 	assimp_to_cglm_mat4(scene->mRootNode->mTransformation, root_transform);
 	B_apply_node_transformations(scene->mRootNode, model, GLM_MAT4_IDENTITY);	
@@ -243,7 +354,8 @@ ActorModel *B_load_model_from_file(const char *filename)
 	ActorModel *model = NULL;
 	model = BG_MALLOC(ActorModel, 1);
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
-	B_load_ai_scene(scene, model);
+	char *dir_name = get_directory_name(filename);
+	B_load_ai_scene(scene, model, dir_name);
 	aiReleaseImport(scene);
 	return model;
 }
@@ -521,6 +633,7 @@ Animation *B_load_animation(const C_STRUCT aiScene *scene, C_STRUCT aiAnimation 
 			       animation->node_array[0], animation->node_array);
 	animation->duration = ai_animation->mDuration;
 	animation->num_nodes = mesh->mNumBones;
+
 
 	return animation;
 }

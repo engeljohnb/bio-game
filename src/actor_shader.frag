@@ -22,11 +22,16 @@
 
 layout (location = 0) out vec3 frag_normal;
 layout (location = 1) out vec3 frag_position;
+layout (location = 2) out vec3 frag_color;
 in vec3 f_normal;
+in vec2 f_tex_coords;
 in vec3 f_position;
+
+uniform sampler2D color_texture;
 
 void main()
 {
 	frag_normal = f_normal;
 	frag_position = f_position * 0.01;
+	frag_color = vec3(texture(color_texture, f_tex_coords));
 }

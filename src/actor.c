@@ -33,11 +33,12 @@ Actor create_player(unsigned int id)
 	memset(&player, 0, sizeof(Actor));
 	player.model = NULL;
 	player.actor_state = create_actor_state(id, VEC3_ZERO, VEC3_Z_UP);
-	player.model = B_load_model_from_file("assets/monkey.gltf");
-	player.animations = B_load_animations_from_file("assets/monkey.gltf", &player.num_animations);
+	player.model = B_load_model_from_file("assets/monkey/monkey.gltf");
+	player.animations = B_load_animations_from_file("assets/monkey/monkey.gltf", &player.num_animations);
 	player.model->current_animation = player.animations[0];
 	player.id = id;
 	player.command_config = default_command_config();
+
 	return player;
 }
 
@@ -50,7 +51,7 @@ Actor create_default_npc(unsigned int id)
 	actor.id = id;
 	actor.command_config = default_command_config();
 	actor.model = BG_MALLOC(ActorModel, 1);
-	actor.model = B_load_model_from_file("assets/monkey.gltf");
+	actor.model = B_load_model_from_file("assets/monkey/monkey.gltf");
 	return actor;
 }
 

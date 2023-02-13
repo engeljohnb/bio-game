@@ -26,16 +26,21 @@
 
 void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 {
+	// TODO: Is this "if" really necessary?
 	if (model->mesh->active)
 	{
 		static float current_time = 0.0f;
 		glBindVertexArray(model->mesh->vao);
-		vec4 color = {1.0f, 1.0f, 0.0f, 1.0f};
-		B_set_uniform_vec4(shader, "color", color);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, model->color_texture);
+		B_set_uniform_int(shader, "color_texture", 0);
+
 		mat4 projection_view;
 		glm_mat4_mul(camera.projection_space, camera.view_space, projection_view);
 		B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 		B_set_uniform_mat4(shader, "world_space", model->world_space);
+
 		if (model->current_animation != NULL)
 		{
 			for (int i = 0; i < model->current_animation->num_nodes; ++i)

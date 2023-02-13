@@ -29,6 +29,7 @@ layout (location = 4) in vec4 bone_weights;
 const int MAX_BONES = 25;
 out vec3 f_normal;
 out vec3 f_position;
+out vec2 f_tex_coords;
 uniform mat4 world_space;
 uniform mat4 projection_view_space;
 uniform mat4 bone_matrices[25];
@@ -54,4 +55,5 @@ void main()
 	gl_Position = projection_view_space * world_space * final_position;
 	f_normal = normalize(normal_world_space * final_normal);
 	f_position = vec3(world_space * vec4(v_position, 1.0));
+	f_tex_coords = vec2(tex_coords);
 }

@@ -17,10 +17,29 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <libgen.h>
 #include <string.h>
 #include <cglm/cglm.h>
 #include "utils.h"
 
+char *get_directory_name(const char *file)
+{
+	char *dir_name = BG_MALLOC(char, 512);
+	dir_name = realpath(file, dir_name);
+	dir_name = dirname(dir_name);
+	if (dir_name == NULL)
+	{
+		BG_FREE(dir_name);
+		return NULL;
+	}
+	return dir_name;
+}
+
+int file_exists(const char *filename)
+{
+	return (access(filename, F_OK) == 0);
+}
 
 float absf(float value)
 {

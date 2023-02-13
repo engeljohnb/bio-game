@@ -228,8 +228,8 @@ void game_loop(const char *server_name, const char *port)
 							   "src/terrain_shader.etess");
 	B_Shader actor_shader = B_compile_simple_shader("src/actor_shader.vert",
 					                "src/actor_shader.frag");
-	B_Shader lighting_shader = B_compile_simple_shader("src/terrain_lighting_shader.vert",
-					          	   "src/terrain_lighting_shader.frag");
+	B_Shader lighting_shader = B_compile_simple_shader("src/lighting_shader.vert",
+					          	   "src/lighting_shader.frag");
 
 	float delta_t = 15.0;
 	float frame_time = 0;
@@ -313,7 +313,8 @@ void game_loop(const char *server_name, const char *port)
 		memset(&point_light, 0, sizeof(PointLight));
 		// Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
 		// before sending to the GPU.
-		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0f, 50.0f, 0.0f), point_light.position);
+		//glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0f, 50.0f, 0.0f), point_light.position);
+		glm_vec3_copy(GLM_VEC3_ZERO, point_light.position);
 		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
 		point_light.intensity = 1.0f;
 

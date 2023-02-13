@@ -122,6 +122,10 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->mode = MODE_SHOW_LIGHTING;
 				}
+				else if (key == SDLK_c)
+				{
+					command_state->mode = MODE_SHOW_COLOR;
+				}
 				break;
 			}
 
