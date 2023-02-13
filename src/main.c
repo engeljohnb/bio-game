@@ -37,9 +37,13 @@
 #include "terrain.h"
 #include "asset_loading.h"
 
+
+// WISHILST: Is there a way to make it so the player's location stays within (SCALE*4, MAX_HEIGHT, SCALE*4), and the only thing
+// that keeps increasing is the block index?
 /* UP NEXT: 
- * 	Why is the monkey being lit differently from everything else?
- * 	Then figure out color */
+ * 	continue improving terrain generation */
+
+#define PLAYER_START_POS VEC3(1000, 300.0f, 1000)
 
 void server_loop(const char *port)
 {
@@ -89,7 +93,7 @@ void server_loop(const char *port)
 							package.num_actors = num_players;
 						}
 						B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &package, sizeof(NewPlayerPackage));
-						players[num_players] = create_actor_state(num_players, VEC3_ZERO, VEC3_Z_UP);
+						players[num_players] = create_actor_state(num_players, PLAYER_START_POS, VEC3_Z_UP);
 						for (unsigned int i = 0; i < num_players; ++i)
 						{
 							B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
@@ -218,7 +222,8 @@ void game_loop(const char *server_name, const char *port)
 	command_state.toggle_anti_aliasing = 1;
 
 	// Environment init
-	TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer, 4, 4);
+	//TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer);
+	TerrainBlock terrain_block = create_terrain_block(renderer.g_buffer);
 
 	// Compile shaders
 	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
@@ -306,16 +311,16 @@ void game_loop(const char *server_name, const char *port)
 		// Render
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
 		B_clear_window(renderer.window);
-		B_draw_terrain(terrain_mesh, terrain_shader, &renderer.camera);
+		draw_terrain_block(&terrain_block, terrain_shader, &renderer.camera);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
 		// Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
 		// before sending to the GPU.
-		glm_vec3_copy(GLM_VEC3_ZERO, point_light.position);
+		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), point_light.position);
 		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
-		point_light.intensity = 1.0f;
+		point_light.intensity = 6.0f;
 
 		B_render_lighting(renderer, lighting_shader, point_light, command_state.mode);
 		B_flip_window(renderer.window);
@@ -331,6 +336,7 @@ void game_loop(const char *server_name, const char *port)
 		free_actor(all_actors[i]);
 	}
 
+	free_terrain_block(&terrain_block);
 	B_close_connection(server_connection);
 	B_free_window(window);
 	free_renderer(renderer);

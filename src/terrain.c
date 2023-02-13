@@ -19,14 +19,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <glad/glad.h>
+#include <math.h>
 #include "utils.h"
 #include "terrain.h"
 #include "utils.h"
 
-TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer, int width, int height)
+TerrainBlock create_terrain_block(B_Framebuffer g_buffer)
 {
-	int num_vertices = width*height*4;
+	TerrainBlock block;
+	for (int i = 0; i < 9; ++i)
+	{
+		block.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
+	}
+	block.current_block_index = 4;
+	return block;
+}
+
+TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer)
+{
+	int num_vertices = 4*4*4;
 	T_Vertex vertices[num_vertices];
+
 	memset(vertices, 0, sizeof(T_Vertex) * num_vertices);
 
 	for (int i = 0; i < num_vertices; i += 4)
@@ -48,7 +61,7 @@ TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer, int width, int height)
 		vertices[i+3].position[2] = -1.0;
 	}
 
-	TerrainMesh mesh = B_send_terrain_mesh_to_gpu(g_buffer, vertices, num_vertices, height);
+	TerrainMesh mesh = B_send_terrain_mesh_to_gpu(g_buffer, vertices, num_vertices, 4);
 	return mesh;
 }
 
@@ -77,19 +90,70 @@ TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertice
 	return mesh;
 }
 
-void B_draw_terrain(TerrainMesh mesh, B_Shader shader, Camera *camera)
+void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int block_index, float tessellation_level)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shader);
+
 	mat4 projection_view;
 	glm_mat4_mul(camera->projection_space, camera->view_space, projection_view);
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
-	B_set_uniform_float(shader, "tessellation_level", 16.0);
+	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
+	B_set_uniform_int(shader, "current_block_index", (int)block_index);
+	B_set_uniform_float(shader, "scale", SCALE);
+
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
+}
+
+int get_terrain_block_index(vec3 position)
+{
+	int x_index = (int)round(position[0])/(SCALE * 4);
+	int z_index = (int)round(position[2])/(SCALE * 4);
+
+	return (int)((z_index * MAX_X) + x_index);
+}
+
+void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera)
+{
+	float tessellation_level = 16.0f;
+	glBindFramebuffer(GL_FRAMEBUFFER, block->terrain_meshes[0].g_buffer);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	int base_index = get_terrain_block_index(camera->position);
+	int x_shift = -1;
+	int y_shift = -MAX_X;
+
+	for (int i = 0; i < 9; ++i)
+	{
+		int index = base_index + y_shift + x_shift;
+		x_shift++;
+		if (x_shift > 1)
+		{
+			x_shift = -1;
+			y_shift += MAX_X;
+		}
+		if (y_shift > MAX_X)
+		{
+			y_shift = -MAX_X;
+		}
+
+
+		B_draw_terrain_mesh(block->terrain_meshes[i], shader, camera, index, tessellation_level);
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void B_free_terrain_mesh(TerrainMesh mesh)
+{
+	glDeleteBuffers(1, &mesh.vbo);
+	glDeleteVertexArrays(1, &mesh.vao);
+}
+
+void free_terrain_block(TerrainBlock *block)
+{
+	for (int i = 0; i < 9; ++i)
+	{
+		B_free_terrain_mesh(block->terrain_meshes[i]);
+	}
+}

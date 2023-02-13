@@ -22,18 +22,26 @@
 #include "rendering.h"
 #include "camera.h"
 
+#define MAX_X 100000
+#define MAX_Y 100000
+#define SCALE 300
+
 typedef struct
 {
 	unsigned int	vao;
 	unsigned int	vbo;
 	unsigned int	g_buffer;
-	unsigned int	lighting_vao;
-	unsigned int	lighting_vbo;
 	int		num_vertices;
 	int		num_columns;
-	unsigned int	normal_texture;
-	unsigned int	position_texture;
 } TerrainMesh;
+
+/* A TerrainBlock is a block of nine 4*SCALE x 4*SCALE terrain_meshes. You could think of them as like a tile map. */
+typedef struct
+{
+	TerrainMesh	terrain_meshes[9];
+	/* The index of the block that the player is currently over */
+	int		current_block_index;
+} TerrainBlock;
 
 typedef struct
 {
@@ -43,6 +51,27 @@ typedef struct
 
 T_Vertex *generate_t_vertices(int width, int height);
 TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertices, int num_vertices, int num_columns);
-void B_draw_terrain(TerrainMesh mesh, B_Shader shader, Camera *camera);
-TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer, int width, int height);
+void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int block_index, float tessellation_level);
+
+/* Draws the terrain meshes that are currently surrounding the player (* is the player's current tile).
+ * The geography is generated dynamically -- so only one TerrainBlock is needed. It's simply repositioned and
+ * the height recalculated based on the player's location.
+ * |-------|-------|-------|
+ * |       |       |       |
+ * |       |       |       |
+ * |       |       |       |
+ * |-------|-------|-------|
+ * |       |       |       |
+ * |       |   *   |       |
+ * |       |       |       |
+ * |-------|-------|-------|
+ * |       |       |       |
+ * |       |       |       |
+ * |       |       |       |
+ * |-------|-------|-------|
+ * */
+void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera);
+TerrainBlock create_terrain_block(B_Framebuffer g_buffer);
+TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer);
+void free_terrain_block(TerrainBlock *block);
 #endif

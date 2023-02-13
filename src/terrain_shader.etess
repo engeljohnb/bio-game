@@ -20,6 +20,8 @@
 
 layout (quads, equal_spacing, cw) in;
 in float tessellation_levels[];
+out int g_block_id;
+
 uniform int patches_per_column;
 
 uniform float width;
@@ -37,8 +39,11 @@ uniform float width;
 // For multiple octaves
 #define NOISE fbm
 #define NUM_NOISE_OCTAVES 5
-#define SCALE 300
+#define MAX_X 100000
+#define MAX_Y 100000
 
+uniform int current_block_index;
+uniform float scale;
 // Precision-adjusted variations of https://www.shadertoy.com/view/4djSRW
 float hash(float p) { p = fract(p * 0.011); p *= p + 7.5; p *= p + p; return fract(p); }
 float hash(vec2 p) {vec3 p3 = fract(vec3(p.xyx) * 0.13); p3 += dot(p3, p3.yzx + 3.333); return fract((p3.x + p3.y) * p3.z); }
@@ -179,16 +184,22 @@ vec3 get_normal(vec3 pos, float increment)
 
 void main()
 {
-	float u = gl_TessCoord.x*SCALE;
-	float v = gl_TessCoord.y*SCALE;
+	float u = gl_TessCoord.x*scale;
+	float v = gl_TessCoord.y*scale;
+
+	int x_block_offset = current_block_index % MAX_Y;
+	int y_block_offset = current_block_index / MAX_Y;
+	x_block_offset *= patches_per_column;
+	y_block_offset *= patches_per_column;
 
 	float x_index = float(int(gl_PrimitiveID) % patches_per_column);
 	float y_index = round(gl_PrimitiveID / patches_per_column);
-	float max_xy = SCALE*float(patches_per_column)/2;
-	float x_offset = (x_index*SCALE) - max_xy;
-	float y_offset = (y_index*SCALE) - max_xy;
+	float max_xy = scale*float(patches_per_column)/2;
+	float shift_to_middle = scale*MAX_X/2;
+	float x_offset = ((x_index + float(x_block_offset)) * scale);
+	float y_offset = ((y_index + float(y_block_offset)) * scale);
 
-	float height = fbm(vec2(u + x_offset, v + y_offset)/max_xy) * SCALE;
+	float height = fbm(vec2(u + x_offset, v + y_offset)/max_xy) * scale;
 	vec4 pos = vec4(u + x_offset, height-80.0f, v+ y_offset, 1.0);
 	gl_Position = pos;
 }

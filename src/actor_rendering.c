@@ -258,7 +258,6 @@ void B_free_mesh(ActorMesh *mesh)
 {
 	glDeleteBuffers(1, &(mesh->ebo));
 	glDeleteBuffers(1, &(mesh->vbo));
-	BG_FREE(mesh);
 }
 
 void B_free_model(ActorModel *model)

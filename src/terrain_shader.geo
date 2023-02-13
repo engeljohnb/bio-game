@@ -24,6 +24,7 @@ layout (triangle_strip, max_vertices=3) out;
 uniform mat4 projection_view_space;
 out vec3 f_position;
 out vec3 f_normal;
+out int f_block_id;
 
 void main()
 {
