@@ -35,7 +35,14 @@ Actor create_player(unsigned int id)
 	player.actor_state = create_actor_state(id, VEC3_ZERO, VEC3_Z_UP);
 	player.model = B_load_model_from_file("assets/monkey/monkey.gltf");
 	player.animations = B_load_animations_from_file("assets/monkey/monkey.gltf", &player.num_animations);
-	player.model->current_animation = player.animations[0];
+	if (player.animations == NULL)
+	{
+		player.model->current_animation = NULL;
+	}
+	else
+	{
+		player.model->current_animation = player.animations[0];
+	}
 	player.id = id;
 	player.command_config = default_command_config();
 

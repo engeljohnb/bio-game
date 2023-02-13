@@ -642,6 +642,11 @@ Animation **B_load_animations_from_file(const char *filename, int *num_animation
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
 	*num_animations = scene->mNumAnimations;
+	if (scene->mNumAnimations == 0)
+	{
+		aiReleaseImport(scene);
+		return NULL;
+	}
 	Animation **animations = BG_MALLOC(Animation*, scene->mNumAnimations);
 	for (unsigned int i = 0; i < scene->mNumAnimations; ++i)
 	{
