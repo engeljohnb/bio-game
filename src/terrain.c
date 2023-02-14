@@ -123,11 +123,11 @@ void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera, in
 		if (x_shift > 1)
 		{
 			x_shift = -1;
-			y_shift += MAX_X;
+			y_shift += MAX_TERRAIN_BLOCKS;
 		}
-		if (y_shift > MAX_X)
+		if (y_shift > MAX_TERRAIN_BLOCKS)
 		{
-			y_shift = -MAX_X;
+			y_shift = -MAX_TERRAIN_BLOCKS;
 		}
 		B_draw_terrain_mesh(block->terrain_meshes[i], shader, camera, index, terrain_block_index, tessellation_level);
 	}
