@@ -43,7 +43,7 @@
 /* UP NEXT: 
  * 	continue improving terrain generation */
 
-#define PLAYER_START_POS VEC3(1000, 300.0f, 1000)
+#define PLAYER_START_POS VEC3(TERRAIN_SCALE*2, 300.0f, TERRAIN_SCALE*2)
 
 void server_loop(const char *port)
 {
@@ -311,7 +311,7 @@ void game_loop(const char *server_name, const char *port)
 		// Render
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
 		B_clear_window(renderer.window);
-		draw_terrain_block(&terrain_block, terrain_shader, &renderer.camera);
+		draw_terrain_block(&terrain_block, terrain_shader, &renderer.camera, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
 		PointLight point_light;

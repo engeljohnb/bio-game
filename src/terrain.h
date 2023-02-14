@@ -22,9 +22,12 @@
 #include "rendering.h"
 #include "camera.h"
 
-#define MAX_X 100000
-#define MAX_Y 100000
-#define SCALE 300
+
+/* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
+ * total number of terrain blocks in either the x or z direction. So the total number
+ * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
+#define MAX_TERRAIN_BLOCKS 100000
+#define TERRAIN_SCALE 300
 
 typedef struct
 {
@@ -51,7 +54,7 @@ typedef struct
 
 T_Vertex *generate_t_vertices(int width, int height);
 TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertices, int num_vertices, int num_columns);
-void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int block_index, float tessellation_level);
+void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int my_block_index, int player_block_index, float tessellation_level);
 
 /* Draws the terrain meshes that are currently surrounding the player (* is the player's current tile).
  * The geography is generated dynamically -- so only one TerrainBlock is needed. It's simply repositioned and
@@ -70,7 +73,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int 
  * |       |       |       |
  * |-------|-------|-------|
  * */
-void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera);
+void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera, int terrain_block_index);
 TerrainBlock create_terrain_block(B_Framebuffer g_buffer);
 TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer);
 void free_terrain_block(TerrainBlock *block);

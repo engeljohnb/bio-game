@@ -90,7 +90,7 @@ TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertice
 	return mesh;
 }
 
-void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int block_index, float tessellation_level)
+void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int my_block_index, int player_block_index, float tessellation_level)
 {
 	glUseProgram(shader);
 
@@ -99,34 +99,26 @@ void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int 
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
-	B_set_uniform_int(shader, "current_block_index", (int)block_index);
-	B_set_uniform_float(shader, "scale", SCALE);
+	B_set_uniform_int(shader, "my_block_index", my_block_index);
+	B_set_uniform_int(shader, "player_block_index", player_block_index);
+	B_set_uniform_float(shader, "scale", TERRAIN_SCALE);
 
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 }
 
-int get_terrain_block_index(vec3 position)
-{
-	int x_index = (int)round(position[0])/(SCALE * 4);
-	int z_index = (int)round(position[2])/(SCALE * 4);
-
-	return (int)((z_index * MAX_X) + x_index);
-}
-
-void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera)
+void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera, int terrain_block_index)
 {
 	float tessellation_level = 16.0f;
 	glBindFramebuffer(GL_FRAMEBUFFER, block->terrain_meshes[0].g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	int base_index = get_terrain_block_index(camera->position);
 	int x_shift = -1;
-	int y_shift = -MAX_X;
+	int y_shift = -MAX_TERRAIN_BLOCKS;
 
 	for (int i = 0; i < 9; ++i)
 	{
-		int index = base_index + y_shift + x_shift;
+		int index = terrain_block_index + y_shift + x_shift;
 		x_shift++;
 		if (x_shift > 1)
 		{
@@ -137,9 +129,7 @@ void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera)
 		{
 			y_shift = -MAX_X;
 		}
-
-
-		B_draw_terrain_mesh(block->terrain_meshes[i], shader, camera, index, tessellation_level);
+		B_draw_terrain_mesh(block->terrain_meshes[i], shader, camera, index, terrain_block_index, tessellation_level);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

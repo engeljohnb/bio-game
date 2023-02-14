@@ -27,6 +27,10 @@
 /* An ActorState is the minimum information about an actor that needs to be sent over the network.
  * Graphics and rendering are all handled client-side, while the server uses this struct to
  * advance the simulation */
+
+/* The actor's x and z positions are not global coordinates, but instead the offset from the position (0,0) of whichever
+ * terrain block the actor is currently over (current_terrain_index). The global location of the actor is stored in
+ * current_terrain_index. */
 typedef struct
 {
 	vec3			position;
@@ -34,6 +38,7 @@ typedef struct
 	vec3			right;
 	CommandState		command_state;
 	int			active;
+	uint64_t		current_terrain_index;			
 	unsigned int		id;
 	float			speed;
 	float			max_speed;

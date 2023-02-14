@@ -22,10 +22,12 @@ layout (quads, equal_spacing, cw) in;
 in float tessellation_levels[];
 out int g_block_id;
 
+uniform int my_block_index;
+uniform int player_block_index;
 uniform int patches_per_column;
-
 uniform float width;
-
+uniform float scale;
+//uniform vec3 player_position;
 // By Morgan McGuire @morgan3d, http://graphicscodex.com
 // Reuse permitted under the BSD license.
 
@@ -39,11 +41,8 @@ uniform float width;
 // For multiple octaves
 #define NOISE fbm
 #define NUM_NOISE_OCTAVES 5
-#define MAX_X 100000
-#define MAX_Y 100000
+#define MAX_TERRAIN_BLOCKS 100000
 
-uniform int current_block_index;
-uniform float scale;
 // Precision-adjusted variations of https://www.shadertoy.com/view/4djSRW
 float hash(float p) { p = fract(p * 0.011); p *= p + 7.5; p *= p + p; return fract(p); }
 float hash(vec2 p) {vec3 p3 = fract(vec3(p.xyx) * 0.13); p3 += dot(p3, p3.yzx + 3.333); return fract((p3.x + p3.y) * p3.z); }
@@ -140,66 +139,35 @@ float fbm(vec3 x) {
 	return v;
 }
 
-vec3 get_normal(vec3 pos, float increment)
-{
-	vec3 face_edges[8];
-
-	face_edges[0] =  vec3(pos.x, pos.y, pos.z + increment) - pos;
-	face_edges[1] =  vec3(pos.x + increment, pos.y, pos.z + increment) - pos;
-	face_edges[2] =  vec3(pos.x + increment, pos.y, pos.z) - pos;
-	face_edges[3] =  vec3(pos.x + increment, pos.y, pos.z - increment) - pos;
-	face_edges[4] =  vec3(pos.x, pos.y, pos.z - increment) - pos;
-	face_edges[5] =  vec3(pos.x - increment, pos.y, pos.z - increment) - pos;
-	face_edges[6] =  vec3(pos.x - increment, pos.y, pos.z) - pos;
-	face_edges[7] =  vec3(pos.x - increment, pos.y, pos.z + increment) - pos;
-
-	for (int i = 0; i < 8; ++i)
-	{
-		face_edges[i].y += fbm(vec2(face_edges[i].x/4, face_edges[i].z/4)) * 50;
-	}
-
-	vec3 face_normals[8];
-
-	face_normals[0] = cross(face_edges[0], face_edges[1]);
-	face_normals[1] = cross(face_edges[1], face_edges[2]);
-	face_normals[2] = cross(face_edges[2], face_edges[3]);
-	face_normals[3] = cross(face_edges[3], face_edges[4]);
-	face_normals[4] = cross(face_edges[4], face_edges[5]);
-	face_normals[5] = cross(face_edges[5], face_edges[6]);
-	face_normals[6] = cross(face_edges[6], face_edges[7]);
-	face_normals[7] = cross(face_edges[7], face_edges[0]);
-
-	vec3 sum_normals = vec3(0.0, 0.0, 0.0);
-	for (int i = 0; i < 8; ++i)
-	{
-		sum_normals += face_normals[i];
-	}
-	if (sum_normals == vec3(0.0, 0.0, 0.0))
-	{
-		return sum_normals;
-	}
-
-	return -normalize(sum_normals);
-}
-
 void main()
 {
 	float u = gl_TessCoord.x*scale;
 	float v = gl_TessCoord.y*scale;
 
-	int x_block_offset = current_block_index % MAX_Y;
-	int y_block_offset = current_block_index / MAX_Y;
-	x_block_offset *= patches_per_column;
-	y_block_offset *= patches_per_column;
+	int global_x_block_offset = my_block_index % MAX_Y;
+	int global_y_block_offset = my_block_index / MAX_Y;
+	global_x_block_offset *= patches_per_column;
+	global_y_block_offset *= patches_per_column;
+
+	int player_x_block_offset = player_block_index % MAX_Y;
+	int player_y_block_offset = player_block_index / MAX_Y;
+	player_x_block_offset *= patches_per_column;
+	player_y_block_offset *= patches_per_column;
+
+	int relative_x_block_offset = global_x_block_offset - player_x_block_offset;
+	int relative_y_block_offset = global_y_block_offset - player_y_block_offset;
 
 	float x_index = float(int(gl_PrimitiveID) % patches_per_column);
 	float y_index = round(gl_PrimitiveID / patches_per_column);
 	float max_xy = scale*float(patches_per_column)/2;
-	float shift_to_middle = scale*MAX_X/2;
-	float x_offset = ((x_index + float(x_block_offset)) * scale);
-	float y_offset = ((y_index + float(y_block_offset)) * scale);
+	float global_x_offset = (x_index + float(global_x_block_offset)) * scale;
+	float global_y_offset = (y_index + float(global_y_block_offset)) * scale;
+	float local_x_offset = x_index*scale;
+	float local_y_offset = y_index*scale;
 
-	float height = fbm(vec2(u + x_offset, v + y_offset)/max_xy) * scale;
-	vec4 pos = vec4(u + x_offset, height-80.0f, v+ y_offset, 1.0);
-	gl_Position = pos;
+	float height = fbm(vec2(u + global_x_offset, v + global_y_offset)/max_xy) * scale;
+	vec3 pos = vec3(u + local_x_offset, height, v+local_y_offset);
+	pos += vec3(relative_x_block_offset * scale, 0, relative_y_block_offset * scale);
+	vec4 position = vec4(pos, 1.0);
+	gl_Position = position;
 }
