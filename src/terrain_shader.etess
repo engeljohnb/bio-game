@@ -144,13 +144,13 @@ void main()
 	float u = gl_TessCoord.x*scale;
 	float v = gl_TessCoord.y*scale;
 
-	int global_x_block_offset = my_block_index % MAX_Y;
-	int global_y_block_offset = my_block_index / MAX_Y;
+	int global_x_block_offset = my_block_index % MAX_TERRAIN_BLOCKS;
+	int global_y_block_offset = my_block_index / MAX_TERRAIN_BLOCKS;
 	global_x_block_offset *= patches_per_column;
 	global_y_block_offset *= patches_per_column;
 
-	int player_x_block_offset = player_block_index % MAX_Y;
-	int player_y_block_offset = player_block_index / MAX_Y;
+	int player_x_block_offset = player_block_index % MAX_TERRAIN_BLOCKS;
+	int player_y_block_offset = player_block_index / MAX_TERRAIN_BLOCKS;
 	player_x_block_offset *= patches_per_column;
 	player_y_block_offset *= patches_per_column;
 
