@@ -142,6 +142,28 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
 }
 
+unsigned int B_compile_compute_shader(const char *comp_path)
+{
+	unsigned int program_id = glCreateProgram();
+	unsigned int compute_id = glCreateShader(GL_COMPUTE_SHADER);
+
+	char compute_buffer[65536] = {0};
+	B_load_file(comp_path, compute_buffer, 65536);
+	const char *compute_source = compute_buffer;
+
+	glShaderSource(compute_id, 1, &compute_source, NULL);
+	glCompileShader(compute_id);
+	B_check_shader(compute_id, comp_path, GL_COMPILE_STATUS);
+
+	glAttachShader(program_id, compute_id);
+	glLinkProgram(program_id);
+	B_check_shader(program_id, "shader program", GL_LINK_STATUS);
+
+	glDeleteShader(compute_id);
+	return program_id;
+
+}
+
 unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path)
 {	
 	unsigned int program_id = glCreateProgram();

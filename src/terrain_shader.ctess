@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#version 410 core
+#version 430 core
 
 layout (vertices=4) out;
 out float tessellation_levels[];

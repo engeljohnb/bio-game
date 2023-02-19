@@ -113,4 +113,3 @@ void free_actor(Actor actor)
 	}
 	BG_FREE(actor.animations);
 }
-

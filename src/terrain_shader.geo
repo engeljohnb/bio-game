@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#version 410 core
+#version 430 core
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
@@ -24,7 +24,7 @@ layout (triangle_strip, max_vertices=3) out;
 uniform mat4 projection_view_space;
 out vec3 f_position;
 out vec3 f_normal;
-out int f_block_id;
+out vec2 f_offset;
 
 void main()
 {

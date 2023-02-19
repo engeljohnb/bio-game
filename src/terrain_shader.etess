@@ -16,158 +16,52 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#version 410 core
+#version 430 core
 
 layout (quads, equal_spacing, cw) in;
-in float tessellation_levels[];
-out int g_block_id;
-
-uniform int my_block_index;
-uniform int player_block_index;
-uniform int patches_per_column;
-uniform float width;
-uniform float scale;
-//uniform vec3 player_position;
-// By Morgan McGuire @morgan3d, http://graphicscodex.com
-// Reuse permitted under the BSD license.
-
-// All noise functions are designed for values on integer scale.
-// They are tuned to avoid visible periodicity for both positive and
-// negative coordinates within a few orders of magnitude.
-
-// For a single octave
-//#define NOISE noise
-
-// For multiple octaves
-#define NOISE fbm
-#define NUM_NOISE_OCTAVES 5
 #define MAX_TERRAIN_BLOCKS 100000
 
-// Precision-adjusted variations of https://www.shadertoy.com/view/4djSRW
-float hash(float p) { p = fract(p * 0.011); p *= p + 7.5; p *= p + p; return fract(p); }
-float hash(vec2 p) {vec3 p3 = fract(vec3(p.xyx) * 0.13); p3 += dot(p3, p3.yzx + 3.333); return fract((p3.x + p3.y) * p3.z); }
-
-float noise(float x) {
-    float i = floor(x);
-    float f = fract(x);
-    float u = f * f * (3.0 - 2.0 * f);
-    return mix(hash(i), hash(i + 1.0), u);
-}
-
-
-float noise(vec2 x) {
-    vec2 i = floor(x);
-    vec2 f = fract(x);
-
-	// Four corners in 2D of a tile
-	float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-
-    // Simple 2D lerp using smoothstep envelope between the values.
-	// return vec3(mix(mix(a, b, smoothstep(0.0, 1.0, f.x)),
-	//			mix(c, d, smoothstep(0.0, 1.0, f.x)),
-	//			smoothstep(0.0, 1.0, f.y)));
-
-	// Same code, with the clamps in smoothstep and common subexpressions
-	// optimized away.
-    vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-}
-
-
-float noise(vec3 x) {
-    const vec3 step = vec3(110, 241, 171);
-
-    vec3 i = floor(x);
-    vec3 f = fract(x);
- 
-    // For performance, compute the base input to a 1D hash from the integer part of the argument and the 
-    // incremental change to the 1D based on the 3D -> 1D wrapping
-    float n = dot(i, step);
-
-    vec3 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(mix( hash(n + dot(step, vec3(0, 0, 0))), hash(n + dot(step, vec3(1, 0, 0))), u.x),
-                   mix( hash(n + dot(step, vec3(0, 1, 0))), hash(n + dot(step, vec3(1, 1, 0))), u.x), u.y),
-               mix(mix( hash(n + dot(step, vec3(0, 0, 1))), hash(n + dot(step, vec3(1, 0, 1))), u.x),
-                   mix( hash(n + dot(step, vec3(0, 1, 1))), hash(n + dot(step, vec3(1, 1, 1))), u.x), u.y), u.z);
-}
-
-
-float fbm(float x) {
-	float v = 0.0;
-	float a = 0.5;
-	float shift = float(100);
-	for (int i = 0; i < NUM_NOISE_OCTAVES; ++i) {
-		v += a * noise(x);
-		x = x * 2.0 + shift;
-		a *= 0.5;
-	}
-	return v;
-}
-
-float _fbm(vec2 x)
-{
-	return 0.0f;
-}
-
-float fbm(vec2 x) {
-	float v = 0.0;
-	float a = 0.5;
-	vec2 shift = vec2(100);
-	// Rotate to reduce axial bias
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
-	for (int i = 0; i < NUM_NOISE_OCTAVES; ++i) {
-		v += a * noise(x);
-		x = rot * x * 2.0 + shift;
-		a *= 0.5;
-	}
-	return v;
-}
-
-
-float fbm(vec3 x) {
-	float v = 0.0;
-	float a = 0.5;
-	vec3 shift = vec3(100);
-	for (int i = 0; i < NUM_NOISE_OCTAVES; ++i) {
-		v += a * noise(x);
-		x = x * 2.0 + shift;
-		a *= 0.5;
-	}
-	return v;
-}
+in float tessellation_levels[];
+uniform sampler2D heightmap;
+uniform int my_block_index;
+uniform int player_block_index;
+uniform int i;
+uniform int patches_per_column;
+uniform float xz_scale;
+uniform float height_scale;
 
 void main()
 {
-	float u = gl_TessCoord.x*scale;
-	float v = gl_TessCoord.y*scale;
+	float u = gl_TessCoord.x*xz_scale;
+	float v = gl_TessCoord.y*xz_scale;
 
-	int global_x_block_offset = my_block_index % MAX_TERRAIN_BLOCKS;
-	int global_y_block_offset = my_block_index / MAX_TERRAIN_BLOCKS;
-	global_x_block_offset *= patches_per_column;
-	global_y_block_offset *= patches_per_column;
+	int my_x_block_index = (my_block_index % MAX_TERRAIN_BLOCKS);
+	int my_z_block_index = my_block_index / MAX_TERRAIN_BLOCKS;
 
-	int player_x_block_offset = player_block_index % MAX_TERRAIN_BLOCKS;
-	int player_y_block_offset = player_block_index / MAX_TERRAIN_BLOCKS;
-	player_x_block_offset *= patches_per_column;
-	player_y_block_offset *= patches_per_column;
+	int player_x_block_index = player_block_index % MAX_TERRAIN_BLOCKS;
+	int player_z_block_index = player_block_index / MAX_TERRAIN_BLOCKS;
 
-	int relative_x_block_offset = global_x_block_offset - player_x_block_offset;
-	int relative_y_block_offset = global_y_block_offset - player_y_block_offset;
+	float x_block_offset = (my_x_block_index - player_x_block_index);
+	float z_block_offset = (my_z_block_index - player_z_block_index);
 
-	float x_index = float(int(gl_PrimitiveID) % patches_per_column);
-	float y_index = round(gl_PrimitiveID / patches_per_column);
-	float max_xy = scale*float(patches_per_column)/2;
-	float global_x_offset = (x_index + float(global_x_block_offset)) * scale;
-	float global_y_offset = (y_index + float(global_y_block_offset)) * scale;
-	float local_x_offset = x_index*scale;
-	float local_y_offset = y_index*scale;
+	x_block_offset *= (patches_per_column * xz_scale);
+	z_block_offset *= (patches_per_column * xz_scale);
 
-	float height = fbm(vec2(u + global_x_offset, v + global_y_offset)/max_xy) * scale;
-	vec3 pos = vec3(u + local_x_offset, height, v+local_y_offset);
-	pos += vec3(relative_x_block_offset * scale, 0, relative_y_block_offset * scale);
+	// The x and y offset for how much to displace this vertex within it's own block.
+	float x_index = float(int(gl_PrimitiveID % patches_per_column));
+	float z_index = floor(gl_PrimitiveID / patches_per_column);
+
+	float x_offset = x_index * xz_scale;
+	float z_offset = z_index * xz_scale;
+
+	float max_xz = (xz_scale * float(patches_per_column));
+	vec3 pos = vec3(u+x_offset, 0, v+z_offset);
+	pos += vec3(x_block_offset, 0, z_block_offset);
+
+	vec2 tex_coords = pos.xz/(max_xz*3);
+	tex_coords += 0.33;
+
+	pos.y += texture(heightmap, tex_coords).r * height_scale;
 	vec4 position = vec4(pos, 1.0);
 	gl_Position = position;
 }

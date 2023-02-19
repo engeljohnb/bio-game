@@ -38,12 +38,10 @@
 #include "asset_loading.h"
 
 
-// WISHILST: Is there a way to make it so the player's location stays within (SCALE*4, MAX_HEIGHT, SCALE*4), and the only thing
-// that keeps increasing is the block index?
 /* UP NEXT: 
- * 	continue improving terrain generation */
+ * 	Terrain generation is a complete mess */
 
-#define PLAYER_START_POS VEC3(TERRAIN_SCALE*2, 300.0f, TERRAIN_SCALE*2)
+#define PLAYER_START_POS VEC3(TERRAIN_HEIGHT_SCALE*2, 300.0f, TERRAIN_XZ_SCALE*2)
 
 void server_loop(const char *port)
 {
@@ -311,7 +309,9 @@ void game_loop(const char *server_name, const char *port)
 		// Render
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
 		B_clear_window(renderer.window);
+		B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
 		draw_terrain_block(&terrain_block, terrain_shader, &renderer.camera, all_actors[player_id].actor_state.current_terrain_index);
+		//B_draw_terrain_mesh(terrain_mesh, terrain_shader, &renderer.camera, all_actors[player_id].actor_state.current_terrain_index, 0, 16.0f);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
 		PointLight point_light;
@@ -336,6 +336,7 @@ void game_loop(const char *server_name, const char *port)
 		free_actor(all_actors[i]);
 	}
 
+	//B_free_terrain_mesh(terrain_mesh);
 	free_terrain_block(&terrain_block);
 	B_close_connection(server_connection);
 	B_free_window(window);

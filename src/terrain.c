@@ -20,9 +20,71 @@
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <math.h>
+#include "simplexnoise.h"
 #include "utils.h"
 #include "terrain.h"
-#include "utils.h"
+
+void B_update_terrain_block(TerrainBlock *block, int player_block_index)
+{
+	static int prev_player_block = 0;
+	static int first_time_through = 1;
+	if ((player_block_index == prev_player_block) && (!first_time_through))
+	{
+		return;
+	}
+
+	if (first_time_through)
+	{
+		first_time_through = 0;
+	}
+	int x_offset = -1;
+	int z_offset =  -MAX_TERRAIN_BLOCKS;
+	int x_counter = 0;
+	int z_counter = 0;
+	glUseProgram(block->compute_shader);
+	for (int i = 0; i < 9; ++i)
+	{
+		int index = player_block_index + z_offset + x_offset;
+		B_set_uniform_int(block->compute_shader, "my_block_index", index);
+		B_set_uniform_float(block->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
+		B_set_uniform_int(block->compute_shader, "x_counter", x_counter);
+		B_set_uniform_int(block->compute_shader, "z_counter", z_counter);
+		x_offset++;
+		x_counter++;
+		if (x_offset > 1)
+		{
+			z_offset += MAX_TERRAIN_BLOCKS;
+			x_offset = -1;
+			x_counter = 0;
+			z_counter++;
+		}
+
+		if (z_offset > MAX_TERRAIN_BLOCKS)
+		{
+			z_offset = -MAX_TERRAIN_BLOCKS;
+		}	
+
+		/*int vertices_per_column = block->block_height;
+		int x_block_index = index % MAX_TERRAIN_BLOCKS;
+		int z_block_index = index / MAX_TERRAIN_BLOCKS;
+		int x_block_offset = x_block_index * (int)vertices_per_column;
+		int z_block_offset = z_block_index * (int)vertices_per_column;
+
+		fprintf(stderr, "index: %i\n", index);
+		fprintf(stderr, "vertices_per_column: %i\n", vertices_per_column);
+		fprintf(stderr, "x_block_index: %i\n", x_block_index);
+		fprintf(stderr, "z_block_index: %i\n", z_block_index);
+		fprintf(stderr, "x_block_offset: %i\n", x_block_offset);
+		fprintf(stderr, "z_block_offset: %i\n", z_block_offset);*/
+
+		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+		glDispatchCompute(block->block_width/16, block->block_height/16, 1);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+	}
+	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	prev_player_block = player_block_index;
+}
 
 TerrainBlock create_terrain_block(B_Framebuffer g_buffer)
 {
@@ -31,8 +93,36 @@ TerrainBlock create_terrain_block(B_Framebuffer g_buffer)
 	{
 		block.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
 	}
-	block.current_block_index = 4;
+	block.block_width = 64;
+	block.block_height = 64;
+
+	block.heightmap_width = block.block_width*3;;
+	block.heightmap_height = block.block_height*3;
+//	size_t size = block.heightmap_width * block.heightmap_height;
+	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
+	for (int i = 0; i < 3; ++i)
+	{
+	/*	block.heightmaps_top[i] = BG_MALLOC(float, size);
+		block.heightmaps_bottom[i] = BG_MALLOC(float, size);
+		block.heightmaps_middle[i] = BG_MALLOC(float, size);	*/
+		block.heightmaps_top[i] = NULL;
+		block.heightmaps_middle[i] = NULL;
+		block.heightmaps_bottom[i] = NULL;
+	}
+	
+	block.g_buffer = g_buffer;
+	B_send_terrain_block_to_gpu(&block);
 	return block;
+}
+
+void B_send_terrain_block_to_gpu(TerrainBlock *block)
+{
+	B_Texture texture = 0;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, block->heightmap_width, block->heightmap_height, 0, GL_RED, GL_FLOAT, NULL);
+
+	block->heightmap_texture = texture;
 }
 
 TerrainMesh B_create_terrain_mesh(B_Framebuffer g_buffer)
@@ -85,51 +175,70 @@ TerrainMesh B_send_terrain_mesh_to_gpu(B_Framebuffer g_buffer, T_Vertex *vertice
 
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 	mesh.num_vertices = num_vertices;
+	//TODO: Technically you're interested in the number of rows, not the number of columns, so change this name.
 	mesh.num_columns = num_columns;
 	mesh.g_buffer = g_buffer;
 	return mesh;
 }
 
-void B_draw_terrain_mesh(TerrainMesh mesh, B_Shader shader, Camera *camera, int my_block_index, int player_block_index, float tessellation_level)
+void B_draw_terrain_mesh(TerrainMesh mesh, 
+			B_Shader shader, 
+			Camera *camera, 
+			int my_block_index, 
+			int player_block_index, 
+			float tessellation_level, 
+			B_Texture texture)
 {
+
 	glUseProgram(shader);
 
 	mat4 projection_view;
 	glm_mat4_mul(camera->projection_space, camera->view_space, projection_view);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	B_set_uniform_int(shader, "heightmap", 0);
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "scale", TERRAIN_SCALE);
+	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
+	B_set_uniform_float(shader, "height_scale", TERRAIN_HEIGHT_SCALE);
 
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 }
 
-void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera, int terrain_block_index)
+void draw_terrain_block(TerrainBlock *block, B_Shader shader, Camera *camera, int player_block_index)
 {
-	float tessellation_level = 16.0f;
-	glBindFramebuffer(GL_FRAMEBUFFER, block->terrain_meshes[0].g_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, block->g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	int x_shift = -1;
-	int y_shift = -MAX_TERRAIN_BLOCKS;
 
+	int x_offset = -1;
+	int z_offset = -MAX_TERRAIN_BLOCKS;
 	for (int i = 0; i < 9; ++i)
 	{
-		int index = terrain_block_index + y_shift + x_shift;
-		x_shift++;
-		if (x_shift > 1)
+		int index = player_block_index + z_offset + x_offset;
+		x_offset++;
+		if (x_offset > 1)
 		{
-			x_shift = -1;
-			y_shift += MAX_TERRAIN_BLOCKS;
+			z_offset += MAX_TERRAIN_BLOCKS;
+			x_offset = -1;
 		}
-		if (y_shift > MAX_TERRAIN_BLOCKS)
+
+		/*if (z_offset > MAX_TERRAIN_BLOCKS)
 		{
-			y_shift = -MAX_TERRAIN_BLOCKS;
-		}
-		B_draw_terrain_mesh(block->terrain_meshes[i], shader, camera, index, terrain_block_index, tessellation_level);
+			z_offset = -MAX_TERRAIN_BLOCKS;
+		}*/
+
+		B_draw_terrain_mesh(block->terrain_meshes[i],
+				    shader,
+				    camera,
+				    index,
+				    player_block_index,
+				    16.0f,
+				    block->heightmap_texture);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -146,4 +255,12 @@ void free_terrain_block(TerrainBlock *block)
 	{
 		B_free_terrain_mesh(block->terrain_meshes[i]);
 	}
+
+	for (int i = 0; i < 3; ++i)
+	{
+		BG_FREE(block->heightmaps_top[i]);
+		BG_FREE(block->heightmaps_middle[i]);
+		BG_FREE(block->heightmaps_bottom[i]);
+	}
 }
+

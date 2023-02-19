@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#version 410 core
+#version 430 core
 #define SHOW_LIGHTING 0
 #define SHOW_POSITION 1
 #define SHOW_NORMALS 2
@@ -98,7 +98,8 @@ void main()
 
 	else if (mode == SHOW_POSITION)
 	{ 
-		frag_color = vec4(position, 1.0);
+		//frag_color = vec4(position, 1.0);
+		frag_color = vec4(vec3(position.y), 1.0);
 	}
 	else if (mode == SHOW_NORMALS)
 	{

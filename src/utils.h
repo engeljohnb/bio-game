@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <memmem.h>
 
+#define VEC2(x, y) (vec2){x, y}
 #define VEC3(x, y, z) (vec3){x, y, z}
 #define VEC4(x, y, z, w) (vec4){x, y, z, w}
 #define RAD(a) a*0.0174532925

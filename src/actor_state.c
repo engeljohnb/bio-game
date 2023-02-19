@@ -85,27 +85,28 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 	vec3 velocity;
 	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
-	if (actor_state->position[0] > TERRAIN_SCALE*4)
+	if (actor_state->position[0] > TERRAIN_XZ_SCALE*4)
 	{
 		actor_state->position[0] = 0;
 		actor_state->current_terrain_index += 1;
 	}
 	if (actor_state->position[0] < 0)
 	{
-		actor_state->position[0] = TERRAIN_SCALE*4;
+		actor_state->position[0] = TERRAIN_XZ_SCALE*4;
 		actor_state->current_terrain_index -= 1;
 	}
 
-	if (actor_state->position[2] > TERRAIN_SCALE*4)
+	if (actor_state->position[2] > TERRAIN_XZ_SCALE*4)
 	{
 		actor_state->position[2] = 0;
 		actor_state->current_terrain_index += MAX_TERRAIN_BLOCKS;
 	}
 	if (actor_state->position[2] < 0)
 	{
-		actor_state->position[2] = TERRAIN_SCALE*4;
+		actor_state->position[2] = TERRAIN_XZ_SCALE*4;
 		actor_state->current_terrain_index -= MAX_TERRAIN_BLOCKS;
 	}
+
 }
 
 ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
@@ -119,6 +120,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	state.speed = 0;
 	// Actor begins roughly in the middle of the map.
 	state.current_terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
+	//state.current_terrain_index = 0;
 	state.max_speed = 3.0;
 	state.active = 1;
 	state.id = id;

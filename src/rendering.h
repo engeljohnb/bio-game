@@ -62,6 +62,7 @@ Renderer create_default_renderer(B_Window window);
 void free_renderer(Renderer renderer);
 unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path);
 unsigned int B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
+unsigned int B_compile_compute_shader(const char *comp_path);
 void B_free_shader(B_Shader shader);
 int B_check_shader(unsigned int id, const char *name, int status);
 void B_set_uniform_float(B_Shader shader, char *name, float value);
