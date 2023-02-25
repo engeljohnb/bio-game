@@ -29,7 +29,7 @@
  * Mostly, you need to make sure the root bone for any skinned mesh has translation (0,0,0), rotation (0,0,0), and scale (1,1,1). 
  * I'll fix it later if I can figure out what's wrong, but I've been stuck on this for a week and need to move on already.
  *
- * Also, only one skinned mesh, and it must not be the child of another mesh. */
+ * Also, only one skinned mesh per actor, and it must not be the child of another mesh. */
 
 /* This function also loads all of the textures needed for the model. If the correct texture can't be found the texture is empty (zero'd) data.
  * For this function to load textures, the naming convention must be followed. The name of the texture must be the same as the name of the

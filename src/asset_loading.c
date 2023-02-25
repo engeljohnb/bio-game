@@ -200,7 +200,7 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 		}
 		if (a_mesh->mNumBones)
 		{
-			int index_counter = 0;
+			int i_counter = 0;
 			model->num_bones = a_mesh->mNumBones;
 			for (int k = 0; k < (int)a_mesh->mNumBones; ++k)
 			{
@@ -208,9 +208,9 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 				{
 					if (a_mesh->mBones[k]->mWeights[l].mVertexId == j)
 					{
-						vertex_data.vertices[j].bone_ids[index_counter] = (GLint)k;
-						vertex_data.vertices[j].bone_weights[index_counter] = a_mesh->mBones[k]->mWeights[l].mWeight;
-						index_counter++;
+						vertex_data.vertices[j].bone_ids[i_counter] = (GLint)k;
+						vertex_data.vertices[j].bone_weights[i_counter] = a_mesh->mBones[k]->mWeights[l].mWeight;
+						i_counter++;
 					} 
 				}
 
@@ -231,13 +231,13 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 		vertex_data.num_faces = num_elements;
 		b_mesh->num_faces = num_elements;
 		vertex_data.faces = BG_MALLOC(unsigned int, num_elements);
-		int index_counter = 0;
+		int i_counter = 0;
 		for (unsigned int j = 0; j < a_mesh->mNumFaces; ++j)
 		{
 			C_STRUCT aiFace face = a_mesh->mFaces[j];
 			for (unsigned int k = 0; k < face.mNumIndices; ++k)
 			{
-				vertex_data.faces[index_counter++] = face.mIndices[k];
+				vertex_data.faces[i_counter++] = face.mIndices[k];
 			}
 		}
 	}
@@ -507,6 +507,47 @@ Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh)
 	B_load_bone_array_iter(B_get_root_bone(scene->mRootNode), bone_array, bone_array[0], NULL, mesh->mBones, mesh->mNumBones);
 	return bone_array;
 }
+/*void B_load_animation_nodes(C_STRUCT aiNode *ai_node, 
+			    C_STRUCT aiNodeAnim **channels, int num_channels,
+			    C_STRUCT aiBone **ai_bones, int num_bones,
+			    AnimationNode *current_node,
+			    AnimationNode **node_array)
+{
+	memset(current_node, 0, sizeof(AnimationNode));
+	int found_match = 0;
+	C_STRUCT aiBone *matching_bone = NULL;
+	C_STRUCT aiNodeAnim *matching_channel = NULL;
+	int bone_index = -1;
+	int channel_index = -1;
+
+	for (int i = 0; i < num_bones; ++i)
+	{
+		if (strncmp(ai_node->mName.data, ai_bones[i]->mName.data, 255) == 0)
+		{
+			bone_index = i;
+			matching_bone = ai_bones[i];
+		}
+	}
+	for (int i = 0; i < num_channels; ++i)
+	{
+		if (strncmp(ai_node->mName.data, channels[i]->mNodeName.data, 255) == 0)
+		{
+			channel_index = i;
+			matching_channel = channels[i];
+		}
+	}
+
+	if (bone_index < 0)
+	{
+		fprintf(stderr, "B_load_animation_nodes error: couldn't find matching bone for AnimationNode \"%s\"\n", ai_node->mName.data);
+		exit(-1);
+	}
+
+
+	current_node->id = bone_index;
+	strncpy(current_node->name, matching_bone->mNodeName.data, 255);
+
+}*/
 
 void B_load_animation_nodes(C_STRUCT aiNode *ai_node, 
 			    C_STRUCT aiNodeAnim **channels, int num_channels,
@@ -514,11 +555,14 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 			    AnimationNode *current_node,
 			    AnimationNode **node_array)
 {
+	//TODO: Remove the repitition from this function (already started for you above).
 	memset(current_node, 0, sizeof(AnimationNode));
+	int found_match = 0;
 	for (int i = 0; i < num_channels; ++i)
 	{
 		if (strncmp(channels[i]->mNodeName.data, ai_node->mName.data, 255) == 0)
 		{
+			found_match = 1;
 			current_node->id = -1;
 			for (int j = 0; j < num_bones; ++j)
 			{
@@ -529,7 +573,7 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 			}
 			if (current_node->id < 0)
 			{
-				fprintf(stderr, "Error: no id for animation node %s\n", ai_node->mName.data);
+				fprintf(stderr, "B_load_animation_nodes error: no id for animation node %s\n", ai_node->mName.data);
 				exit(-1);
 			}
 
@@ -571,14 +615,14 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 
 			current_node->children = BG_MALLOC(int, ai_node->mNumChildren);
 			current_node->num_children = ai_node->mNumChildren;
-			int child_index = 0;
-			for (int j = 0; j < num_channels; ++j)
+			int child_i = 0;
+			for (int j = 0; j < num_bones; ++j)
 			{
 				for (unsigned int k = 0; k < ai_node->mNumChildren; ++k)
 				{
 					if (strncmp(ai_node->mChildren[k]->mName.data, ai_bones[j]->mName.data, 255) == 0)
 					{
-						current_node->children[child_index++] = j;
+						current_node->children[child_i++] = j;
 					}
 				}
 			}
@@ -605,7 +649,52 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 		}
 	}
 
-	
+	if (!found_match)
+	{
+		for (int i = 0; i < num_bones; ++i)
+		{
+			if (strncmp(ai_node->mName.data, ai_bones[i]->mName.data, 255) == 0)
+			{
+				current_node->id = i;
+				strncpy(current_node->name, ai_bones[i]->mName.data, 255);
+
+				found_match = 1;
+				mat4 offset_matrix;
+				assimp_to_cglm_mat4(ai_bones[i]->mOffsetMatrix, offset_matrix);
+				glm_mat4_copy(offset_matrix, current_node->inverse_bind);
+
+				mat4 transformation;
+				assimp_to_cglm_mat4(ai_node->mTransformation, transformation);
+				glm_mat4_copy(transformation, current_node->current_transform);
+
+				current_node->children = BG_MALLOC(int, ai_node->mNumChildren);
+				current_node->num_children = ai_node->mNumChildren;
+				int child_i = 0;
+				for (int j = 0; j < num_bones; ++j)
+				{
+					for (unsigned int k = 0; k < ai_node->mNumChildren; ++k)
+					{
+						if (strncmp(ai_node->mChildren[k]->mName.data, ai_bones[j]->mName.data, 255) == 0)
+						{
+							current_node->children[child_i++] = j;
+						}
+					}
+				}
+
+				node_array[current_node->id] = current_node;
+				for (int j = 0; j < current_node->num_children; ++j)
+				{
+					B_load_animation_nodes(ai_node->mChildren[j], channels, num_channels, ai_bones, num_bones, node_array[current_node->children[j]], node_array);
+				}
+			}
+		}
+	}
+
+	if (!found_match)
+	{
+		fprintf(stderr, "B_load_animation_nodes error: couldn't find matching bone for AnimationNode %s\n", ai_node->mName.data);
+		exit(-1);
+	}
 }
 	
 Animation *B_load_animation(const C_STRUCT aiScene *scene, C_STRUCT aiAnimation *ai_animation)
@@ -621,8 +710,8 @@ Animation *B_load_animation(const C_STRUCT aiScene *scene, C_STRUCT aiAnimation 
 	C_STRUCT aiMesh *mesh = scene->mMeshes[model->mMeshes[0]];
 	C_STRUCT aiBone **bones = mesh->mBones;
 
-	animation->node_array = BG_MALLOC(AnimationNode*, ai_animation->mNumChannels);
-	for (unsigned int i = 0; i < ai_animation->mNumChannels; ++i)
+	animation->node_array = BG_MALLOC(AnimationNode*, mesh->mNumBones);
+	for (unsigned int i = 0; i < mesh->mNumBones; ++i)
 	{
 		animation->node_array[i] = BG_MALLOC(AnimationNode, 1);
 	}

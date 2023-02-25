@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <math.h>
-#include "simplexnoise.h"
 #include "utils.h"
 #include "terrain.h"
 

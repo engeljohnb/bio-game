@@ -39,7 +39,7 @@
 
 
 /* UP NEXT: 
- * 	Terrain generation is a complete mess */
+ * 	Terrain collision. */
 
 #define PLAYER_START_POS VEC3(TERRAIN_HEIGHT_SCALE*2, 300.0f, TERRAIN_XZ_SCALE*2)
 
