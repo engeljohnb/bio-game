@@ -23,6 +23,7 @@
 #define __CAMERA_H__
 
 #include <cglm/cglm.h>
+#include "terrain_collisions.h"
 #include "actor_state.h"
 #include "window.h"
 #include "input.h"
@@ -39,8 +40,7 @@ typedef struct
 
 
 Camera create_camera(B_Window window, vec3 position, vec3 front);
-//void update_camera(Camera *camera, CommandState command_state, float delta_t);
-void update_camera(Camera *camera, ActorState player, mat4 yaw_dest);
+void update_camera(Camera *camera, ActorState player, TerrainBlock *terrain_block, mat4 yaw_dest);
 void look_at(Camera *camera, vec3 target);
 
 #endif

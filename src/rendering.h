@@ -23,10 +23,7 @@
 #include <glad/glad.h>
 #include "camera.h"
 #include "window.h"
-
-typedef unsigned int B_Shader;
-typedef unsigned int B_Framebuffer;
-typedef unsigned int B_Texture;
+#include "common.h"
 
 /* Most objects in the game have rendering needs specific to that type of object. However, there are
  * a few things that will tend to be the same with most every object. A Renderer is just a
@@ -48,30 +45,11 @@ typedef struct
 	unsigned int	lighting_vbo;
 } Renderer;
 
-typedef struct 
-{
-	vec3 	position;
-	vec3 	color;
-	float 	intensity;
-} PointLight;
-
 
 B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo);
 void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode);
 Renderer create_default_renderer(B_Window window);
 void free_renderer(Renderer renderer);
-unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path);
-unsigned int B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
-unsigned int B_compile_compute_shader(const char *comp_path);
-void B_free_shader(B_Shader shader);
-int B_check_shader(unsigned int id, const char *name, int status);
-void B_set_uniform_float(B_Shader shader, char *name, float value);
-void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
-void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
-void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
-void B_set_uniform_int(B_Shader shader, char *name, int value);
-void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value);
-
 #endif
 
 

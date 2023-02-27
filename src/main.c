@@ -313,7 +313,7 @@ void game_loop(const char *server_name, const char *port)
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 
-		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
+		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_block, command_state.camera_rotation);
 		// Render
 
 		mat4 projection_view;

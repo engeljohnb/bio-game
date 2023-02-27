@@ -18,7 +18,7 @@
 #ifndef __TERRAIN_H__
 #define __TERRAIN_H__
 #include <glad/glad.h>
-#include "rendering.h"
+#include "common.h"
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
  * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */

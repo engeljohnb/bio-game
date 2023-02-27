@@ -1,6 +1,7 @@
 #ifndef __COLLISIONS_H__
 #define __COLLISIONS_H__
 #include <cglm/cglm.h>
+#include "actor_state.h"
 #include "terrain.h"
 
 float get_terrain_height(vec3 pos, TerrainBlock *block);

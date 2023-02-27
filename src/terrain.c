@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <math.h>
+#include <string.h>
 #include "utils.h"
 #include "terrain.h"
 

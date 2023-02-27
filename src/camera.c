@@ -69,26 +69,31 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 }
 
-void update_camera(Camera *camera, ActorState player, mat4 rotation)
+void update_camera(Camera *camera, ActorState player, TerrainBlock *terrain_block, mat4 rotation)
 {
 	glm_vec3_copy(player.position, camera->position);
-
-	get_rotation_matrix(player.command_state.look_x, player.command_state.look_y, rotation);
-	glm_mat4_mulv3(rotation, VEC3_Z_DOWN, 0, camera->front);
-	glm_mat4_mulv3(rotation, VEC3_X_DOWN, 0, camera->right);
-
 	mat4 translate;
 	glm_mat4_identity(translate);
 	vec3 up;
 	glm_vec3_cross(camera->front, camera->right, up);
 
+	get_rotation_matrix(player.command_state.look_x, player.command_state.look_y, rotation);
+	glm_mat4_mulv3(rotation, VEC3_Z_DOWN, 0, camera->front);
+	glm_mat4_mulv3(rotation, VEC3_X_DOWN, 0, camera->right);
+
 	vec3 camera_direction;
 	glm_vec3_copy(camera->front, camera_direction);
-	glm_vec3_scale(camera_direction, 45, camera_direction);
+	glm_vec3_scale(camera_direction, 55, camera_direction);
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
+	float height = get_terrain_height(camera->position, terrain_block);
+	if (camera->position[1] < (height + 3.0f))
+	{
+		camera->position[1] = height + 3.0f;
+	}
+
 	vec3 target;
-	glm_vec3_add(player.position, VEC3(0, 2, 0), target);
+	glm_vec3_add(player.position, VEC3(0, 10, 0), target);
 	glm_lookat(camera->position, target, up, camera->view_space);
 }
