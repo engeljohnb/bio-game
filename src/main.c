@@ -33,15 +33,16 @@
 #include "actor.h"
 #include "input.h"
 #include "time.h"
-#include "utils.h"
 #include "terrain.h"
 #include "asset_loading.h"
+#include "terrain_collisions.h"
+#include "utils.h"
 
 
 /* UP NEXT: 
  * 	Terrain collision. */
 
-#define PLAYER_START_POS VEC3(TERRAIN_HEIGHT_SCALE*2, 300.0f, TERRAIN_XZ_SCALE*2)
+#define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
 void server_loop(const char *port)
 {
@@ -196,6 +197,9 @@ void game_loop(const char *server_name, const char *port)
 	Renderer renderer = create_default_renderer(window);
 	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
 
+	// Environment init
+	TerrainBlock terrain_block = create_terrain_block(renderer.g_buffer);
+
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
@@ -206,22 +210,23 @@ void game_loop(const char *server_name, const char *port)
 	B_send_message(server_connection, JOIN_REQUEST, NULL, 0);
 	NewPlayerPackage *package = confirm_join_request(server_connection);
 	unsigned int player_id = package->my_id;
+
+	/* Package->num_actors is the number of players *already* in the game -- so if you
+	 * are the first player, this shouldn't execute */
 	for (unsigned int i = 0; i < package->num_actors; ++i)
 	{
 		all_actors[i] = create_player(package->actor_states[i].id);
 		all_actors[i].actor_state = package->actor_states[i];
+		snap_to_ground(all_actors[i].actor_state.position, &terrain_block);
 	}
+
 	BG_FREE(package);
 	all_actors[player_id] = create_player(player_id);
-
+	snap_to_ground(all_actors[player_id].actor_state.position, &terrain_block);
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
 	command_state.toggle_anti_aliasing = 1;
-
-	// Environment init
-	//TerrainMesh terrain_mesh = B_create_terrain_mesh(renderer.g_buffer);
-	TerrainBlock terrain_block = create_terrain_block(renderer.g_buffer);
 
 	// Compile shaders
 	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
@@ -238,7 +243,7 @@ void game_loop(const char *server_name, const char *port)
 	float frame_time = 0;
 	int running = 1;
 	int frames = 0;
-							
+
 	while (running)
 	{
 		unsigned int num_states = 0;
@@ -252,7 +257,6 @@ void game_loop(const char *server_name, const char *port)
 		int message_return = 0;
 		while (num_states < num_players)
 		{
-			frames++;
 			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
@@ -281,6 +285,8 @@ void game_loop(const char *server_name, const char *port)
 		}
 
 		frame_time += B_get_frame_time(delta_t);
+
+		/* If the most current ActorState hasn't been received from the server, update it locally. */
 		if (message_return <= 0)
 		{
 			for (unsigned int i = 0; i < num_players; ++i)
@@ -303,24 +309,27 @@ void game_loop(const char *server_name, const char *port)
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
+			update_actor_gravity(&all_actors[i].actor_state, &terrain_block);
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 
-		// Render
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, command_state.camera_rotation);
+		// Render
+
+		mat4 projection_view;
+		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
 		B_clear_window(renderer.window);
 		B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
-		draw_terrain_block(&terrain_block, terrain_shader, &renderer.camera, all_actors[player_id].actor_state.current_terrain_index);
-		//B_draw_terrain_mesh(terrain_mesh, terrain_shader, &renderer.camera, all_actors[player_id].actor_state.current_terrain_index, 0, 16.0f);
+		draw_terrain_block(&terrain_block, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
-		// Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
-		// before sending to the GPU.
+		/* Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
+		 * before sending to the GPU. */
 		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), point_light.position);
 		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
-		point_light.intensity = 6.0f;
+		point_light.intensity = 2.0f;
 
 		B_render_lighting(renderer, lighting_shader, point_light, command_state.mode);
 		B_flip_window(renderer.window);
@@ -329,6 +338,9 @@ void game_loop(const char *server_name, const char *port)
 		{
 			free_message(message);
 		}
+		
+		frames++;
+
 	}
 
 	for (unsigned int i = 0; i < num_players; ++i)
@@ -336,7 +348,6 @@ void game_loop(const char *server_name, const char *port)
 		free_actor(all_actors[i]);
 	}
 
-	//B_free_terrain_mesh(terrain_mesh);
 	free_terrain_block(&terrain_block);
 	B_close_connection(server_connection);
 	B_free_window(window);

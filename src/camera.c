@@ -84,9 +84,11 @@ void update_camera(Camera *camera, ActorState player, mat4 rotation)
 
 	vec3 camera_direction;
 	glm_vec3_copy(camera->front, camera_direction);
-	glm_vec3_scale(camera_direction, 15, camera_direction);
+	glm_vec3_scale(camera_direction, 45, camera_direction);
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	glm_lookat(camera->position, player.position, up, camera->view_space);
+	vec3 target;
+	glm_vec3_add(player.position, VEC3(0, 2, 0), target);
+	glm_lookat(camera->position, target, up, camera->view_space);
 }

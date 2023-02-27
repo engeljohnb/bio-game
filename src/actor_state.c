@@ -20,9 +20,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "actor_rendering.h"
-#include "terrain.h"
 #include "utils.h"
+#include "terrain.h"
 #include "actor_state.h"
+#include "terrain_collisions.h"
 #include "actor.h"
 
 #define GRAPHICAL_RENDER 1
@@ -83,7 +84,9 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, actor_state->right);
 
 	vec3 velocity;
-	glm_vec3_scale(command_state.move_direction, actor_state->speed, velocity);
+	vec3 move_direction_xz;
+	glm_vec3_copy(VEC3(command_state.move_direction[0], 0, command_state.move_direction[2]), move_direction_xz);
+	glm_vec3_scale(move_direction_xz, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 	if (actor_state->position[0] > TERRAIN_XZ_SCALE*4)
 	{
@@ -106,15 +109,14 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 		actor_state->position[2] = TERRAIN_XZ_SCALE*4;
 		actor_state->current_terrain_index -= MAX_TERRAIN_BLOCKS;
 	}
-
 }
+
 
 ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 {
 	ActorState state;
 	memset(&state, 0, sizeof(ActorState));
 	memset(&state.command_state, 0, sizeof(CommandState));
-	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(facing, state.front);
 	state.speed = 0;

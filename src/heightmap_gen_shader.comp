@@ -206,8 +206,8 @@ void main(void)
 	uint x_block_offset = x_block_index * uint(vertices_per_column);
 	uint z_block_offset = z_block_index * uint(vertices_per_row);
 
-	float x_index = float(gl_GlobalInvocationID.x);// + float(vertices_per_column);// * x_counter;
-	float z_index = float(gl_GlobalInvocationID.y);// + float(vertices_per_row);// * z_counter;
+	float x_index = float(gl_GlobalInvocationID.x);
+	float z_index = float(gl_GlobalInvocationID.y);
 	float x_offset = (x_index + float(x_block_offset));
 	float z_offset = (z_index + float(z_block_offset));
 

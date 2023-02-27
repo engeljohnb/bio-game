@@ -29,8 +29,8 @@ typedef unsigned int B_Framebuffer;
 typedef unsigned int B_Texture;
 
 /* Most objects in the game have rendering needs specific to that type of object. However, there are
- * a few things that will tend to be the same with most every object. A Renderer is nothing more than
- * a collection of any data needed for rendering which most objects should be able to share
+ * a few things that will tend to be the same with most every object. A Renderer is just a
+ * collection of any data needed for rendering which most objects should be able to share
  * (such as the deferred lighting framebuffer, for example).
  *
  * It's not really organized. Whenever I find myself passing the same variable to every draw function,
