@@ -39,6 +39,7 @@ typedef struct
 	CommandState		command_state;
 	int			active;
 	uint64_t		current_terrain_index;			
+	uint64_t		prev_terrain_index;			
 	unsigned int		id;
 	float			speed;
 	float			max_speed;

@@ -42,6 +42,33 @@ void B_init(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 }
 
+B_Window B_create_server_window(void)
+{
+	B_Window window;
+	int window_width = 0;
+	int window_height = 0;
+	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 0, 0, window_width, window_height, SDL_WINDOW_OPENGL);
+	if (sdl_window == NULL)
+	{
+		fprintf(stderr, "Could not create server window: %s\n", SDL_GetError());
+	}
+	SDL_GLContext gl_context = SDL_GL_CreateContext(sdl_window);
+	gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+	glViewport(0, 0, window_width, window_height);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	window.sdl_window = sdl_window;
+	window.gl_context = gl_context;
+	window.width = window_width;
+	window.height = window_height;
+	window.background_color[0] = 0.0f;
+	window.background_color[1] = 0.0f;
+	window.background_color[2] = 0.0f;
+
+	return window;
+}
+
 B_Window B_create_window(void)
 {
 	B_Window window;

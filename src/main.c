@@ -40,7 +40,8 @@
 
 
 /* UP NEXT: 
- * 	Terrain collision. */
+ * 	Wash and doc, then fix that weird glitch where the screen flashes every so many frames.
+ * 	Then make it so the server is authorative again. Perhaps it's time to learn how to compress data for networking? */
 
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
@@ -48,12 +49,14 @@ void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
 	ActorState players[MAX_PLAYERS];
+	TerrainBlock terrain_blocks[MAX_PLAYERS];
 	CommandState command_states[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		memset(&addresses[i], 0, sizeof(B_Address));
 		memset(&players[i], 0, sizeof(ActorState));
 		memset(&command_states[i], 0, sizeof(CommandState));
+		memset(&terrain_blocks[i], 0, sizeof(TerrainBlock));
 	}
 
 	unsigned int num_players = 0;
@@ -67,15 +70,16 @@ void server_loop(const char *port)
 		B_Message message;
 		unsigned int num_states = 0;
 		memset(&message, 0, sizeof(B_Message));
+
 		while ((num_states < num_players) || (!num_states))
 		{
 			int message_return = 0;
 			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
-				SDL_Delay(10);
 				continue;
 			}
+
 			switch (message.type)
 			{
 				case JOIN_REQUEST:
@@ -93,6 +97,7 @@ void server_loop(const char *port)
 						}
 						B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &package, sizeof(NewPlayerPackage));
 						players[num_players] = create_actor_state(num_players, PLAYER_START_POS, VEC3_Z_UP);
+						terrain_blocks[num_players] = create_server_terrain_block();
 						for (unsigned int i = 0; i < num_players; ++i)
 						{
 							B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
@@ -101,6 +106,7 @@ void server_loop(const char *port)
 					}
 					break;
 				}
+
 				case COMMAND_STATE:
 				{
 					CommandState command_state = *(CommandState *)message.data;
@@ -133,6 +139,7 @@ void server_loop(const char *port)
 					break;
 				}
 			}
+
 			for (unsigned int i = 0; i < num_players; ++i)
 			{
 				if (!players[i].active)
@@ -140,15 +147,18 @@ void server_loop(const char *port)
 					num_states++;
 				}
 			}
+
 			if (message_return > 0)
 			{
 				free_message(message);
 			}
 		}
+
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor_state_direction(&players[i], &command_states[i]);
 		}
+
 		frame_time += B_get_frame_time(delta_t);
 		while (frame_time >= delta_t)
 		{
@@ -158,6 +168,17 @@ void server_loop(const char *port)
 			}
 			frame_time -= delta_t;
 		}
+
+		for (unsigned int i = 0; i < num_players; ++i)
+		{
+			if (players[i].current_terrain_index != players[i].prev_terrain_index)
+			{
+				B_update_terrain_block(&terrain_blocks[i], players[i].current_terrain_index);
+			}
+			update_actor_gravity(&players[i], &terrain_blocks[i]);
+			
+		}
+
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			for (unsigned int j = 0; j < num_players; ++j)
@@ -260,7 +281,6 @@ void game_loop(const char *server_name, const char *port)
 			message_return = B_listen_for_message(server_connection, &message, NON_BLOCKING);
 			if (message_return <= 0)
 			{
-				SDL_Delay(10);
 				break;
 			}
 			switch (message.type)
@@ -301,15 +321,25 @@ void game_loop(const char *server_name, const char *port)
 				}
 				frame_time -= delta_t;
 			}
+
+			// TODO: This will work fine for one-player, but what if players are on different terrain chunks?
+			for (unsigned int i = 0; i < num_players; ++i)
+			{
+				B_update_terrain_block(&terrain_block, all_actors[i].actor_state.current_terrain_index);
+				update_actor_gravity(&all_actors[i].actor_state, &terrain_block);
+			}
 		}
 		else
 		{
+			if (all_actors[player_id].actor_state.current_terrain_index != all_actors[player_id].actor_state.prev_terrain_index)
+			{
+				B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
+			}
 			frame_time = 0;
 		}
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			update_actor_gravity(&all_actors[i].actor_state, &terrain_block);
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 
@@ -319,7 +349,7 @@ void game_loop(const char *server_name, const char *port)
 		mat4 projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
 		B_clear_window(renderer.window);
-		B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
+		
 		draw_terrain_block(&terrain_block, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
@@ -372,7 +402,11 @@ int main(int argc, char **argv)
 	char port[] = "4886";
 	if (strncmp(argv[2], "0", 1) == 0)
 	{
+		B_init();
+		B_Window server_window = B_create_server_window();
 		server_loop(port);
+		B_free_window(server_window);
+
 	}
 	else if (strncmp(argv[2], "1", 1) == 0)
 	{
@@ -384,7 +418,10 @@ int main(int argc, char **argv)
 	{
 		if (!fork())
 		{
+			B_init();
+			B_Window server_window = B_create_server_window();
 			server_loop(port);
+			B_free_window(server_window);
 			int status = 0;
 			waitpid(0, &status, 0);
 		}

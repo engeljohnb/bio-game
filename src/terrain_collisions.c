@@ -234,7 +234,7 @@ void update_actor_gravity(ActorState *actor_state, TerrainBlock *terrain_block)
 	float height = get_terrain_height(actor_state->position, terrain_block) + 2.0f;
 	if (actor_state->position[1] > height)
 	{
-		actor_state->position[1] -= 0.001;
+		actor_state->position[1] -= 0.4;
 	}
 	if (actor_state->position[1] < height)
 	{

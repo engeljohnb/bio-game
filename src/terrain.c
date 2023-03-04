@@ -26,12 +26,6 @@
 
 void B_update_terrain_block(TerrainBlock *block, int player_block_index)
 {
-	static int prev_player_block = 0;
-	if (player_block_index == prev_player_block)
-	{
-		return;
-	}
-
 	int x_offset = -1;
 	int z_offset =  -MAX_TERRAIN_BLOCKS;
 	int x_counter = 0;
@@ -66,7 +60,6 @@ void B_update_terrain_block(TerrainBlock *block, int player_block_index)
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, block->heightmap_buffer);
-	prev_player_block = player_block_index;
 }
 
 TerrainBlock create_terrain_block(unsigned int  g_buffer)
@@ -89,6 +82,30 @@ TerrainBlock create_terrain_block(unsigned int  g_buffer)
 
 	block.tessellation_level = 16.0;
 	
+	B_send_terrain_block_to_gpu(&block);
+
+	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
+	B_update_terrain_block(&block, terrain_index);
+	return block;
+}
+
+TerrainBlock create_server_terrain_block(void)
+{
+	TerrainBlock block;
+	memset(&block, 0, sizeof(TerrainBlock));
+
+	block.block_width = 64;
+	block.block_height = 64;
+
+	block.heightmap_width = block.block_width*3;;
+	block.heightmap_height = block.block_height*3;
+	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
+	
+	block.heightmap_size = block.heightmap_width * block.heightmap_height;
+	block.heightmap_buffer = BG_MALLOC(GLfloat, block.heightmap_size);
+
+	block.tessellation_level = 16.0;
+
 	B_send_terrain_block_to_gpu(&block);
 
 	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
@@ -221,7 +238,6 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices
 	mesh.g_buffer = g_buffer;
 	return mesh;
 }
-
 void B_free_terrain_mesh(TerrainMesh mesh)
 {
 	glDeleteBuffers(1, &mesh.vbo);

@@ -80,6 +80,7 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertice
  * |-------|-------|-------|
  * */
 TerrainBlock create_terrain_block(unsigned int g_buffer);
+TerrainBlock create_server_terrain_block(void);
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
 void free_terrain_block(TerrainBlock *block);
 void B_free_terrain_mesh(TerrainMesh mesh);
