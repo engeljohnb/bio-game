@@ -229,12 +229,12 @@ float get_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 	return final_height;
 }
 
-void update_actor_gravity(ActorState *actor_state, TerrainBlock *terrain_block)
+void update_actor_gravity(ActorState *actor_state, TerrainBlock *terrain_block, float delta_t)
 {
 	float height = get_terrain_height(actor_state->position, terrain_block) + 2.0f;
 	if (actor_state->position[1] > height)
 	{
-		actor_state->position[1] -= 0.4;
+		actor_state->position[1] -= 0.08 * delta_t;
 	}
 	if (actor_state->position[1] < height)
 	{

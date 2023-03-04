@@ -175,7 +175,7 @@ void server_loop(const char *port)
 			{
 				B_update_terrain_block(&terrain_blocks[i], players[i].current_terrain_index);
 			}
-			update_actor_gravity(&players[i], &terrain_blocks[i]);
+			update_actor_gravity(&players[i], &terrain_blocks[i], delta_t);
 			
 		}
 
@@ -326,7 +326,7 @@ void game_loop(const char *server_name, const char *port)
 			for (unsigned int i = 0; i < num_players; ++i)
 			{
 				B_update_terrain_block(&terrain_block, all_actors[i].actor_state.current_terrain_index);
-				update_actor_gravity(&all_actors[i].actor_state, &terrain_block);
+				update_actor_gravity(&all_actors[i].actor_state, &terrain_block, delta_t);
 			}
 		}
 		else

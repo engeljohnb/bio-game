@@ -23,7 +23,7 @@
  * total number of terrain blocks in either the x or z direction. So the total number
  * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
 #define MAX_TERRAIN_BLOCKS 100000
-#define TERRAIN_HEIGHT_SCALE 700
+#define TERRAIN_HEIGHT_SCALE 800
 #define TERRAIN_XZ_SCALE 300
 typedef struct
 {
