@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "terrain_collisions.h"
 
-void get_texel_from_position(vec3 pos, TerrainBlock *terrain_block, int *x, int *z)
+void get_texel_from_position(vec3 pos, TerrainChunk *terrain_block, int *x, int *z)
 {
 	size_t section_heightmap_height = round(terrain_block->heightmap_width/3);
 	size_t section_heightmap_width = round(terrain_block->heightmap_height/3);
@@ -24,7 +24,7 @@ void get_texel_from_position(vec3 pos, TerrainBlock *terrain_block, int *x, int 
 	*z = pixel_z;
 }
 
-float get_raw_terrain_height(vec3 pos, TerrainBlock *terrain_block)
+float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_block)
 {
 	size_t total_heightmap_width = terrain_block->heightmap_width;
 	size_t section_heightmap_height = round(terrain_block->heightmap_width/3);
@@ -50,12 +50,12 @@ float get_raw_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 	return terrain_block->heightmap_buffer[index].value * (terrain_block->heightmap_buffer[index].scale*2500);
 }
 
-void snap_to_ground(vec3 pos, TerrainBlock *terrain_block)
+void snap_to_ground(vec3 pos, TerrainChunk *terrain_block)
 {
 	pos[1] = get_terrain_height(pos, terrain_block);
 }
 
-void find_nearest_grid_coord(vec3 pos, TerrainBlock *terrain_block, vec2 dest)
+void find_nearest_grid_coord(vec3 pos, TerrainChunk *terrain_block, vec2 dest)
 {
 	vec2 player_coord;
 	glm_vec2_copy(VEC2(pos[0], pos[2]), player_coord);
@@ -95,7 +95,7 @@ void find_nearest_grid_coord(vec3 pos, TerrainBlock *terrain_block, vec2 dest)
 	glm_vec3_copy(VEC2(x, z), dest);
 }
 
-void find_nearest_grid_square(vec3 pos, TerrainBlock *terrain_block, vec2 dest)
+void find_nearest_grid_square(vec3 pos, TerrainChunk *terrain_block, vec2 dest)
 {
 	/* Size / num_vertices */
 	float grid_square_size = (TERRAIN_XZ_SCALE * 4) / (4 * terrain_block->tessellation_level * 3);
@@ -164,7 +164,7 @@ float bilinearly_interpolate_float(float x0,
 	return (r0 * scalar0y) + (r1 * scalar1y);
 }
 
-void get_four_nearest_heights(vec3 pos, TerrainBlock *terrain_block, vec4 dest)
+void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_block, vec4 dest)
 {
 	float texel_width = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
 	float texel_height = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
@@ -199,7 +199,7 @@ float barrycentrically_interpolate(vec3 p1, vec3 p2, vec3 p3, vec3 pos)
 }
 
 
-float get_terrain_height(vec3 pos, TerrainBlock *terrain_block)
+float get_terrain_height(vec3 pos, TerrainChunk *terrain_block)
 {
 	vec4 heights;
 	get_four_nearest_heights(pos, terrain_block, heights);
@@ -233,7 +233,7 @@ float get_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 	return final_height;
 }
 
-void update_actor_gravity(ActorState *actor_state, TerrainBlock *terrain_block, float delta_t)
+void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_block, float delta_t)
 {
 	float height = get_terrain_height(actor_state->position, terrain_block) + 2.0f;
 	if (actor_state->position[1] > height)

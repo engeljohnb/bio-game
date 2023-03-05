@@ -39,7 +39,7 @@ typedef struct
 	CommandState		command_state;
 	int			active;
 	uint64_t		current_terrain_index;			
-	uint64_t		prev_terrain_index;			
+	uint64_t		prev_terrain_index;
 	unsigned int		id;
 	float			speed;
 	float			max_speed;
@@ -60,5 +60,6 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing);
 /* Destructively applies changes based on the given CommandState */
 void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t);
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state);
+int actor_outside_terrain_boundaries(ActorState *actor_state);
 
 #endif

@@ -67,6 +67,7 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 			current_time = 0.0f;
 		}
 	}
+
 	else
 	{
 		for (int i = 0; i < MAX_BONES; ++i)
@@ -91,7 +92,6 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 	{
 		B_draw_actor_model(model->children[i], camera, shader);
 	}
-
 }
 
 PointLight create_point_light(vec3 position, vec3 color, float intensity)

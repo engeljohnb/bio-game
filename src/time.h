@@ -23,6 +23,7 @@
 #define FPS_30 33
 
 void B_keep_time(int target_period);
+void B_stopwatch(char *message);
 float B_get_frame_time(float delta_t);
 
 #endif

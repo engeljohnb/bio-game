@@ -32,7 +32,7 @@ typedef struct
 	unsigned int	vbo;
 	unsigned int	g_buffer;
 	int		num_vertices;
-	int		num_columns;
+	int		num_rows;
 } TerrainMesh;
 
 typedef struct
@@ -41,9 +41,7 @@ typedef struct
 	float		scale;
 } TerrainHeight;
 
-/* A TerrainBlock is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map. */
-//TODO: If I'm going to keep calling one of the individual meshes a "block", I shouldn't also call the collection
-//of all of them a "block". Maybe call it a TerrainChunk?
+/* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map. */
 typedef struct
 {
 	TerrainHeight	*heightmap_buffer;
@@ -58,7 +56,7 @@ typedef struct
 	B_Framebuffer	g_buffer;
 	B_Shader 	compute_shader;
 	float		*tex_coords[2];
-} TerrainBlock;
+} TerrainChunk;
 
 typedef struct
 {
@@ -67,10 +65,10 @@ typedef struct
 } T_Vertex;
 
 T_Vertex *generate_t_vertices(int width, int height);
-TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertices, int num_vertices, int num_columns);
+TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertices, int num_vertices, int num_rows);
 
 /* Draws the terrain meshes that are currently surrounding the player (* marks the player's current tile).
- * The geography is generated dynamically -- so only one TerrainBlock is needed throughout the game. It's simply repositioned and
+ * The geography is generated dynamically -- so only one TerrainChunk is needed throughout the game. It's simply repositioned and
  * the height recalculated based on the player's location.
  * |-------|-------|-------|
  * |       |       |       |
@@ -86,15 +84,15 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertice
  * |       |       |       |
  * |-------|-------|-------|
  * */
-TerrainBlock create_terrain_block(unsigned int g_buffer);
-TerrainBlock create_server_terrain_block(void);
+TerrainChunk create_terrain_block(unsigned int g_buffer);
+TerrainChunk create_server_terrain_block(void);
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
-void free_terrain_block(TerrainBlock *block);
+void free_terrain_block(TerrainChunk *block);
 void B_free_terrain_mesh(TerrainMesh mesh);
-void B_send_terrain_block_to_gpu(TerrainBlock *block);
-void B_update_terrain_block(TerrainBlock *block, int player_block_index);
+void B_send_terrain_block_to_gpu(TerrainChunk *block);
+void B_update_terrain_block(TerrainChunk *block, int player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_block(TerrainBlock *block, B_Shader shader, mat4 projection_view, int player_block_index);
+void draw_terrain_block(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index);
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,

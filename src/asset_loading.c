@@ -507,47 +507,6 @@ Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh)
 	B_load_bone_array_iter(B_get_root_bone(scene->mRootNode), bone_array, bone_array[0], NULL, mesh->mBones, mesh->mNumBones);
 	return bone_array;
 }
-/*void B_load_animation_nodes(C_STRUCT aiNode *ai_node, 
-			    C_STRUCT aiNodeAnim **channels, int num_channels,
-			    C_STRUCT aiBone **ai_bones, int num_bones,
-			    AnimationNode *current_node,
-			    AnimationNode **node_array)
-{
-	memset(current_node, 0, sizeof(AnimationNode));
-	int found_match = 0;
-	C_STRUCT aiBone *matching_bone = NULL;
-	C_STRUCT aiNodeAnim *matching_channel = NULL;
-	int bone_index = -1;
-	int channel_index = -1;
-
-	for (int i = 0; i < num_bones; ++i)
-	{
-		if (strncmp(ai_node->mName.data, ai_bones[i]->mName.data, 255) == 0)
-		{
-			bone_index = i;
-			matching_bone = ai_bones[i];
-		}
-	}
-	for (int i = 0; i < num_channels; ++i)
-	{
-		if (strncmp(ai_node->mName.data, channels[i]->mNodeName.data, 255) == 0)
-		{
-			channel_index = i;
-			matching_channel = channels[i];
-		}
-	}
-
-	if (bone_index < 0)
-	{
-		fprintf(stderr, "B_load_animation_nodes error: couldn't find matching bone for AnimationNode \"%s\"\n", ai_node->mName.data);
-		exit(-1);
-	}
-
-
-	current_node->id = bone_index;
-	strncpy(current_node->name, matching_bone->mNodeName.data, 255);
-
-}*/
 
 void B_load_animation_nodes(C_STRUCT aiNode *ai_node, 
 			    C_STRUCT aiNodeAnim **channels, int num_channels,
@@ -555,7 +514,6 @@ void B_load_animation_nodes(C_STRUCT aiNode *ai_node,
 			    AnimationNode *current_node,
 			    AnimationNode **node_array)
 {
-	//TODO: Remove the repitition from this function (already started for you above).
 	memset(current_node, 0, sizeof(AnimationNode));
 	int found_match = 0;
 	for (int i = 0; i < num_channels; ++i)

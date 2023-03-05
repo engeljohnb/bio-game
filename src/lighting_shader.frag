@@ -98,7 +98,6 @@ void main()
 
 	else if (mode == SHOW_POSITION)
 	{ 
-		//frag_color = vec4(position, 1.0);
 		frag_color = vec4(vec3(position.y), 1.0);
 	}
 	else if (mode == SHOW_NORMALS)

@@ -70,7 +70,7 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 }
 
-void update_camera(Camera *camera, ActorState player, TerrainBlock *terrain_block, mat4 rotation)
+void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_block, mat4 rotation)
 {
 	glm_vec3_copy(player.position, camera->position);
 	mat4 translate;

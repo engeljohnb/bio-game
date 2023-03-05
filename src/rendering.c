@@ -21,6 +21,7 @@
 #include "window.h"
 #include "rendering.h"
 #include "utils.h"
+#include "time.h"
 
 B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo)
 {
@@ -62,21 +63,21 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 	int height = 0;
 	B_get_window_size(&width, &height);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _normal_texture, 0);
 
 	glGenTextures(1, &_position_texture);
 	glBindTexture(GL_TEXTURE_2D, _position_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _position_texture, 0);
 
 	glGenTextures(1, &_color_texture);
 	glBindTexture(GL_TEXTURE_2D, _color_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _color_texture, 0);
@@ -122,7 +123,7 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shader);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, renderer.position_texture);
@@ -136,6 +137,7 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	B_set_uniform_int(shader, "f_color_texture", 2);
 	B_set_uniform_point_light(shader, "point_light", point_light);
 	B_set_uniform_int(shader, "mode", mode);
+
 
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(renderer.lighting_vao);

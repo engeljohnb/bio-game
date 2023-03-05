@@ -45,23 +45,21 @@ void B_init(void)
 B_Window B_create_server_window(void)
 {
 	B_Window window;
-	int window_width = 0;
-	int window_height = 0;
-	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 0, 0, window_width, window_height, SDL_WINDOW_OPENGL);
+	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 0, 0, 0, 0, SDL_WINDOW_OPENGL);
 	if (sdl_window == NULL)
 	{
 		fprintf(stderr, "Could not create server window: %s\n", SDL_GetError());
 	}
 	SDL_GLContext gl_context = SDL_GL_CreateContext(sdl_window);
 	gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
-	glViewport(0, 0, window_width, window_height);
+	glViewport(0, 0, 0, 0);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
 	window.sdl_window = sdl_window;
 	window.gl_context = gl_context;
-	window.width = window_width;
-	window.height = window_height;
+	window.width = 0;
+	window.height = 0;
 	window.background_color[0] = 0.0f;
 	window.background_color[1] = 0.0f;
 	window.background_color[2] = 0.0f;
@@ -73,8 +71,8 @@ B_Window B_create_server_window(void)
 B_Window B_create_window(void)
 {
 	B_Window window;
-	int window_width = 0;
-	int window_height = 0;
+	int window_width = 16;
+	int window_height = 9;
 	SDL_Window *size_window = SDL_CreateWindow("Get-size", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	SDL_GetWindowSize(size_window, &window_width, &window_height);
 	SDL_DestroyWindow(size_window);
@@ -114,7 +112,7 @@ B_Window B_create_window(void)
 void B_clear_window(B_Window window)
 {
 	glClearColor(window.background_color[0], window.background_color[1], window.background_color[2], 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void B_flip_window(B_Window window)

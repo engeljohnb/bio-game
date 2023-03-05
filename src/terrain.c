@@ -24,7 +24,7 @@
 #include "utils.h"
 #include "terrain.h"
 
-void B_update_terrain_block(TerrainBlock *block, int player_block_index)
+void B_update_terrain_block(TerrainChunk *block, int player_block_index)
 {
 	int x_offset = -1;
 	int z_offset = -MAX_TERRAIN_BLOCKS;
@@ -47,24 +47,19 @@ void B_update_terrain_block(TerrainBlock *block, int player_block_index)
 			z_offset += MAX_TERRAIN_BLOCKS;
 			z_counter++;
 		}
-		if (z_offset > MAX_TERRAIN_BLOCKS)
-		{
-			z_offset = -MAX_TERRAIN_BLOCKS;
-		}
-
 
 		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
-		glDispatchCompute(block->block_width/16, block->block_height/16, 1);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glDispatchCompute(block->block_width/8, block->block_height/8, 1);
+		//glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, block->heightmap_buffer);
 }
 
-TerrainBlock create_terrain_block(unsigned int  g_buffer)
+TerrainChunk create_terrain_block(unsigned int  g_buffer)
 {
-	TerrainBlock block;
+	TerrainChunk block;
 	for (int i = 0; i < 9; ++i)
 	{
 		block.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
@@ -89,10 +84,10 @@ TerrainBlock create_terrain_block(unsigned int  g_buffer)
 	return block;
 }
 
-TerrainBlock create_server_terrain_block(void)
+TerrainChunk create_server_terrain_block(void)
 {
-	TerrainBlock block;
-	memset(&block, 0, sizeof(TerrainBlock));
+	TerrainChunk block;
+	memset(&block, 0, sizeof(TerrainChunk));
 
 	block.block_width = 64;
 	block.block_height = 64;
@@ -113,7 +108,7 @@ TerrainBlock create_server_terrain_block(void)
 	return block;
 }
 
-void B_send_terrain_block_to_gpu(TerrainBlock *block)
+void B_send_terrain_block_to_gpu(TerrainChunk *block)
 {
 	unsigned int texture = 0;
 	glGenTextures(1, &texture);
@@ -168,7 +163,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	glBindTexture(GL_TEXTURE_2D, texture);
 	B_set_uniform_int(shader, "heightmap", 0);
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
-	B_set_uniform_int(shader, "patches_per_column", mesh.num_columns);
+	B_set_uniform_int(shader, "patches_per_column", mesh.num_rows);
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
@@ -179,7 +174,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 }
 
-void draw_terrain_block(TerrainBlock *block, B_Shader shader, mat4 projection_view, int player_block_index)
+void draw_terrain_block(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, block->g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -213,7 +208,7 @@ void draw_terrain_block(TerrainBlock *block, B_Shader shader, mat4 projection_vi
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices, int num_vertices, int num_columns)
+TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices, int num_vertices, int num_rows)
 {
 	TerrainMesh mesh = {0};
 	size_t stride = sizeof(GLfloat)*3 + sizeof(GLfloat)*2;
@@ -233,8 +228,7 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices
 
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 	mesh.num_vertices = num_vertices;
-	//TODO: Technically you're interested in the number of rows, not the number of columns, so change this name.
-	mesh.num_columns = num_columns;
+	mesh.num_rows = num_rows;
 	mesh.g_buffer = g_buffer;
 	return mesh;
 }
@@ -244,7 +238,7 @@ void B_free_terrain_mesh(TerrainMesh mesh)
 	glDeleteVertexArrays(1, &mesh.vao);
 }
 
-void free_terrain_block(TerrainBlock *block)
+void free_terrain_block(TerrainChunk *block)
 {
 	for (int i = 0; i < 9; ++i)
 	{
