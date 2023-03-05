@@ -303,6 +303,7 @@ void game_loop(const char *server_name, const char *port)
 			}
 		}
 
+
 		/* Simulation updates */
 		frame_time += B_get_frame_time(delta_t);
 		/* If the most current ActorState hasn't been received from the server, update it locally. */
@@ -342,13 +343,16 @@ void game_loop(const char *server_name, const char *port)
 		{
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
-
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_block, command_state.camera_rotation);
 
 		/* Render */
 		mat4 projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
 
+		int window_width = 0;
+		int window_height = 0;
+		get_window_size(&window_width, &window_height);
+		glViewport(0, 0, window_width/2, window_height/2);
 		draw_terrain_block(&terrain_block, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 
@@ -360,6 +364,7 @@ void game_loop(const char *server_name, const char *port)
 		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
 		point_light.intensity = 2.0f;
 
+		glViewport(0, 0, window_width, window_height);
 		B_render_lighting(renderer, lighting_shader, point_light, command_state.mode);
 		B_flip_window(renderer.window);
 
@@ -369,7 +374,7 @@ void game_loop(const char *server_name, const char *port)
 		}
 		
 		frames++;
-
+		glFinish();
 	}
 
 	for (unsigned int i = 0; i < num_players; ++i)

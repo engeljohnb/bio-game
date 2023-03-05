@@ -74,7 +74,8 @@ vec4 calculate_point_light(PointLight point_light, vec3 position, vec3 normal)
 void main()
 {
 	vec3 position = vec3(texture(f_position_texture, f_tex_coords));
-	vec3 normal = vec3(texture(f_normal_texture, f_tex_coords));
+	vec2 base_normal = vec2(texture(f_normal_texture, f_tex_coords).rg);
+	vec3 normal = vec3(base_normal.r, base_normal.g, 1-(base_normal.r + base_normal.g));
 	vec3 color = vec3(texture(f_color_texture, f_tex_coords));
 	DirectionLight direction_light;
 	direction_light.direction = normalize(vec3(0.0f, 1.0f, 1.0f));
@@ -86,7 +87,7 @@ void main()
 	result += calculate_direction_light(direction_light, position, normal);
 
 	if (mode == SHOW_LIGHTING)
-	{	if ((position == vec3(0.0f)) && (normal == vec3(0.0f)))
+	{	if ((position == vec3(0.0f)) || (normal == vec3(0.0f)))
 		{
 			frag_color = vec4(0.3, 0.3, 0.4, 1.0);
 		}

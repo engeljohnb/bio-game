@@ -25,7 +25,7 @@
 int g_window_width = -1;
 int g_window_height = -1;
 
-void B_get_window_size(int *width, int *height)
+void get_window_size(int *width, int *height)
 {
 	*width = g_window_width;
 	*height = g_window_height;

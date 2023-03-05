@@ -32,7 +32,7 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 {
 	Camera camera;
 	memset(&camera, 0, sizeof(Camera));
-	glm_perspective(RAD(45.0f), (float)window.width/(float)window.height, 0.1f, 1000.0f, camera.projection_space);
+	glm_perspective(RAD(45), (float)window.width/(float)window.height, 0.1f, 1000.0f, camera.projection_space);
 	glm_vec3_copy(position, camera.position);
 	glm_vec3_copy(front, camera.front);
 	glm_vec3_copy(VEC3_X_UP, camera.right);
