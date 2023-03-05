@@ -171,10 +171,10 @@ void server_loop(const char *port)
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			if (players[i].current_terrain_index != players[i].prev_terrain_index)
-			{
+			/*if (players[i].current_terrain_index != players[i].prev_terrain_index)
+			{*/
 				B_update_terrain_block(&terrain_blocks[i], players[i].current_terrain_index);
-			}
+			//}
 			update_actor_gravity(&players[i], &terrain_blocks[i], delta_t);
 			
 		}
@@ -331,10 +331,10 @@ void game_loop(const char *server_name, const char *port)
 		}
 		else
 		{
-			if (all_actors[player_id].actor_state.current_terrain_index != all_actors[player_id].actor_state.prev_terrain_index)
-			{
+			/*if (all_actors[player_id].actor_state.current_terrain_index != all_actors[player_id].actor_state.prev_terrain_index)
+			{*/
 				B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
-			}
+			//}
 			frame_time = 0;
 		}
 

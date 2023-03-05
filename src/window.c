@@ -65,6 +65,7 @@ B_Window B_create_server_window(void)
 	window.background_color[0] = 0.0f;
 	window.background_color[1] = 0.0f;
 	window.background_color[2] = 0.0f;
+	SDL_HideWindow(window.sdl_window);
 
 	return window;
 }

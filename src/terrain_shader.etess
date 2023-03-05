@@ -62,7 +62,8 @@ void main()
 	vec2 tex_coords = pos.xz/(max_xz);
 	tex_coords += 0.33;
 
-	pos.y += texture(heightmap, tex_coords).r * height_scale;
+	vec2 height = texture(heightmap, tex_coords).rg;
+	pos.y += height.r * (height.g*2500);
 	vec4 position = vec4(pos, 1.0);
 	gl_Position = position;
 }

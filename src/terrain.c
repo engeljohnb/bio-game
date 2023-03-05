@@ -27,7 +27,7 @@
 void B_update_terrain_block(TerrainBlock *block, int player_block_index)
 {
 	int x_offset = -1;
-	int z_offset =  -MAX_TERRAIN_BLOCKS;
+	int z_offset = -MAX_TERRAIN_BLOCKS;
 	int x_counter = 0;
 	int z_counter = 0;
 	glUseProgram(block->compute_shader);
@@ -38,28 +38,28 @@ void B_update_terrain_block(TerrainBlock *block, int player_block_index)
 		B_set_uniform_float(block->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
 		B_set_uniform_int(block->compute_shader, "x_counter", x_counter);
 		B_set_uniform_int(block->compute_shader, "z_counter", z_counter);
-		x_offset++;
 		x_counter++;
+		x_offset++;
 		if (x_offset > 1)
 		{
-			z_offset += MAX_TERRAIN_BLOCKS;
 			x_offset = -1;
 			x_counter = 0;
+			z_offset += MAX_TERRAIN_BLOCKS;
 			z_counter++;
 		}
-
 		if (z_offset > MAX_TERRAIN_BLOCKS)
 		{
 			z_offset = -MAX_TERRAIN_BLOCKS;
-		}	
+		}
 
-		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 		glDispatchCompute(block->block_width/16, block->block_height/16, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, block->heightmap_buffer);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, block->heightmap_buffer);
 }
 
 TerrainBlock create_terrain_block(unsigned int  g_buffer)
@@ -78,7 +78,7 @@ TerrainBlock create_terrain_block(unsigned int  g_buffer)
 	
 	block.g_buffer = g_buffer;
 	block.heightmap_size = block.heightmap_width * block.heightmap_height;
-	block.heightmap_buffer = BG_MALLOC(GLfloat, block.heightmap_size);
+	block.heightmap_buffer = BG_MALLOC(TerrainHeight, block.heightmap_size);
 
 	block.tessellation_level = 16.0;
 	
@@ -102,7 +102,7 @@ TerrainBlock create_server_terrain_block(void)
 	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
 	
 	block.heightmap_size = block.heightmap_width * block.heightmap_height;
-	block.heightmap_buffer = BG_MALLOC(GLfloat, block.heightmap_size);
+	block.heightmap_buffer = BG_MALLOC(TerrainHeight, block.heightmap_size);
 
 	block.tessellation_level = 16.0;
 
@@ -118,7 +118,7 @@ void B_send_terrain_block_to_gpu(TerrainBlock *block)
 	unsigned int texture = 0;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, block->heightmap_width, block->heightmap_height, 0, GL_RED, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, block->heightmap_width, block->heightmap_height, 0, GL_RG, GL_FLOAT, NULL);
 
 	block->heightmap_texture = texture;
 }

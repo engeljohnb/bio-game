@@ -25,6 +25,7 @@
 #define MAX_TERRAIN_BLOCKS 100000
 #define TERRAIN_HEIGHT_SCALE 800
 #define TERRAIN_XZ_SCALE 300
+
 typedef struct
 {
 	unsigned int	vao;
@@ -34,22 +35,28 @@ typedef struct
 	int		num_columns;
 } TerrainMesh;
 
+typedef struct
+{
+	float		value;
+	float		scale;
+} TerrainHeight;
+
 /* A TerrainBlock is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map. */
 //TODO: If I'm going to keep calling one of the individual meshes a "block", I shouldn't also call the collection
 //of all of them a "block". Maybe call it a TerrainChunk?
 typedef struct
 {
-	float		*heightmap_buffer;
+	TerrainHeight	*heightmap_buffer;
 	float		tessellation_level;
 	int		heightmap_width;
 	int		heightmap_height;
 	int		block_width;
 	int		block_height;
-	size_t		heightmap_size;
+	unsigned int	heightmap_size;
 	TerrainMesh	terrain_meshes[9];
-	unsigned int 	heightmap_texture;
-	unsigned int	g_buffer;
-	unsigned int	compute_shader;
+	B_Texture 	heightmap_texture;
+	B_Framebuffer	g_buffer;
+	B_Shader 	compute_shader;
 	float		*tex_coords[2];
 } TerrainBlock;
 

@@ -29,7 +29,7 @@ float get_raw_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 	size_t total_heightmap_width = terrain_block->heightmap_width;
 	size_t section_heightmap_height = round(terrain_block->heightmap_width/3);
 	size_t section_heightmap_width = round(terrain_block->heightmap_height/3);
-	
+
 	float mesh_height = TERRAIN_XZ_SCALE*4;
 	float mesh_width = TERRAIN_XZ_SCALE*4;
 
@@ -42,8 +42,12 @@ float get_raw_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 	pixel_x += section_heightmap_width;
 	pixel_z += section_heightmap_height;
 
-	int index = (pixel_z * total_heightmap_width) + pixel_x;
-	return terrain_block->heightmap_buffer[index];
+	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
+	if (terrain_block->heightmap_buffer[index].scale == 0)
+	{
+		terrain_block->heightmap_buffer[index].scale = 0.01;
+	}
+	return terrain_block->heightmap_buffer[index].value * (terrain_block->heightmap_buffer[index].scale*2500);
 }
 
 void snap_to_ground(vec3 pos, TerrainBlock *terrain_block)
@@ -225,7 +229,7 @@ float get_terrain_height(vec3 pos, TerrainBlock *terrain_block)
 						q10[1], q11[1],
 						player_grid_square_x,
 						player_grid_square_z);
-	final_height *= TERRAIN_HEIGHT_SCALE;
+	//final_height *= TERRAIN_HEIGHT_SCALE;
 	return final_height;
 }
 

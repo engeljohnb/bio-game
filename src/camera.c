@@ -47,6 +47,7 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 	vec3 frontpos;
 	glm_vec3_add(front, position, frontpos);
 	glm_lookat(frontpos, position, VEC3_Y_UP, camera.view_space);
+	
 	return camera;
 }
 
@@ -92,6 +93,8 @@ void update_camera(Camera *camera, ActorState player, TerrainBlock *terrain_bloc
 	{
 		camera->position[1] = height + 3.0f;
 	}
+
+	//camera->position[1] = 900.0f;
 
 	vec3 target;
 	glm_vec3_add(player.position, VEC3(0, 10, 0), target);
