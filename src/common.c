@@ -20,7 +20,7 @@
 #include <string.h>
 #include "common.h"
 
-unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path)
+B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path)
 {	
 	unsigned int program_id = glCreateProgram();
 	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
@@ -51,7 +51,49 @@ unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_pat
 	return program_id;
 }
 
-unsigned int B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path)
+B_Shader B_compile_grass_shader(const char *vert_path, const char *geo_path, const char *frag_path)
+{	
+	unsigned int program_id = glCreateProgram();
+	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);
+	unsigned int fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+	unsigned int geo_id = glCreateShader(GL_GEOMETRY_SHADER);
+
+	char vertex_buffer[4096] = {0};
+	B_load_file(vert_path, vertex_buffer, 4096);
+	char fragment_buffer[4096] = {0};
+	B_load_file(frag_path, fragment_buffer, 4096);
+	char geo_buffer[4096] = {0};
+	B_load_file(geo_path, geo_buffer, 4096);
+
+	const char *vertex_source = vertex_buffer;
+	const char *fragment_source = fragment_buffer;
+	const char *geo_source = geo_buffer;
+
+	glShaderSource(vertex_id, 1, &vertex_source, NULL);
+	glCompileShader(vertex_id);
+	B_check_shader(vertex_id, vert_path, GL_COMPILE_STATUS);
+
+	glShaderSource(fragment_id, 1, &fragment_source, NULL);
+	glCompileShader(fragment_id);
+	B_check_shader(fragment_id, frag_path, GL_COMPILE_STATUS);
+
+	glShaderSource(geo_id, 1, &geo_source, NULL);
+	glCompileShader(geo_id);
+	B_check_shader(geo_id, geo_path, GL_COMPILE_STATUS);
+
+	glAttachShader(program_id, vertex_id);
+	glAttachShader(program_id, fragment_id);
+	glAttachShader(program_id, geo_id);
+	glLinkProgram(program_id);
+	B_check_shader(program_id, "shader program", GL_LINK_STATUS);
+
+	glDeleteShader(vertex_id);
+	glDeleteShader(fragment_id);
+	glDeleteShader(geo_id);
+	return program_id;
+}
+
+B_Shader B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path)
 {
 	unsigned int program_id = glCreateProgram();
 	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);

@@ -28,6 +28,22 @@
 
 typedef struct
 {
+	unsigned int 	vao;
+	unsigned int	vbo;
+	unsigned int	ebo;
+	unsigned int	instance_vbo;
+	unsigned int	g_buffer;
+	B_Shader	shader;
+	int		num_vertices;
+	int		num_elements;
+	B_Texture	heightmap_texture;
+	B_Texture	density_texture;
+	int		density_texture_width;
+	int		density_texture_height;
+} TerrainElementMesh;
+
+typedef struct
+{
 	unsigned int	vao;
 	unsigned int	vbo;
 	unsigned int	g_buffer;
@@ -84,15 +100,15 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertice
  * |       |       |       |
  * |-------|-------|-------|
  * */
-TerrainChunk create_terrain_block(unsigned int g_buffer);
-TerrainChunk create_server_terrain_block(void);
+TerrainChunk create_terrain_chunk(unsigned int g_buffer);
+TerrainChunk create_server_terrain_chunk(void);
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
-void free_terrain_block(TerrainChunk *block);
+void free_terrain_chunk(TerrainChunk *block);
 void B_free_terrain_mesh(TerrainMesh mesh);
-void B_send_terrain_block_to_gpu(TerrainChunk *block);
-void B_update_terrain_block(TerrainChunk *block, int player_block_index);
+void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
+void B_update_terrain_chunk(TerrainChunk *block, int player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_block(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index);
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index);
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,
@@ -100,6 +116,8 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			int player_block_index, 
 			float tessellation_level, 
 			B_Texture texture);
-
+TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture);
+void B_free_terrain_element_mesh(TerrainElementMesh mesh);
+void B_draw_terrain_element_mesh(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position);
 
 #endif

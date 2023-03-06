@@ -24,7 +24,93 @@
 #include "utils.h"
 #include "terrain.h"
 
-void B_update_terrain_block(TerrainChunk *block, int player_block_index)
+
+void B_send_terrain_element_mesh_to_gpu(TerrainElementMesh *mesh)
+{
+	size_t stride = sizeof(GLfloat)*3;
+	int num_vertices = 9;
+	float depth = 0.20;
+	float width = 0.08;
+	GLfloat vertices[] = 	{ 0, 		0, 		0, 
+				  0,		0.25,		0,
+				  0,		0.50,		depth/5,
+				  0,		0.75,		depth/2,
+				  width/2,	1,		depth,
+				  width,	0.75,		depth/2,
+				  width,	0.50,		depth/5,
+				  width,	0.25,		0,
+				  width,	0,		0 };
+
+	GLfloat *offsets = BG_MALLOC(GLfloat, 300*300);
+	int x_counter = 0;
+	int y_counter = 0;
+	for (int i = 0; i < (300*300); i+=2)
+	{
+		offsets[i] = (float)((x_counter*0.5) + 550);
+	
+		offsets[i+1] = (float)((y_counter*0.5) + 550);
+		x_counter++;
+		if (x_counter > 150)
+		{
+			x_counter = 0;
+			y_counter++;
+		}
+	}
+
+	glGenVertexArrays(1, &mesh->vao);
+	glBindVertexArray(mesh->vao);
+
+	glGenBuffers(1, &mesh->vbo);
+	glGenBuffers(1, &mesh->instance_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->instance_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*(300*300), offsets, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)stride);
+	glVertexAttribDivisor(1, 1);
+
+	unsigned  indices[] = { 3, 4, 5,
+			  	2, 3, 5,
+			  	6, 2, 5,
+			  	1, 2, 6,
+			  	7, 1, 6,
+			  	0, 1, 7,
+			  	8, 0, 7 };
+	mesh->num_elements = sizeof(indices)/sizeof(unsigned int);
+	glGenBuffers(1, &mesh->ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
+
+	unsigned int density_texture = 0;
+	glGenTextures(1, &density_texture);
+	mesh->density_texture_width = 256;
+	mesh->density_texture_height = 256;
+	glBindTexture(GL_TEXTURE_2D, density_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, mesh->density_texture_width, mesh->density_texture_height, 0, GL_RED, GL_FLOAT, NULL);
+
+	mesh->density_texture = density_texture;
+	mesh->num_vertices = num_vertices;
+	mesh->shader = B_compile_grass_shader("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
+	BG_FREE(offsets);
+}
+
+TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)
+{
+	TerrainElementMesh mesh;
+	memset(&mesh, 0, sizeof(TerrainElementMesh));
+	mesh.g_buffer = g_buffer;
+	mesh.heightmap_texture = heightmap_texture;
+	B_send_terrain_element_mesh_to_gpu(&mesh);
+
+	return mesh;
+}
+
+void B_update_terrain_chunk(TerrainChunk *block, int player_block_index)
 {
 	int x_offset = -1;
 	int z_offset = -MAX_TERRAIN_BLOCKS;
@@ -50,14 +136,14 @@ void B_update_terrain_block(TerrainChunk *block, int player_block_index)
 
 		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 		glDispatchCompute(block->block_width/8, block->block_height/8, 1);
-		//glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, block->heightmap_buffer);
 }
 
-TerrainChunk create_terrain_block(unsigned int  g_buffer)
+TerrainChunk create_terrain_chunk(unsigned int  g_buffer)
 {
 	TerrainChunk block;
 	for (int i = 0; i < 9; ++i)
@@ -77,14 +163,14 @@ TerrainChunk create_terrain_block(unsigned int  g_buffer)
 
 	block.tessellation_level = 16.0;
 	
-	B_send_terrain_block_to_gpu(&block);
+	B_send_terrain_chunk_to_gpu(&block);
 
 	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
-	B_update_terrain_block(&block, terrain_index);
+	B_update_terrain_chunk(&block, terrain_index);
 	return block;
 }
 
-TerrainChunk create_server_terrain_block(void)
+TerrainChunk create_server_terrain_chunk(void)
 {
 	TerrainChunk block;
 	memset(&block, 0, sizeof(TerrainChunk));
@@ -101,14 +187,14 @@ TerrainChunk create_server_terrain_block(void)
 
 	block.tessellation_level = 16.0;
 
-	B_send_terrain_block_to_gpu(&block);
+	B_send_terrain_chunk_to_gpu(&block);
 
 	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
-	B_update_terrain_block(&block, terrain_index);
+	B_update_terrain_chunk(&block, terrain_index);
 	return block;
 }
 
-void B_send_terrain_block_to_gpu(TerrainChunk *block)
+void B_send_terrain_chunk_to_gpu(TerrainChunk *block)
 {
 	unsigned int texture = 0;
 	glGenTextures(1, &texture);
@@ -148,6 +234,24 @@ TerrainMesh B_create_terrain_mesh(unsigned int g_buffer)
 	return mesh;
 }
 
+void B_draw_terrain_element_mesh(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mesh.heightmap_texture);
+	mat4 scale;
+	glm_mat4_identity(scale);
+	glm_scale(scale, VEC3(8,8,8));
+	B_set_uniform_int(mesh.shader, "heightmap", 0);
+	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
+	B_set_uniform_mat4(mesh.shader, "scale", scale);
+	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4);
+	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
+	glBindVertexArray(mesh.vao);
+	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, (300*300));
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,
@@ -174,7 +278,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 }
 
-void draw_terrain_block(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, block->g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -232,13 +336,21 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices
 	mesh.g_buffer = g_buffer;
 	return mesh;
 }
+
+void B_free_terrain_element_mesh(TerrainElementMesh mesh)
+{
+	glDeleteBuffers(1, &mesh.vbo);
+	glDeleteVertexArrays(1, &mesh.vao);
+	glDeleteTextures(1, &mesh.density_texture);
+}
+
 void B_free_terrain_mesh(TerrainMesh mesh)
 {
 	glDeleteBuffers(1, &mesh.vbo);
 	glDeleteVertexArrays(1, &mesh.vao);
 }
 
-void free_terrain_block(TerrainChunk *block)
+void free_terrain_chunk(TerrainChunk *block)
 {
 	for (int i = 0; i < 9; ++i)
 	{

@@ -8,8 +8,8 @@ float get_terrain_height(vec3 pos, TerrainChunk *block);
 
 /* Gets the height, but doesn't interpoate between the values on the heightmap -- mostly needed as a
  * utility for get_terrain_height */
-float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_block);
-void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_block, float delta_t);
-void snap_to_ground(vec3 pos, TerrainChunk *terrain_block);
+float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk);
+void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_chunk, float delta_t);
+void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk);
 
 #endif

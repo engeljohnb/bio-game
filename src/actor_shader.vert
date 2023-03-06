@@ -52,7 +52,7 @@ void main()
 		final_normal += local_normal;
 	}
 
-	gl_Position = (projection_view_space * world_space * final_position)/2;
+	gl_Position = (projection_view_space * world_space * final_position);
 	f_normal = normalize(normal_world_space * final_normal);
 	f_position = vec3(world_space * vec4(v_position, 1.0));
 	f_tex_coords = vec2(tex_coords);

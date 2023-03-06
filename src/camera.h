@@ -40,7 +40,7 @@ typedef struct
 
 
 Camera create_camera(B_Window window, vec3 position, vec3 front);
-void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_block, mat4 yaw_dest);
+void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 yaw_dest);
 void look_at(Camera *camera, vec3 target);
 
 #endif

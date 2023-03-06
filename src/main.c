@@ -38,22 +38,24 @@
 #include "terrain_collisions.h"
 #include "utils.h"
 
-
-//TODO: make the game run quieter.
+// UP NEXT: 
+// 	Make the gras movement more natural
+// 	Add wind movement
+//	Then work on procedurally generating grass.
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
 void server_loop(const char *port)
 {
 	B_Address addresses[MAX_PLAYERS];
 	ActorState players[MAX_PLAYERS];
-	TerrainChunk terrain_blocks[MAX_PLAYERS];
+	TerrainChunk terrain_chunks[MAX_PLAYERS];
 	CommandState command_states[MAX_PLAYERS];
 	for (int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		memset(&addresses[i], 0, sizeof(B_Address));
 		memset(&players[i], 0, sizeof(ActorState));
 		memset(&command_states[i], 0, sizeof(CommandState));
-		memset(&terrain_blocks[i], 0, sizeof(TerrainChunk));
+		memset(&terrain_chunks[i], 0, sizeof(TerrainChunk));
 	}
 
 	unsigned int num_players = 0;
@@ -94,7 +96,7 @@ void server_loop(const char *port)
 						}
 						B_send_to_address(server_connection, addresses[num_players], ID_ASSIGNMENT, &package, sizeof(NewPlayerPackage));
 						players[num_players] = create_actor_state(num_players, PLAYER_START_POS, VEC3_Z_UP);
-						terrain_blocks[num_players] = create_server_terrain_block();
+						terrain_chunks[num_players] = create_server_terrain_chunk();
 						for (unsigned int i = 0; i < num_players; ++i)
 						{
 							B_send_to_address(server_connection, addresses[i], NEW_PLAYER, &num_players, sizeof(unsigned int));
@@ -171,9 +173,9 @@ void server_loop(const char *port)
 		{
 			if (players[i].current_terrain_index != players[i].prev_terrain_index)
 			{
-				B_update_terrain_block(&terrain_blocks[i], players[i].current_terrain_index);
+				B_update_terrain_chunk(&terrain_chunks[i], players[i].current_terrain_index);
 			}
-			update_actor_gravity(&players[i], &terrain_blocks[i], delta_t);
+			update_actor_gravity(&players[i], &terrain_chunks[i], delta_t);
 			
 		}
 
@@ -217,7 +219,8 @@ void game_loop(const char *server_name, const char *port)
 	B_Connection server_connection = B_connect_to(server_name, port, CONNECT_TO_SERVER);
 
 	// Environment init
-	TerrainChunk terrain_block = create_terrain_block(renderer.g_buffer);
+	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer);
+	TerrainElementMesh grass_mesh = create_grass_blade(renderer.g_buffer, terrain_chunk.heightmap_texture);
 
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
@@ -236,12 +239,12 @@ void game_loop(const char *server_name, const char *port)
 	{
 		all_actors[i] = create_player(package->actor_states[i].id);
 		all_actors[i].actor_state = package->actor_states[i];
-		snap_to_ground(all_actors[i].actor_state.position, &terrain_block);
+		snap_to_ground(all_actors[i].actor_state.position, &terrain_chunk);
 	}
 
 	BG_FREE(package);
 	all_actors[player_id] = create_player(player_id);
-	snap_to_ground(all_actors[player_id].actor_state.position, &terrain_block);
+	snap_to_ground(all_actors[player_id].actor_state.position, &terrain_chunk);
 	unsigned int num_players = player_id+1;
 	CommandState command_state = {0};
 	command_state.id = player_id;
@@ -326,15 +329,15 @@ void game_loop(const char *server_name, const char *port)
 
 			for (unsigned int i = 0; i < num_players; ++i)
 			{
-				B_update_terrain_block(&terrain_block, all_actors[i].actor_state.current_terrain_index);
-				update_actor_gravity(&all_actors[i].actor_state, &terrain_block, delta_t);
+				B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
+				update_actor_gravity(&all_actors[i].actor_state, &terrain_chunk, delta_t);
 			}
 		}
 		else
 		{
 			if (all_actors[player_id].actor_state.prev_terrain_index != all_actors[player_id].actor_state.current_terrain_index)
 			{
-				B_update_terrain_block(&terrain_block, all_actors[player_id].actor_state.current_terrain_index);
+				B_update_terrain_chunk(&terrain_chunk, all_actors[player_id].actor_state.current_terrain_index);
 			}
 			frame_time = 0;
 		}
@@ -343,7 +346,7 @@ void game_loop(const char *server_name, const char *port)
 		{
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
-		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_block, command_state.camera_rotation);
+		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_chunk, command_state.camera_rotation);
 
 		/* Render */
 		mat4 projection_view;
@@ -352,9 +355,13 @@ void game_loop(const char *server_name, const char *port)
 		int window_width = 0;
 		int window_height = 0;
 		get_window_size(&window_width, &window_height);
+
 		glViewport(0, 0, window_width/2, window_height/2);
-		draw_terrain_block(&terrain_block, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
+
+		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
+		// TODO: How to handle this in multiplayer?
+		B_draw_terrain_element_mesh(grass_mesh, projection_view, all_actors[player_id].actor_state.position);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
@@ -382,7 +389,8 @@ void game_loop(const char *server_name, const char *port)
 		free_actor(all_actors[i]);
 	}
 
-	free_terrain_block(&terrain_block);
+	free_terrain_chunk(&terrain_chunk);
+	B_free_terrain_element_mesh(grass_mesh);
 	B_close_connection(server_connection);
 	B_free_window(window);
 	free_renderer(renderer);

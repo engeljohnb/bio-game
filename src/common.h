@@ -33,9 +33,9 @@ typedef struct
 } PointLight;
 
 
-unsigned int B_compile_simple_shader(const char *vert_path, const char *frag_path);
-unsigned int B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
-unsigned int B_compile_compute_shader(const char *comp_path);
+B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path);
+B_Shader B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
+B_Shader B_compile_compute_shader(const char *comp_path);
 void B_free_shader(B_Shader shader);
 int B_check_shader(unsigned int id, const char *name, int status);
 void B_set_uniform_float(B_Shader shader, char *name, float value);
@@ -44,4 +44,5 @@ void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
 void B_set_uniform_int(B_Shader shader, char *name, int value);
 void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value);
+B_Shader B_compile_grass_shader(const char *vert_path, const char *geo_path, const char *frag_path);
 #endif

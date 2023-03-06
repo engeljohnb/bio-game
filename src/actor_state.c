@@ -133,7 +133,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	state.current_terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
 	//state.prev_terrain_index = state.current_terrain_index;
 	//state.current_terrain_index = 0;
-	state.max_speed = 3.0;
+	state.max_speed = 1.0;
 	state.active = 1;
 	state.id = id;
 	return state;

@@ -3,10 +3,10 @@
 #include "utils.h"
 #include "terrain_collisions.h"
 
-void get_texel_from_position(vec3 pos, TerrainChunk *terrain_block, int *x, int *z)
+void get_texel_from_position(vec3 pos, TerrainChunk *terrain_chunk, int *x, int *z)
 {
-	size_t section_heightmap_height = round(terrain_block->heightmap_width/3);
-	size_t section_heightmap_width = round(terrain_block->heightmap_height/3);
+	size_t section_heightmap_height = round(terrain_chunk->heightmap_width/3);
+	size_t section_heightmap_width = round(terrain_chunk->heightmap_height/3);
 	
 	float mesh_height = TERRAIN_XZ_SCALE*4;
 	float mesh_width = TERRAIN_XZ_SCALE*4;
@@ -24,11 +24,11 @@ void get_texel_from_position(vec3 pos, TerrainChunk *terrain_block, int *x, int 
 	*z = pixel_z;
 }
 
-float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_block)
+float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 {
-	size_t total_heightmap_width = terrain_block->heightmap_width;
-	size_t section_heightmap_height = round(terrain_block->heightmap_width/3);
-	size_t section_heightmap_width = round(terrain_block->heightmap_height/3);
+	size_t total_heightmap_width = terrain_chunk->heightmap_width;
+	size_t section_heightmap_height = round(terrain_chunk->heightmap_width/3);
+	size_t section_heightmap_width = round(terrain_chunk->heightmap_height/3);
 
 	float mesh_height = TERRAIN_XZ_SCALE*4;
 	float mesh_width = TERRAIN_XZ_SCALE*4;
@@ -43,33 +43,33 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_block)
 	pixel_z += section_heightmap_height;
 
 	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
-	if (terrain_block->heightmap_buffer[index].scale == 0)
+	if (terrain_chunk->heightmap_buffer[index].scale == 0)
 	{
-		terrain_block->heightmap_buffer[index].scale = 0.01;
+		terrain_chunk->heightmap_buffer[index].scale = 0.01;
 	}
-	return terrain_block->heightmap_buffer[index].value * (terrain_block->heightmap_buffer[index].scale*2500);
+	return terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*2500);
 }
 
-void snap_to_ground(vec3 pos, TerrainChunk *terrain_block)
+void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk)
 {
-	pos[1] = get_terrain_height(pos, terrain_block);
+	pos[1] = get_terrain_height(pos, terrain_chunk);
 }
 
-void find_nearest_grid_coord(vec3 pos, TerrainChunk *terrain_block, vec2 dest)
+void find_nearest_grid_coord(vec3 pos, TerrainChunk *terrain_chunk, vec2 dest)
 {
 	vec2 player_coord;
 	glm_vec2_copy(VEC2(pos[0], pos[2]), player_coord);
 
 	int range_start = 0;
-	int range_end = terrain_block->heightmap_size;
-	int current_index = terrain_block->heightmap_size/2;
-	for (size_t i = 0; i < terrain_block->heightmap_size; ++i)
+	int range_end = terrain_chunk->heightmap_size;
+	int current_index = terrain_chunk->heightmap_size/2;
+	for (size_t i = 0; i < terrain_chunk->heightmap_size; ++i)
 	{
-		float x0 = (float)(current_index % terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
-		float z0 = floor(current_index / terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
+		float x0 = (float)(current_index % terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
+		float z0 = floor(current_index / terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
 
-		float x1 = (float)((current_index-1) % terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
-		float z1 = floor((current_index-1) / terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
+		float x1 = (float)((current_index-1) % terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
+		float z1 = floor((current_index-1) / terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
 
 		float distance0 = glm_vec2_distance(VEC2(x0, z0), player_coord);
 		float distance1 = glm_vec2_distance(VEC2(x1, z1), player_coord);
@@ -90,15 +90,15 @@ void find_nearest_grid_coord(vec3 pos, TerrainChunk *terrain_block, vec2 dest)
 		current_index = range_end - ((range_end-range_start)/2);
 	}
 
-	float x = (float)(current_index % terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
-	float z = floor(current_index / terrain_block->heightmap_width) * TERRAIN_XZ_SCALE;
+	float x = (float)(current_index % terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
+	float z = floor(current_index / terrain_chunk->heightmap_width) * TERRAIN_XZ_SCALE;
 	glm_vec3_copy(VEC2(x, z), dest);
 }
 
-void find_nearest_grid_square(vec3 pos, TerrainChunk *terrain_block, vec2 dest)
+void find_nearest_grid_square(vec3 pos, TerrainChunk *terrain_chunk, vec2 dest)
 {
 	/* Size / num_vertices */
-	float grid_square_size = (TERRAIN_XZ_SCALE * 4) / (4 * terrain_block->tessellation_level * 3);
+	float grid_square_size = (TERRAIN_XZ_SCALE * 4) / (4 * terrain_chunk->tessellation_level * 3);
 	int x_index = (int)round(pos[0] / grid_square_size);
 	int z_index = (int)round(pos[2] / grid_square_size);
 
@@ -164,10 +164,10 @@ float bilinearly_interpolate_float(float x0,
 	return (r0 * scalar0y) + (r1 * scalar1y);
 }
 
-void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_block, vec4 dest)
+void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_chunk, vec4 dest)
 {
-	float texel_width = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
-	float texel_height = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
+	float texel_width = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
+	float texel_height = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
 
 	vec3 height0;
 	vec3 height1;
@@ -182,10 +182,10 @@ void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_block, vec4 dest)
 	glm_vec3_copy(VEC3(grid_x, 0, grid_z), height2);
 	glm_vec3_copy(VEC3(grid_x-texel_width, 0, grid_z), height3);
 
-	dest[0] = get_raw_terrain_height(height0, terrain_block);
-	dest[1] = get_raw_terrain_height(height1, terrain_block);
-	dest[2] = get_raw_terrain_height(height2, terrain_block);
-	dest[3] = get_raw_terrain_height(height3, terrain_block);
+	dest[0] = get_raw_terrain_height(height0, terrain_chunk);
+	dest[1] = get_raw_terrain_height(height1, terrain_chunk);
+	dest[2] = get_raw_terrain_height(height2, terrain_chunk);
+	dest[3] = get_raw_terrain_height(height3, terrain_chunk);
 }
 
 float barrycentrically_interpolate(vec3 p1, vec3 p2, vec3 p3, vec3 pos)
@@ -199,13 +199,13 @@ float barrycentrically_interpolate(vec3 p1, vec3 p2, vec3 p3, vec3 pos)
 }
 
 
-float get_terrain_height(vec3 pos, TerrainChunk *terrain_block)
+float get_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 {
 	vec4 heights;
-	get_four_nearest_heights(pos, terrain_block, heights);
+	get_four_nearest_heights(pos, terrain_chunk, heights);
 
-	float grid_square_width = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
-	float grid_square_height = TERRAIN_XZ_SCALE / terrain_block->tessellation_level;
+	float grid_square_width = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
+	float grid_square_height = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
 
 	vec3 q00;
 	vec3 q10;
@@ -233,9 +233,11 @@ float get_terrain_height(vec3 pos, TerrainChunk *terrain_block)
 	return final_height;
 }
 
-void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_block, float delta_t)
+void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_chunk, float delta_t)
 {
-	float height = get_terrain_height(actor_state->position, terrain_block) + 2.0f;
+	actor_state->position[0] -= 2.5;
+	actor_state->position[2] -= 2.5;
+	float height = get_terrain_height(actor_state->position, terrain_chunk) + 3.0f;
 	if (actor_state->position[1] > height)
 	{
 		actor_state->position[1] -= 0.08 * delta_t;
@@ -244,5 +246,7 @@ void update_actor_gravity(ActorState *actor_state, TerrainChunk *terrain_block, 
 	{
 		actor_state->position[1] = height;
 	}
+	actor_state->position[0] += 2.5;
+	actor_state->position[2] += 2.5;
 }
 

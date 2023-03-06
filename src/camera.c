@@ -70,7 +70,7 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 }
 
-void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_block, mat4 rotation)
+void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 rotation)
 {
 	glm_vec3_copy(player.position, camera->position);
 	mat4 translate;
@@ -88,7 +88,7 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_bloc
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
-	float height = get_terrain_height(camera->position, terrain_block);
+	float height = get_terrain_height(camera->position, terrain_chunk);
 	if (camera->position[1] < (height + 3.0f))
 	{
 		camera->position[1] = height + 3.0f;
