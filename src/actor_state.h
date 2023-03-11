@@ -24,13 +24,11 @@
 #include "input.h"
 #define MAX_PLAYERS 4
 
-/* An ActorState is the minimum information about an actor that needs to be sent over the network.
- * Graphics and rendering are all handled client-side, while the server uses this struct to
- * advance the simulation */
 
-/* The actor's x and z positions are not global coordinates, but instead the offset from the position (0,0) of whichever
- * terrain block the actor is currently over (current_terrain_index). The global location of the actor is stored in
- * current_terrain_index. */
+/* An ActorState is all data needed about an actor to advance the simulation, including user input.
+ * It probably could have been combined with the Actor object itself, but it's a leftover from when
+ * the game was intended to be multiplayer. The ActorState was to be the minimum information
+ * that needed to be sent over the network. */
 typedef struct
 {
 	vec3			position;
@@ -45,19 +43,9 @@ typedef struct
 	float			max_speed;
 } ActorState;
 
-
-/* A NewPlayerPackage is sent to a new player as soon as they join the game. It contains the current
- * state of each other player. */
-typedef struct
-{
-	ActorState	actor_states[MAX_PLAYERS];
-	unsigned int	num_actors;
-	unsigned int	my_id;
-} NewPlayerPackage;
-
 ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing);
 
-/* Destructively applies changes based on the given CommandState */
+/* Applies the changes to an ActorState commanded by the command state */
 void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t);
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state);
 int actor_outside_terrain_boundaries(ActorState *actor_state);
