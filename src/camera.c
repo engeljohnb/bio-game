@@ -94,7 +94,7 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 		camera->position[1] = height + 3.0f;
 	}
 
-	//camera->position[1] = 900.0f;
+	//camera->position[1] = 100.0f;
 
 	vec3 target;
 	glm_vec3_add(player.position, VEC3(0, 10, 0), target);

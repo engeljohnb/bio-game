@@ -43,10 +43,6 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	pixel_z += section_heightmap_height;
 
 	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
-	if (terrain_chunk->heightmap_buffer[index].scale == 0)
-	{
-		terrain_chunk->heightmap_buffer[index].scale = 0.01;
-	}
 	return terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*2500);
 }
 

@@ -117,11 +117,15 @@ void B_update_terrain_chunk(TerrainChunk *block, int player_block_index)
 	int x_counter = 0;
 	int z_counter = 0;
 	glUseProgram(block->compute_shader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
+	B_set_uniform_int(block->compute_shader, "data", 0);
+	B_set_uniform_float(block->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
+	glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 	for (int i = 0; i < 9; ++i)
 	{
 		int index = player_block_index + z_offset + x_offset;
 		B_set_uniform_int(block->compute_shader, "my_block_index", index);
-		B_set_uniform_float(block->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
 		B_set_uniform_int(block->compute_shader, "x_counter", x_counter);
 		B_set_uniform_int(block->compute_shader, "z_counter", z_counter);
 		x_counter++;
@@ -134,7 +138,6 @@ void B_update_terrain_chunk(TerrainChunk *block, int player_block_index)
 			z_counter++;
 		}
 
-		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 		glDispatchCompute(block->block_width/8, block->block_height/8, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
@@ -200,6 +203,9 @@ void B_send_terrain_chunk_to_gpu(TerrainChunk *block)
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, block->heightmap_width, block->heightmap_height, 0, GL_RG, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	block->heightmap_texture = texture;
 }

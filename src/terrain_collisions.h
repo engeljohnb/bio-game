@@ -3,7 +3,6 @@
 #include <cglm/cglm.h>
 #include "actor_state.h"
 #include "terrain.h"
-
 float get_terrain_height(vec3 pos, TerrainChunk *block);
 
 /* Gets the height, but doesn't interpoate between the values on the heightmap -- mostly needed as a
