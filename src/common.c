@@ -228,6 +228,12 @@ void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value)
 	glUniform3f(glGetUniformLocation(shader, name), value[0], value[1], value[2]);
 }
 
+void B_set_uniform_vec2(B_Shader shader, char *name, vec2 value)
+{
+	glUseProgram(shader);
+	glUniform2f(glGetUniformLocation(shader, name), value[0], value[1]);
+}
+
 void B_set_uniform_float(B_Shader shader, char *name, float value)
 {
 	glUseProgram(shader);

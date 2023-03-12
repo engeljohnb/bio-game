@@ -83,6 +83,7 @@ void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 int _bg_free(void *ptr);
 float absf(float value);
 void print_vec3(vec3 vector);
+void print_vec2(vec2 vector);
 void print_mat4(mat4 mat);
 /* Appends second to first and stores the resulting string in dest. Size is the size of dest. */
 void cat_to(char *first, char *second, char *dest, size_t size);

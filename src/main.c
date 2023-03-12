@@ -38,9 +38,7 @@
 #include "utils.h"
 
 // UP NEXT: 
-// 	Make the gras movement more natural
-// 	Add wind movement
-//	Then work on procedurally generating grass.
+// 	Grass should be appearing, but shouldn't correctly update with the player changing blocks yet.
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
 void game_loop(void)
@@ -50,7 +48,10 @@ void game_loop(void)
 
 	// Environment init
 	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer);
-	TerrainElementMesh grass_mesh = create_grass_blade(renderer.g_buffer, terrain_chunk.heightmap_texture);
+	TerrainElementMesh grass;
+	vec2 grass_patch_offsets[9] = {{0.0f}};
+	get_grass_patch_offsets(PLAYER_TERRAIN_INDEX_START, grass_patch_offsets);
+	grass = create_grass_blade(renderer.g_buffer, terrain_chunk.heightmap_texture);
 
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
@@ -109,9 +110,15 @@ void game_loop(void)
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
-			B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
+			if (all_actors[i].actor_state.current_terrain_index != all_actors[i].actor_state.prev_terrain_index)
+			{
+				get_grass_patch_offsets(all_actors[i].actor_state.current_terrain_index, grass_patch_offsets);
+				B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
+			}
 			update_actor_gravity(&all_actors[i].actor_state, &terrain_chunk, delta_t);
 		}
+
+		
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
@@ -131,7 +138,7 @@ void game_loop(void)
 
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		B_draw_terrain_element_mesh(grass_mesh, projection_view, all_actors[player_id].actor_state.position);
+		draw_grass_patches(grass, projection_view, all_actors[player_id].actor_state.position, grass_patch_offsets);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
@@ -154,7 +161,7 @@ void game_loop(void)
 	}
 
 	free_terrain_chunk(&terrain_chunk);
-	B_free_terrain_element_mesh(grass_mesh);
+	B_free_terrain_element_mesh(grass);
 	B_free_window(window);
 	free_renderer(renderer);
 	B_free_shader(terrain_shader);

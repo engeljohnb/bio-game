@@ -319,3 +319,7 @@ void print_vec3(vec3 vector)
 	fprintf(stderr, "%f %f %f\n", vector[0], vector[1], vector[2]);
 }
 
+void print_vec2(vec2 vector)
+{
+	fprintf(stderr, "%f %f\n", vector[0], vector[1]);
+}

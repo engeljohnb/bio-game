@@ -21,11 +21,20 @@
 #include <glad/glad.h>
 #include <math.h>
 #include <string.h>
+#include "noise.h"
 #include "utils.h"
 #include "terrain.h"
 
+int g_terrain_heightmap_width;
+int g_terrain_heightmap_height;
 
-void B_send_terrain_element_mesh_to_gpu(TerrainElementMesh *mesh)
+void get_terrain_heightmap_size(int *w, int *h)
+{
+	*w = g_terrain_heightmap_width;
+	*h = g_terrain_heightmap_height;
+}
+
+void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 {
 	size_t stride = sizeof(GLfloat)*3;
 	int num_vertices = 9;
@@ -41,38 +50,15 @@ void B_send_terrain_element_mesh_to_gpu(TerrainElementMesh *mesh)
 				  width,	0.25,		0,
 				  width,	0,		0 };
 
-	GLfloat *offsets = BG_MALLOC(GLfloat, 300*300);
-	int x_counter = 0;
-	int y_counter = 0;
-	for (int i = 0; i < (300*300); i+=2)
-	{
-		offsets[i] = (float)((x_counter*0.5) + 550);
-	
-		offsets[i+1] = (float)((y_counter*0.5) + 550);
-		x_counter++;
-		if (x_counter > 150)
-		{
-			x_counter = 0;
-			y_counter++;
-		}
-	}
-
 	glGenVertexArrays(1, &mesh->vao);
 	glBindVertexArray(mesh->vao);
 
 	glGenBuffers(1, &mesh->vbo);
-	glGenBuffers(1, &mesh->instance_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
 	glEnableVertexAttribArray(0);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh->instance_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*(300*300), offsets, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)stride);
-	glVertexAttribDivisor(1, 1);
 
 	unsigned  indices[] = { 3, 4, 5,
 			  	2, 3, 5,
@@ -86,17 +72,8 @@ void B_send_terrain_element_mesh_to_gpu(TerrainElementMesh *mesh)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
-	unsigned int density_texture = 0;
-	glGenTextures(1, &density_texture);
-	mesh->density_texture_width = 256;
-	mesh->density_texture_height = 256;
-	glBindTexture(GL_TEXTURE_2D, density_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, mesh->density_texture_width, mesh->density_texture_height, 0, GL_RED, GL_FLOAT, NULL);
-
-	mesh->density_texture = density_texture;
 	mesh->num_vertices = num_vertices;
 	mesh->shader = B_compile_grass_shader("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
-	BG_FREE(offsets);
 }
 
 TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)
@@ -105,7 +82,7 @@ TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)
 	memset(&mesh, 0, sizeof(TerrainElementMesh));
 	mesh.g_buffer = g_buffer;
 	mesh.heightmap_texture = heightmap_texture;
-	B_send_terrain_element_mesh_to_gpu(&mesh);
+	B_send_grass_blade_to_gpu(&mesh);
 
 	return mesh;
 }
@@ -158,6 +135,8 @@ TerrainChunk create_terrain_chunk(unsigned int  g_buffer)
 
 	block.heightmap_width = block.block_width*3;;
 	block.heightmap_height = block.block_height*3;
+	g_terrain_heightmap_width = block.heightmap_width;
+	g_terrain_heightmap_height = block.heightmap_height;
 	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
 	
 	block.g_buffer = g_buffer;
@@ -195,6 +174,50 @@ TerrainChunk create_server_terrain_chunk(void)
 	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
 	B_update_terrain_chunk(&block, terrain_index);
 	return block;
+}
+
+int get_terrain_heightmap_index_from_position(vec2 pos)
+{
+	int heightmap_width = 0;
+	int heightmap_height = 0;
+	get_terrain_heightmap_size(&heightmap_width, &heightmap_height); 
+
+	size_t section_heightmap_height = round(heightmap_width/3);
+	size_t section_heightmap_width = round(heightmap_height/3);
+	
+	float mesh_height = TERRAIN_XZ_SCALE*4;
+	float mesh_width = TERRAIN_XZ_SCALE*4;
+
+	float percent_x = glm_percent(0, mesh_width, pos[0]);
+	float percent_z = glm_percent(0, mesh_height, pos[1]);
+
+	int pixel_x = floor(section_heightmap_width * percent_x);
+	int pixel_z = floor(section_heightmap_height * percent_z);
+
+	pixel_x += section_heightmap_width;
+	pixel_z += section_heightmap_height;
+
+	return (pixel_z * heightmap_width) + pixel_x;
+}
+
+void update_grass_patch_offset(vec2 offset, int index_diff)
+{
+	if (index_diff == 1)
+	{
+		offset[0] -= TERRAIN_XZ_SCALE*4;
+	}
+	if (index_diff == -1)
+	{
+		offset[0] += TERRAIN_XZ_SCALE*4;
+	}
+	if (index_diff == MAX_TERRAIN_BLOCKS)
+	{
+		offset[1] -= TERRAIN_XZ_SCALE*4;
+	}
+	if (index_diff == -MAX_TERRAIN_BLOCKS)
+	{
+		offset[1] += TERRAIN_XZ_SCALE*4;
+	}
 }
 
 void B_send_terrain_chunk_to_gpu(TerrainChunk *block)
@@ -238,8 +261,43 @@ TerrainMesh B_create_terrain_mesh(unsigned int g_buffer)
 	return mesh;
 }
 
-void B_draw_terrain_element_mesh(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position)
+void get_grass_patch_offset(unsigned int terrain_index, vec2 offset)
 {
+	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
+	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
+
+	offset[0] = noise1((float)x_index/MAX_TERRAIN_BLOCKS) * TERRAIN_XZ_SCALE*4*3;
+	offset[1] = noise1((float)z_index/MAX_TERRAIN_BLOCKS) * TERRAIN_XZ_SCALE*4*3; 
+}
+
+void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9])
+{
+	get_grass_patch_offset(terrain_index-MAX_TERRAIN_BLOCKS-1, offsets[0]);
+	get_grass_patch_offset(terrain_index-MAX_TERRAIN_BLOCKS, offsets[1]);
+	get_grass_patch_offset(terrain_index-MAX_TERRAIN_BLOCKS+1, offsets[2]);
+
+	get_grass_patch_offset(terrain_index-1, offsets[3]);
+	get_grass_patch_offset(terrain_index, offsets[4]);
+	get_grass_patch_offset(terrain_index+1, offsets[5]);
+
+	get_grass_patch_offset(terrain_index+MAX_TERRAIN_BLOCKS-1, offsets[6]);
+	get_grass_patch_offset(terrain_index+MAX_TERRAIN_BLOCKS, offsets[7]);
+	get_grass_patch_offset(terrain_index+MAX_TERRAIN_BLOCKS+1, offsets[8]);
+}
+
+
+void B_draw_grass_patch(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position, int x_offset, int z_offset, vec2 base_offset)
+{
+	if ((base_offset[0] > TERRAIN_XZ_SCALE*4) ||
+	    (base_offset[1] > TERRAIN_XZ_SCALE*4))
+	{
+		return;
+	}
+	static float time = 0.0f;
+	vec2 offset;
+	glm_vec2_copy(base_offset, offset);
+	offset[0] += x_offset * TERRAIN_XZ_SCALE*4;
+	offset[1] += z_offset * TERRAIN_XZ_SCALE*4;
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh.heightmap_texture);
@@ -251,9 +309,28 @@ void B_draw_terrain_element_mesh(TerrainElementMesh mesh, mat4 projection_view, 
 	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4);
 	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
+	B_set_uniform_vec2(mesh.shader, "base_offset", offset);
+	B_set_uniform_float(mesh.shader, "time", time);
 	glBindVertexArray(mesh.vao);
 	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, (300*300));
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	time += 1.0f;
+}
+
+void draw_grass_patches(TerrainElementMesh grass, mat4 projection_view, vec3 player_position, vec2 offsets[9])
+{
+	int x_counter = -1;
+	int z_counter = -1;
+	for (int i = 0; i < 9; ++i)
+	{
+		B_draw_grass_patch(grass, projection_view, player_position, x_counter, z_counter, offsets[i]);
+		x_counter++;
+		if (x_counter > 1)
+		{
+			x_counter = -1;
+			z_counter++;
+		}	
+	}
 }
 
 void B_draw_terrain_mesh(TerrainMesh mesh, 
@@ -345,7 +422,7 @@ void B_free_terrain_element_mesh(TerrainElementMesh mesh)
 {
 	glDeleteBuffers(1, &mesh.vbo);
 	glDeleteVertexArrays(1, &mesh.vao);
-	glDeleteTextures(1, &mesh.density_texture);
+	//BG_FREE(mesh.offsets);
 }
 
 void B_free_terrain_mesh(TerrainMesh mesh)

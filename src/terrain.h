@@ -28,6 +28,12 @@
 
 typedef struct
 {
+	float		value;
+	float		scale;
+} TerrainHeight;
+
+typedef struct
+{
 	unsigned int 	vao;
 	unsigned int	vbo;
 	unsigned int	ebo;
@@ -37,9 +43,6 @@ typedef struct
 	int		num_vertices;
 	int		num_elements;
 	B_Texture	heightmap_texture;
-	B_Texture	density_texture;
-	int		density_texture_width;
-	int		density_texture_height;
 } TerrainElementMesh;
 
 typedef struct
@@ -51,13 +54,10 @@ typedef struct
 	int		num_rows;
 } TerrainMesh;
 
-typedef struct
-{
-	float		value;
-	float		scale;
-} TerrainHeight;
 
-/* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map. */
+/* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map.
+ * Whenever a "block" is referred to in the code, it's usally indicating one of these nine meshes, and a "chunk" usually indicates
+ * all nine of them together. */
 typedef struct
 {
 	TerrainHeight	*heightmap_buffer;
@@ -118,6 +118,16 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			B_Texture texture);
 TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture);
 void B_free_terrain_element_mesh(TerrainElementMesh mesh);
-void B_draw_terrain_element_mesh(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position);
 
+/* base_offset is the terrain chunk xz coordinates (from 0 to TERRAIN_XZ_SCALE*4) of the center of the patch of grass. If it's outside the current
+ * terrain chunk, the grass won't be rendered.
+ * 
+ * x_offset and z_offset are the player's terrain block index (x=row, z=column) minus the grass patch's terrain block index (x=row, z=column). 
+ * They should be 0, 1, or -1.*/
+void B_draw_grass_patch(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position, int x_offset, int z_offset, vec2 base_offset);
+void update_grass_patch_offset(vec2 offset, int index_diff);
+void get_terrain_heightmap_size(int *w, int *h);
+void get_grass_patch_offset(unsigned int terrain_index, vec2 offset);
+void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9]);
+void draw_grass_patches(TerrainElementMesh grass, mat4 projection_view, vec3 player_position, vec2 offsets[9]);
 #endif

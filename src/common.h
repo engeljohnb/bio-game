@@ -21,6 +21,7 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include "utils.h"
+#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
 typedef unsigned int B_Texture;
@@ -39,6 +40,7 @@ B_Shader B_compile_compute_shader(const char *comp_path);
 void B_free_shader(B_Shader shader);
 int B_check_shader(unsigned int id, const char *name, int status);
 void B_set_uniform_float(B_Shader shader, char *name, float value);
+void B_set_uniform_vec2(B_Shader shader, char *name, vec2 value);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);

@@ -1,8 +1,9 @@
 #version 430 core
 
 layout (location = 0) in vec3 v_pos;
-layout (location = 1) in vec2 v_offset;
+uniform vec2 base_offset;
 uniform vec3 player_position;
+uniform float time;
 
 out VS_OUT
 {
@@ -34,26 +35,41 @@ mat4 rotate(vec3 axis, float angle)
 
 void main()
 {
-	mat4 rotation = rotate(vec3(0, 1, 0), radians(15*gl_InstanceID));
-	vec3 final_pos = vec3(rotation * vec4(v_pos, 1.0));
+	int x_index = gl_InstanceID % 300;
+	int z_index = gl_InstanceID / 300;
+	float offx = (x_index-300/2)*3*fract(10000*sin(gl_InstanceID));
+	float offz = (z_index-300/2)*3*fract(20000*sin(gl_InstanceID));
+	//float offx = float(x_index - (300/2));
+	//float offz = float(z_index - (300/2));
+	vec2 final_xz_offset = vec2(base_offset.x + offx, base_offset.y + offz);
+
+	mat4 rotation = rotate(vec3(0, 1, 0), gl_InstanceID*fract(10000*sin(gl_InstanceID)));
 	mat4 displacement = mat4(1.0);
-	float dist = distance(player_position.xz, v_offset);
-	// TODO: Make this nicer
-	if (dist < 5)
+	float player_distance = distance(player_position.xz, final_xz_offset);
+	if (player_distance < 8)
 	{
-		vec2 axis_xz = v_offset - player_position.xz;
-		vec3 axis = normalize(vec3(axis_xz.x, 0, axis_xz.y));
-		displacement = translate(vec3(-0.04, -0.5, 0));
-		float angle = radians(10);
-		if (dist < 2)
+		if (player_distance == 0)
 		{
-			angle = radians(30);
+			player_distance = 0.01;
 		}
+		vec3 axis = normalize(vec3(1, 0, 1));
+		displacement = translate(vec3(-0.04, -0.5, 0));
+		float angle = min(1/(player_distance*2), 30);
 		displacement = displacement * rotate(axis, angle);
 		displacement = displacement * inverse(translate(vec3(-0.04, -0.5, 0)));
 	}
 
-	vs_out.g_offset = v_offset;
+	vec2 wind_direction = normalize(vec2(1.0, 1.0));
+	vec2 wind_location = wind_direction*(time/1000);
+	float wind_distance = distance(vec2(offx, offz), wind_location);
+	float angle = radians(sin(wind_distance*2))*10;
+
+	vec3 wind_rotation_axis = normalize(vec3(wind_direction.x, 0, wind_direction.y));
+	mat4 wind_displacement = translate(vec3(-0.04, -0.5, 0));
+	wind_displacement = wind_displacement * rotate(wind_rotation_axis, angle);
+	wind_displacement = wind_displacement * inverse(translate(vec3(-0.04, -0.5, 0)));
+
+	vs_out.g_offset = final_xz_offset;
 	vs_out.instance_id = gl_InstanceID;
-	gl_Position = rotation * displacement * vec4(v_pos, 1.0);
+	gl_Position = wind_displacement * rotation * displacement * vec4(v_pos, 1.0);
 }

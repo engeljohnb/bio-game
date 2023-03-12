@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "terrain_collisions.h"
 
-void get_texel_from_position(vec3 pos, TerrainChunk *terrain_chunk, int *x, int *z)
+/*void get_texel_from_position(vec3 pos, TerrainChunk *terrain_chunk, int *x, int *z)
 {
 	size_t section_heightmap_height = round(terrain_chunk->heightmap_width/3);
 	size_t section_heightmap_width = round(terrain_chunk->heightmap_height/3);
@@ -22,7 +22,7 @@ void get_texel_from_position(vec3 pos, TerrainChunk *terrain_chunk, int *x, int 
 
 	*x = pixel_x;
 	*z = pixel_z;
-}
+}*/
 
 float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 {
