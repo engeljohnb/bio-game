@@ -111,6 +111,11 @@ void get_rotation_matrix(float yaw, float pitch, mat4 dest)
 	}
 }
 
+float vec2_magnitude(vec2 vec)
+{
+	return sqrt(vec[0]*vec[0] + vec[1] * vec[1]);
+}
+
 int vec3_equal(float a[3], float b[3])
 {
 	return ((a[0] == b[0]) &&

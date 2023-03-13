@@ -124,8 +124,20 @@ void B_free_terrain_element_mesh(TerrainElementMesh mesh);
  * 
  * x_offset and z_offset are the player's terrain block index (x=row, z=column) minus the grass patch's terrain block index (x=row, z=column). 
  * They should be 0, 1, or -1.*/
-void B_draw_grass_patch(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position, int x_offset, int z_offset, int patch_size, vec2 base_offset);
-void draw_grass_patches(TerrainElementMesh grass, mat4 projection_view, vec3 player_position, unsigned int terrain_index, vec2 offsets[9]);
+void B_draw_grass_patch(TerrainElementMesh mesh, 
+			mat4 projection_view, 
+			vec3 player_position, 
+			int x_offset, 
+			int z_offset, 
+			int patch_size, 
+			float time, 
+			vec2 base_offset);
+
+void draw_grass_patches(TerrainElementMesh grass, 
+			mat4 projection_view, 
+			vec3 player_position, 
+			unsigned int terrain_index, 
+			vec2 offsets[9]);
 void update_grass_patch_offset(vec2 offset, int index_diff);
 void get_terrain_heightmap_size(int *w, int *h);
 void get_grass_patch_offset(unsigned int terrain_index, vec2 offset);

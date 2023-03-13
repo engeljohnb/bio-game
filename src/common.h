@@ -22,6 +22,7 @@
 #include <glad/glad.h>
 #include "utils.h"
 #define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
+
 typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
 typedef unsigned int B_Texture;
@@ -34,6 +35,8 @@ typedef struct
 } PointLight;
 
 
+void set_view_distance(float distance);
+float get_view_distance(void);
 B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path);
 B_Shader B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
 B_Shader B_compile_compute_shader(const char *comp_path);

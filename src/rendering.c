@@ -124,8 +124,10 @@ void free_renderer(Renderer renderer)
 void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(shader);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, renderer.position_texture);
@@ -139,7 +141,6 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	B_set_uniform_int(shader, "f_color_texture", 2);
 	B_set_uniform_point_light(shader, "point_light", point_light);
 	B_set_uniform_int(shader, "mode", mode);
-
 
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(renderer.lighting_vao);

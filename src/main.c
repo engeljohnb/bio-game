@@ -91,8 +91,10 @@ void game_loop(void)
 			running = 0;
 		}
 
+
 		// Simulation updates
 		frame_time += B_get_frame_time(delta_t);
+
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor_state_direction(&all_actors[i].actor_state, &all_actors[i].actor_state.command_state);
@@ -118,8 +120,6 @@ void game_loop(void)
 			update_actor_gravity(&all_actors[i].actor_state, &terrain_chunk, delta_t);
 		}
 
-		
-
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
@@ -139,7 +139,10 @@ void game_loop(void)
 
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		draw_grass_patches(grass, projection_view, all_actors[player_id].actor_state.position, terrain_index, grass_patch_offsets);
+		draw_grass_patches(grass, projection_view, 
+				   all_actors[player_id].actor_state.position, 
+				   terrain_index, 
+				   grass_patch_offsets);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
@@ -150,6 +153,7 @@ void game_loop(void)
 		point_light.intensity = 2.0f;
 
 		glViewport(0, 0, window_width, window_height);
+
 		B_render_lighting(renderer, lighting_shader, point_light, all_actors[player_id].actor_state.command_state.mode);
 		B_flip_window(renderer.window);
 

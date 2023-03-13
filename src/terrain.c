@@ -21,6 +21,7 @@
 #include <glad/glad.h>
 #include <math.h>
 #include <string.h>
+#include "time.h"
 #include "noise.h"
 #include "utils.h"
 #include "terrain.h"
@@ -37,7 +38,7 @@ void get_terrain_heightmap_size(int *w, int *h)
 void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 {
 	size_t stride = sizeof(GLfloat)*3;
-	int num_vertices = 9*64;
+	int num_vertices = 9*36;
 	float depth = 0.20;
 	float width = 0.08;
 
@@ -61,19 +62,19 @@ void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 	  0, 1, 7,
 	  8, 0, 7 };
 
-	GLfloat vertices[3 * 9 * 64] = { 0.0f };
-	unsigned int indices[21 * 64] = { 0.0f };
+	GLfloat vertices[3 * 9 * 36] = { 0.0f };
+	unsigned int indices[21 * 36] = { 0.0f };
 
-	for (int i = 0; i < 64; ++i)
+	for (int i = 0; i < 36; ++i)
 	{
 		mat4 translation = GLM_MAT4_IDENTITY_INIT;
 		mat4 rotation = GLM_MAT4_IDENTITY_INIT;
-		float x = (float)(i % 8);
-		float z = (float)floor(i / 8);
+		float x = (float)(i % 6);
+		float z = (float)floor(i / 6);
 		float trans_x = noise1(x/4.0f) * x/1.5;
 		float trans_z = noise1(z/4.0f) * z/1.5;
 
-		float rotation_value = noise1((float)i/64.0f) * 10;
+		float rotation_value = noise1((float)i/36.0f) * 10;
 
 		glm_rotate(rotation, rotation_value, VEC3(0, 1, 0));
 		glm_translate(translation, VEC3(trans_x, 0, trans_z));
@@ -113,48 +114,6 @@ void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 	mesh->num_vertices = num_vertices;
 	mesh->shader = B_compile_grass_shader("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
 }
-/*
-void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
-{
-	size_t stride = sizeof(GLfloat)*3;
-	int num_vertices = 9;
-	float depth = 0.20;
-	float width = 0.08;
-	GLfloat vertices[] = 	{ 0, 		0, 		0, 
-				  0,		0.25,		0,
-				  0,		0.50,		depth/5,
-				  0,		0.75,		depth/2,
-				  width/2,	1,		depth,
-				  width,	0.75,		depth/2,
-				  width,	0.50,		depth/5,
-				  width,	0.25,		0,
-				  width,	0,		0 };
-
-	glGenVertexArrays(1, &mesh->vao);
-	glBindVertexArray(mesh->vao);
-
-	glGenBuffers(1, &mesh->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glEnableVertexAttribArray(0);
-
-	unsigned  indices[] = { 3, 4, 5,
-			  	2, 3, 5,
-			  	6, 2, 5,
-			  	1, 2, 6,
-			  	7, 1, 6,
-			  	0, 1, 7,
-			  	8, 0, 7 };
-	mesh->num_elements = sizeof(indices)/sizeof(unsigned int);
-	glGenBuffers(1, &mesh->ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
-
-	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_grass_shader("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
-}*/
 
 TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)
 {
@@ -349,7 +308,7 @@ int get_grass_patch_size(unsigned int terrain_index)
 	float x = (float)x_index / MAX_TERRAIN_BLOCKS;
 	float z = (float)z_index / MAX_TERRAIN_BLOCKS;
 
-	return (round(noise2(x, z) * 150.0f));
+	return (round(noise2(x, z) * 180.0f));
 }
 
 void get_grass_patch_offset(unsigned int terrain_index, vec2 offset)
@@ -377,18 +336,34 @@ void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9])
 }
 
 
-void B_draw_grass_patch(TerrainElementMesh mesh, mat4 projection_view, vec3 player_position, int x_offset, int z_offset, int patch_size, vec2 base_offset)
+void B_draw_grass_patch(TerrainElementMesh mesh, 
+			mat4 projection_view, 
+			vec3 player_position, 
+			int x_offset, 
+			int z_offset, 
+			int patch_size, 
+			float time, 
+			vec2 base_offset)
 {
+	/* If base offset bleeds into another terrain block, don't draw.*/
 	if ((base_offset[0] > TERRAIN_XZ_SCALE*4) ||
 	    (base_offset[1] > TERRAIN_XZ_SCALE*4))
 	{
 		return;
 	}
-	static float time = 0.0f;
+
 	vec2 offset;
 	glm_vec2_copy(base_offset, offset);
 	offset[0] += x_offset * TERRAIN_XZ_SCALE*4;
 	offset[1] += z_offset * TERRAIN_XZ_SCALE*4;
+	float view_distance = get_view_distance();
+	/* If the grass is too far away to see, don't draw. */
+	if ((player_position[0] - offset[0] > view_distance) ||
+	    (player_position[2] - offset[1] > view_distance))
+	{
+		return;
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh.heightmap_texture);
@@ -406,18 +381,22 @@ void B_draw_grass_patch(TerrainElementMesh mesh, mat4 projection_view, vec3 play
 	glBindVertexArray(mesh.vao);
 	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, patch_size*patch_size);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	time += 1.0f;
 }
 
-void draw_grass_patches(TerrainElementMesh grass, mat4 projection_view, vec3 player_position, unsigned int terrain_index, vec2 offsets[9])
+void draw_grass_patches(TerrainElementMesh grass, 
+			mat4 projection_view, 
+			vec3 player_position, 
+			unsigned int terrain_index, 
+			vec2 offsets[9])
 {
+	static float time = 0.0f;
 	int x_counter = -1;
 	int z_counter = -1;
 	for (int i = 0; i < 9; ++i)
 	{
 		unsigned int grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
 		int patch_size = get_grass_patch_size(grass_terrain_index);
-		B_draw_grass_patch(grass, projection_view, player_position, x_counter, z_counter, patch_size, offsets[i]);
+		B_draw_grass_patch(grass, projection_view, player_position, x_counter, z_counter, patch_size, time, offsets[i]);
 		x_counter++;
 		if (x_counter > 1)
 		{
@@ -425,6 +404,7 @@ void draw_grass_patches(TerrainElementMesh grass, mat4 projection_view, vec3 pla
 			z_counter++;
 		}	
 	}
+	time += 1.0f;
 }
 
 void B_draw_terrain_mesh(TerrainMesh mesh, 

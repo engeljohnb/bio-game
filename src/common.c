@@ -20,6 +20,18 @@
 #include <string.h>
 #include "common.h"
 
+float g_view_distance = 0.0f;
+
+void set_view_distance(float distance)
+{
+	g_view_distance = distance;
+}
+
+float get_view_distance(void)
+{
+	return g_view_distance;
+}
+
 B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path)
 {	
 	unsigned int program_id = glCreateProgram();

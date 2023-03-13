@@ -30,9 +30,10 @@ extern float delta_t;
 
 Camera create_camera(B_Window window, vec3 position, vec3 front)
 {
+	float view_distance = get_view_distance();
 	Camera camera;
 	memset(&camera, 0, sizeof(Camera));
-	glm_perspective(RAD(45), (float)window.width/(float)window.height, 0.1f, 1000.0f, camera.projection_space);
+	glm_perspective(RAD(45), (float)window.width/(float)window.height, 0.1f, view_distance, camera.projection_space);
 	glm_vec3_copy(position, camera.position);
 	glm_vec3_copy(front, camera.front);
 	glm_vec3_copy(VEC3_X_UP, camera.right);

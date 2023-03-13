@@ -36,17 +36,20 @@ mat4 rotate(vec3 axis, float angle)
 
 void main()
 {
-	int x_index = gl_InstanceID % 300;
-	int z_index = gl_InstanceID / 300;
-	float patch_size_factor = 0.08;
-	float offx = (x_index-300/2)*patch_size*patch_size_factor*fract(10000*sin(gl_InstanceID));
-	float offz = (z_index-300/2)*patch_size*patch_size_factor*fract(20000*sin(gl_InstanceID));
+	int x_index = gl_InstanceID % int(patch_size);
+	int z_index = gl_InstanceID / int(patch_size);
+	float rand_num = fract(100000*sin(gl_InstanceID));
+	float patch_size_factor = 0.4;
+	float offx = (x_index-patch_size/2)*patch_size*patch_size_factor*rand_num;
+	float offz = (z_index-patch_size/2)*patch_size*patch_size_factor*(rand_num*rand_num/2);
 	//float offx = float(x_index - (300/2));
 	//float offz = float(z_index - (300/2));
 	vec2 final_xz_offset = vec2(base_offset.x + offx, base_offset.y + offz);
 
-	mat4 rotation = rotate(vec3(0, 1, 0), gl_InstanceID*fract(10000*sin(gl_InstanceID)));
+	mat4 rotation = rotate(vec3(0, 1, 0), rand_num);
 	mat4 displacement = mat4(1.0);
+	mat4 recenter = translate(vec3(-0.5, -0.5, -0.5));
+	mat4 inv_recenter = inverse(recenter);
 	float player_distance = distance(player_position.xz, final_xz_offset);
 	if (player_distance < 8)
 	{
@@ -57,21 +60,18 @@ void main()
 		vec3 axis = normalize(vec3(1, 0, 1));
 		displacement = translate(vec3(-1.0, -1.0, 0.5));
 		float angle = min(1/(player_distance*2), 30);
-		displacement = displacement * rotate(axis, angle);
-		displacement = displacement * inverse(translate(vec3(-1.0, -1.0, 0.5)));
+		displacement = recenter * rotate(axis, angle);
+		displacement = displacement * inv_recenter;
 	}
 
-	vec2 wind_direction = normalize(vec2(1.0, 1.0));
-	vec2 wind_location = wind_direction*(time/1000);
-	float wind_distance = distance(vec2(offx, offz), wind_location);
-	float angle = radians(sin(wind_distance*2))*6;
+	float wind_distance = (time * rand_num)/75;
+	float angle = radians(sin(wind_distance*2))*2;
 
-	vec3 wind_rotation_axis = normalize(vec3(wind_direction.x, 0, wind_direction.y));
-	mat4 wind_displacement = translate(vec3(-0.04, -0.5, 0));
-	wind_displacement = wind_displacement * rotate(wind_rotation_axis, angle);
-	wind_displacement = wind_displacement * inverse(translate(vec3(-0.04, -0.5, 0)));
+	vec3 wind_rotation_axis = vec3(1, 0, 1);
+	mat4 wind_displacement =  recenter * rotate(wind_rotation_axis, angle);
+	wind_displacement = wind_displacement * inv_recenter;
 
 	vs_out.g_offset = final_xz_offset;
 	vs_out.instance_id = gl_InstanceID;
-	gl_Position = wind_displacement * displacement * rotation * vec4(v_pos, 1.0);
+	gl_Position = wind_displacement * rotation * displacement * vec4(v_pos, 1.0);
 }

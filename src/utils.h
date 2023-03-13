@@ -82,6 +82,7 @@ void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
  * Besides, having BG_MALLOC and BG_FREE both be macros has a nice symmetry to it. */
 int _bg_free(void *ptr);
 float absf(float value);
+float vec2_magnitude(vec2 vec);
 void print_vec3(vec3 vector);
 void print_vec2(vec2 vector);
 void print_mat4(mat4 mat);
