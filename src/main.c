@@ -132,13 +132,14 @@ void game_loop(void)
 
 		int window_width = 0;
 		int window_height = 0;
+		unsigned int terrain_index = all_actors[player_id].actor_state.current_terrain_index;
 		get_window_size(&window_width, &window_height);
 
 		glViewport(0, 0, window_width/2, window_height/2);
 
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		draw_grass_patches(grass, projection_view, all_actors[player_id].actor_state.position, grass_patch_offsets);
+		draw_grass_patches(grass, projection_view, all_actors[player_id].actor_state.position, terrain_index, grass_patch_offsets);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
