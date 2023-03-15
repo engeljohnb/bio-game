@@ -27,12 +27,13 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 {
 	GLfloat texture_vertices[] = { 
 	// position		// tex_coords
-	 -1.0f, -1.0f, 0.0f ,   0.0f, 0.0f,
-	 -1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
-	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
-	  -1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
-	  1.0f, 1.0f, 0.0f,     1.0f, 1.0f };
+	 -1.0f, -1.0f, 0.0f ,   0.0f, 0.0f, //0
+	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f, //2
+	 -1.0f, 1.0f, 0.0f,	0.0f, 1.0f, //1
+	  1.0f, 1.0f, 0.0f,     1.0f, 1.0f,  //5
+	  -1.0f, 1.0f, 0.0f,    0.0f, 1.0f, //4
+	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f, //3
+					    };
 
 	size_t stride = sizeof(GLfloat)*5;
 
@@ -123,6 +124,9 @@ void free_renderer(Renderer renderer)
 
 void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode)
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -145,5 +149,7 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(renderer.lighting_vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
+
+	glDisable(GL_CULL_FACE);
 }
 

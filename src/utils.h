@@ -74,6 +74,8 @@ int vec3_zero(float a[3]);
 int valid(void *ptr);
 void pitch(float angle, mat4 dest);
 void yaw(float angle, mat4 dest);
+int is_in_frustum_2d(mat4 projection_view, vec2 position);
+int is_behind_camera_2d(mat4 projection_view, vec2 pos);
 void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
@@ -83,6 +85,7 @@ void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 int _bg_free(void *ptr);
 float absf(float value);
 float vec2_magnitude(vec2 vec);
+void print_vec4(vec4 vector);
 void print_vec3(vec3 vector);
 void print_vec2(vec2 vector);
 void print_mat4(mat4 mat);

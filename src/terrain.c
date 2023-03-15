@@ -308,7 +308,7 @@ int get_grass_patch_size(unsigned int terrain_index)
 	float x = (float)x_index / MAX_TERRAIN_BLOCKS;
 	float z = (float)z_index / MAX_TERRAIN_BLOCKS;
 
-	return (round(noise2(x, z) * 180.0f));
+	return (round(noise2(x, z) * 220.0f));
 }
 
 void get_grass_patch_offset(unsigned int terrain_index, vec2 offset)
@@ -435,6 +435,9 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 
 void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, block->g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -465,6 +468,8 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 				    block->heightmap_texture);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDisable(GL_CULL_FACE);
 }
 
 TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices, int num_vertices, int num_rows)

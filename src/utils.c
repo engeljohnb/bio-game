@@ -111,6 +111,51 @@ void get_rotation_matrix(float yaw, float pitch, mat4 dest)
 	}
 }
 
+int is_behind_camera_2d(mat4 projection_view, vec2 pos)
+{
+	vec4 corners[8];
+	mat4 inv_projection_view;
+	glm_mat4_inv(projection_view, inv_projection_view);
+	glm_frustum_corners(inv_projection_view, corners);
+
+	vec3 plane_coords[4];
+	vec3 position;
+	glm_vec3_copy(VEC3(pos[0], 0, pos[1]), position);
+	for (int i = 0; i < 4; ++i)
+	{
+		plane_coords[i][0] = corners[i][0];
+		plane_coords[i][1] = 0;
+		plane_coords[i][2] = corners[i][2];
+	}
+
+	vec3 b_minus_a;
+	vec3 c_minus_a;
+	vec3 normal;
+	glm_vec3_sub(plane_coords[1], plane_coords[0], b_minus_a);
+	glm_vec3_sub(plane_coords[2], plane_coords[0], c_minus_a);
+	glm_vec3_cross(b_minus_a, c_minus_a, normal);
+
+	float distance = glm_vec3_dot(position, normal);
+	return (distance < 0);
+}
+
+int is_in_frustum_2d(mat4 projection_view, vec2 pos)
+{
+	vec4 corners[8];
+	mat4 inv_projection_view;
+	glm_mat4_inv(projection_view, inv_projection_view);
+	glm_frustum_corners(inv_projection_view, corners);
+
+	float ftlx = corners[GLM_LTF][0];
+	float ftrx = corners[GLM_RTF][1];
+	float ftrz = corners[GLM_RTF][2];
+	float ntrz = corners[GLM_RTN][2];
+	return !((pos[0] > ftlx-500) &&
+		(pos[0] < ftrx+500) &&
+		(pos[1] < ftrz+500) &&
+		(pos[1] > ntrz-500));
+}
+
 float vec2_magnitude(vec2 vec)
 {
 	return sqrt(vec[0]*vec[0] + vec[1] * vec[1]);
@@ -317,6 +362,11 @@ void print_mat4(mat4 mat)
 	fprintf(stderr, "%f\t", mat[3][1]);
 	fprintf(stderr, "%f\t", mat[3][2]);
 	fprintf(stderr, "%f\t\n\n", mat[3][3]);
+}
+
+void print_vec4(vec4 vector)
+{
+	fprintf(stderr, "%f %f %f %f\n", vector[0], vector[1], vector[2], vector[3]);
 }
 
 void print_vec3(vec3 vector)

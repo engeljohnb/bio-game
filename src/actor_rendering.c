@@ -27,6 +27,9 @@
 
 void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	static float current_time = 0.0f;
 	glBindVertexArray(model->mesh->vao);
 
@@ -92,6 +95,8 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 	{
 		B_draw_actor_model(model->children[i], camera, shader);
 	}
+
+	glDisable(GL_CULL_FACE);
 }
 
 PointLight create_point_light(vec3 position, vec3 color, float intensity)
