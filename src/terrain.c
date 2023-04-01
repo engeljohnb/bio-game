@@ -337,8 +337,9 @@ void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9])
 
 
 void B_draw_grass_patch(TerrainElementMesh mesh, 
-			mat4 projection_view, 
+			mat4 projection_view,
 			vec3 player_position, 
+			vec3 player_facing,
 			int x_offset, 
 			int z_offset, 
 			int patch_size, 
@@ -373,19 +374,32 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_int(mesh.shader, "heightmap", 0);
 	B_set_uniform_float(mesh.shader, "patch_size", (float)patch_size);
 	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
-	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4);
+	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
 	B_set_uniform_vec2(mesh.shader, "base_offset", offset);
 	B_set_uniform_float(mesh.shader, "time", time);
+	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
+	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
+
+	vec3 frustum_corners[8];
+	get_frustum_corners(projection_view, frustum_corners);
+	for (int i = 0; i < 8; ++i)
+	{
+		char name[128] = {0};
+		snprintf(name, 128, "frustum_corners[%i]", i);
+		B_set_uniform_vec3(mesh.shader, name, frustum_corners[i]);
+	}
+	
 	glBindVertexArray(mesh.vao);
 	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, patch_size*patch_size);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void draw_grass_patches(TerrainElementMesh grass, 
-			mat4 projection_view, 
+			mat4 projection_view,
 			vec3 player_position, 
+			vec3 player_facing,
 			unsigned int terrain_index, 
 			vec2 offsets[9])
 {
@@ -396,7 +410,7 @@ void draw_grass_patches(TerrainElementMesh grass,
 	{
 		unsigned int grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
 		int patch_size = get_grass_patch_size(grass_terrain_index);
-		B_draw_grass_patch(grass, projection_view, player_position, x_counter, z_counter, patch_size, time, offsets[i]);
+		B_draw_grass_patch(grass, projection_view, player_position, player_facing, x_counter, z_counter, patch_size, time, offsets[i]);
 		x_counter++;
 		if (x_counter > 1)
 		{
@@ -441,6 +455,7 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 	glBindFramebuffer(GL_FRAMEBUFFER, block->g_buffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 	int x_offset = -1;
 	int z_offset = -MAX_TERRAIN_BLOCKS;

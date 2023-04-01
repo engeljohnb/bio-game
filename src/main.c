@@ -37,8 +37,8 @@
 #include "terrain_collisions.h"
 #include "utils.h"
 
-// UP NEXT: 
-// 	Grass should be appearing, but shouldn't correctly update with the player changing blocks yet.
+// UP NEXT: Perhaps I would be better off implementing frustum culling manually.
+
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
 void game_loop(void)
@@ -93,7 +93,7 @@ void game_loop(void)
 
 
 		// Simulation updates
-		frame_time += B_get_frame_time(delta_t);
+		frame_time += B_get_frame_time();
 
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
@@ -137,10 +137,18 @@ void game_loop(void)
 
 		glViewport(0, 0, window_width/2, window_height/2);
 
+		static int printed =  0;
+		if (!printed)
+		{
+			fprintf(stderr, "%lu\n", all_actors[player_id].actor_state.current_terrain_index);
+			printed++;
+		}
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		draw_grass_patches(grass, projection_view, 
+		draw_grass_patches(grass, 
+				   projection_view,
 				   all_actors[player_id].actor_state.position, 
+				   renderer.camera.front,
 				   terrain_index, 
 				   grass_patch_offsets);
 

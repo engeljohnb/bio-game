@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "common.h"
 #include "actor_rendering.h"
 #include "utils.h"
 #include "terrain.h"
@@ -130,7 +131,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	glm_vec3_copy(facing, state.front);
 	state.speed = 0;
 	// Actor begins roughly in the middle of the map.
-	state.current_terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
+	state.current_terrain_index = PLAYER_TERRAIN_INDEX_START;
 	//state.prev_terrain_index = state.current_terrain_index;
 	//state.current_terrain_index = 0;
 	state.max_speed = 1.7;

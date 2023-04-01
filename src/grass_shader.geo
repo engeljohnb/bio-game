@@ -5,17 +5,116 @@ layout (triangle_strip, max_vertices = 3) out;
 
 in VS_OUT
 {
+	vec3 g_player_pos;
 	vec2 g_offset;
 	int  instance_id;
 } gs_in[];
 
+mat4 translate(vec3 delta)
+{
+    return mat4(
+        vec4(1.0, 0.0, 0.0, 0.0),
+        vec4(0.0, 1.0, 0.0, 0.0),
+        vec4(0.0, 0.0, 1.0, 0.0),
+        vec4(delta, 1.0));
+}
+
+uniform vec3 player_facing;
 uniform mat4 scale;
 uniform mat4 projection_view;
 uniform sampler2D heightmap;
 uniform float terrain_chunk_size;
+uniform float view_distance;
+uniform vec3 frustum_corners[8];
 
 out vec3 f_position;
 out vec3 f_normal;
+
+vec3 get_frustum_vector(int i)
+{
+	switch (i)
+	{
+		case 0:
+		{
+			return frustum_corners[0] - frustum_corners[2];
+			break;
+		}
+		case 1:
+		{
+			return frustum_corners[1] - frustum_corners[4];
+			break;
+		}
+		case 2:
+		{
+			return frustum_corners[6] - frustum_corners[3];
+			break;
+		}
+		case 3:
+		{
+			return frustum_corners[5] - frustum_corners[7];
+			break;
+		}
+	}
+}
+
+vec3 get_frustum_normal(int i)
+{
+	switch (i)
+	{
+		case 0:
+		{
+			return normalize(cross(frustum_corners[1] - frustum_corners[0], frustum_corners[2] - frustum_corners[0]));
+			break;
+		}
+		case 1:
+		{
+			return normalize(cross(frustum_corners[5] - frustum_corners[4], frustum_corners[1] - frustum_corners[4]));
+			break;
+		}
+		case 2:
+		{
+			return normalize(cross(frustum_corners[2] - frustum_corners[3], frustum_corners[6] - frustum_corners[3]));
+			break;
+		}
+		case 3:
+		{
+			return -normalize(cross(frustum_corners[5] - frustum_corners[7], frustum_corners[6] - frustum_corners[7]));
+			break;
+		}
+	}
+}
+
+float get_d(int i)
+{
+	switch (i)
+	{
+		case 0:
+		{
+			return dot(frustum_corners[1], -get_frustum_normal(i));
+			break;
+		}
+		case 1:
+		{
+			return dot(frustum_corners[1], -get_frustum_normal(i));
+			break;
+		}
+		case 2:
+		{
+			return dot(frustum_corners[6], -get_frustum_normal(i));
+			break;
+		}
+		case 3:
+		{
+			return dot(frustum_corners[6], -get_frustum_normal(i));
+			break;
+		}
+	}
+}
+
+bool is_inside(vec3 normal, vec3 point, float d)
+{
+	return (dot(normal, point) + d > 0.0);
+}
 
 void main()
 {
@@ -25,20 +124,41 @@ void main()
 
 	f_normal = normalize(cross((b-a), (c-a)));
 
-	for (int i = 0; i < gl_in.length(); i++)
-	{ 
-		vec2 g_offset = gs_in[i].g_offset;
-		vec3 trans = vec3(scale * gl_in[i].gl_Position);
-		vec2 tex_coords = g_offset/(terrain_chunk_size*3);
-		tex_coords += 0.33;
-		vec4 height_color = texture(heightmap, tex_coords);
-		float height = height_color.r * (height_color.g * 2500)-0.75;
-		trans += vec3(g_offset.x, height, g_offset.y);
-
-		vec4 pos = projection_view * vec4(trans, 1.0);
-		gl_Position = pos;
-		f_position = trans;
-		EmitVertex();
+	vec2 g_offset = gs_in[0].g_offset;
+	vec3 xz_location = vec3(g_offset.x, gs_in[0].g_player_pos.y , g_offset.y);
+	bool in_frustum = true;
+	for (int j = 0; j < 4; ++j)
+	{
+		vec3 normal = get_frustum_normal(j);
+		vec3 check = xz_location - get_frustum_vector(j);
+		if ((dot(normal, check) + get_d(j)) < 0)
+		{
+			in_frustum = false;
+			break;
+		}
 	}
-	//EndPrimitive();
+	if (in_frustum)
+	{
+		for (int i = 0; i < gl_in.length(); i++)
+		{ 
+			vec3 trans = vec3(scale * gl_in[i].gl_Position);
+			vec2 tex_coords = g_offset/(terrain_chunk_size*3);
+			tex_coords += 0.33;
+			vec4 height_color = texture(heightmap, tex_coords);
+			float height = height_color.r * (height_color.g * 2500)-0.75;
+			trans += vec3(g_offset.x, height, g_offset.y);
+
+			vec4 pos = projection_view * vec4(trans, 1.0);
+			gl_Position = pos;
+			f_position = trans;
+			
+			if (!in_frustum)
+			{
+				continue;
+			}
+			EmitVertex();
+		}
+	}
+
+	EndPrimitive();
 }

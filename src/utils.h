@@ -77,6 +77,8 @@ void yaw(float angle, mat4 dest);
 int is_in_frustum_2d(mat4 projection_view, vec2 position);
 int is_behind_camera_2d(mat4 projection_view, vec2 pos);
 void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
+void get_frustum_normals(mat4 projection_view, vec3 dest[4]);
+void get_frustum_corners(mat4 projection_view, vec3 dest[8]);
 
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
  * I'm just too lazy to go back and change each call.

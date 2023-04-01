@@ -356,6 +356,7 @@ ActorModel *B_load_model_from_file(const char *filename)
 	char *dir_name = get_directory_name(filename);
 	B_load_ai_scene(scene, model, dir_name);
 	aiReleaseImport(scene);
+	BG_FREE(dir_name);
 	return model;
 }
 

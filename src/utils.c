@@ -139,6 +139,51 @@ int is_behind_camera_2d(mat4 projection_view, vec2 pos)
 	return (distance < 0);
 }
 
+void get_normal_vec3(vec3 a, vec3 b, vec3 c, vec3 dest)
+{
+	vec3 b_m_a;
+	vec3 c_m_a;
+	glm_vec3_sub(b, a, b_m_a);
+	glm_vec3_sub(c, a, c_m_a);
+
+	glm_vec3_cross(b_m_a, c_m_a, dest);
+	glm_vec3_normalize(dest);
+}
+
+void get_frustum_corners(mat4 projection_view, vec3 dest[8])
+{
+	vec4 corners_vec4[8];
+	mat4 inv_projection_view;
+	glm_mat4_inv(projection_view, inv_projection_view);
+	glm_frustum_corners(inv_projection_view, corners_vec4);
+
+	for (int i = 0; i < 8; ++i)
+	{
+		glm_vec3(corners_vec4[i], dest[i]);
+	}
+
+}
+
+
+void get_frustum_normals(mat4 projection_view, vec3 dest[4])
+{
+	vec4 corners_vec4[8];
+	vec3 corners[8];
+	mat4 inv_projection_view;
+	glm_mat4_inv(projection_view, inv_projection_view);
+	glm_frustum_corners(inv_projection_view, corners_vec4);
+
+	for (int i = 0; i < 8; ++i)
+	{
+		glm_vec3(corners_vec4[i], corners[i]);
+	}
+
+	get_normal_vec3(corners[2], corners[1], corners[0], dest[0]);
+	get_normal_vec3(corners[5], corners[1], corners[0], dest[1]);
+	get_normal_vec3(corners[2], corners[6], corners[7], dest[2]);
+	get_normal_vec3(corners[4], corners[5], corners[6], dest[3]);
+}
+
 int is_in_frustum_2d(mat4 projection_view, vec2 pos)
 {
 	vec4 corners[8];

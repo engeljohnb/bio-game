@@ -8,6 +8,7 @@ uniform float time;
 
 out VS_OUT
 {
+	vec3 	g_player_pos;
 	vec2 	g_offset;
 	int	instance_id;
 } vs_out;
@@ -72,6 +73,7 @@ void main()
 	wind_displacement = wind_displacement * inv_recenter;
 
 	vs_out.g_offset = final_xz_offset;
+	vs_out.g_player_pos = player_position;
 	vs_out.instance_id = gl_InstanceID;
 	gl_Position = wind_displacement * rotation * displacement * vec4(v_pos, 1.0);
 }
