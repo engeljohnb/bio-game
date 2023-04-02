@@ -126,6 +126,7 @@ void game_loop(void)
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_chunk, all_actors[player_id].actor_state.command_state.camera_rotation);
 
+
 		/* Render */
 		mat4 projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);

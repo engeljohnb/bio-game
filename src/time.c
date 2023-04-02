@@ -40,7 +40,7 @@ void B_stopwatch(char *message)
 	glFinish();
 	static unsigned long prev_time = 0;
 	unsigned long time = SDL_GetTicks();
-	fprintf(stderr, "%lu %s\n", (time-prev_time), message);
+	fprintf(stdout, "%lu %s\n", (time-prev_time), message);
 	prev_time = time;
 }
 

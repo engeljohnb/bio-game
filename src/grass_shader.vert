@@ -3,6 +3,7 @@
 layout (location = 0) in vec3 v_pos;
 uniform float patch_size;
 uniform vec2 base_offset;
+uniform vec3 player_facing;
 uniform vec3 player_position;
 uniform float time;
 
@@ -10,6 +11,7 @@ out VS_OUT
 {
 	vec3 	g_player_pos;
 	vec2 	g_offset;
+	vec2 	g_base_offset;
 	int	instance_id;
 } vs_out;
 
@@ -58,7 +60,7 @@ void main()
 		{
 			player_distance = 0.01;
 		}
-		vec3 axis = normalize(vec3(1, 0, 1));
+		vec3 axis = normalize(-player_facing);
 		displacement = translate(vec3(-1.0, -1.0, 0.5));
 		float angle = min(1/(player_distance*2), 30);
 		displacement = recenter * rotate(axis, angle);
@@ -75,5 +77,6 @@ void main()
 	vs_out.g_offset = final_xz_offset;
 	vs_out.g_player_pos = player_position;
 	vs_out.instance_id = gl_InstanceID;
+	vs_out.g_base_offset = base_offset;
 	gl_Position = wind_displacement * rotation * displacement * vec4(v_pos, 1.0);
 }

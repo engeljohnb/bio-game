@@ -363,13 +363,22 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	vec3 frustum_corners[8];
 	get_frustum_corners(projection_view, frustum_corners);
 
+
 	/* If the grass is too far away to see, don't draw. */
 	vec3 n_player_facing;
 	glm_vec3_negate_to(player_facing, n_player_facing);
-	if (!which_side(player_facing, frustum_corners[7], VEC3(offset[1], 0, offset[2])))
+	if (!which_side(player_facing, frustum_corners[7], VEC3(offset[0], 0, offset[1])))
 	{
 		return;
 	}
+
+	/* If the patch of grass is behind the player and too far away to see unless the player turns, don't draw */
+	if ((!which_side(n_player_facing, frustum_corners[1], VEC3(offset[0], 0, offset[1]))) &&
+	    (glm_vec2_distance(VEC2(player_position[0], player_position[2]), offset) > TERRAIN_XZ_SCALE))
+	{
+		return;
+	}
+
 
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
@@ -387,6 +396,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_float(mesh.shader, "time", time);
 	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
+	B_set_uniform_float(mesh.shader, "max_distance", TERRAIN_XZ_SCALE);
 
 	for (int i = 0; i < 8; ++i)
 	{
@@ -420,7 +430,7 @@ void draw_grass_patches(TerrainElementMesh grass,
 		{
 			x_counter = -1;
 			z_counter++;
-		}	
+		}
 	}
 	time += 1.0f;
 }

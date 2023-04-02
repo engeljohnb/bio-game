@@ -7,6 +7,7 @@ in VS_OUT
 {
 	vec3 g_player_pos;
 	vec2 g_offset;
+	vec2 g_base_offset;
 	int  instance_id;
 } gs_in[];
 
@@ -19,13 +20,13 @@ mat4 translate(vec3 delta)
         vec4(delta, 1.0));
 }
 
-uniform vec3 player_facing;
 uniform mat4 scale;
 uniform mat4 projection_view;
 uniform sampler2D heightmap;
 uniform float terrain_chunk_size;
 uniform float view_distance;
 uniform vec3 frustum_corners[8];
+uniform float max_distance;
 
 out vec3 f_position;
 out vec3 f_normal;
@@ -97,19 +98,25 @@ void main()
 
 	f_normal = normalize(cross((b-a), (c-a)));
 
+	vec2 g_base_offset = gs_in[0].g_base_offset;
 	vec2 g_offset = gs_in[0].g_offset;
 	vec3 xz_location = vec3(g_offset.x, gs_in[0].g_player_pos.y , g_offset.y);
-	bool in_frustum = true;
+
+	bool render = true;
 	for (int j = 0; j < 4; ++j)
 	{
 		vec3 normal = get_frustum_normal(j);
 		if ((dot(normal, xz_location) + get_d(j)) < -10)
 		{
-			in_frustum = false;
+			render = false;
 			break;
 		}
 	}
-	if (in_frustum)
+	if (distance(g_base_offset, g_offset) > max_distance)
+	{
+		render = false;
+	}
+	if (render)
 	{
 		for (int i = 0; i < gl_in.length(); i++)
 		{ 
@@ -124,7 +131,7 @@ void main()
 			gl_Position = pos;
 			f_position = trans;
 			
-			if (!in_frustum)
+			if (!render)
 			{
 				continue;
 			}
