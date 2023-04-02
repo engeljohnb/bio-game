@@ -22,9 +22,65 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices=3) out;
 
 uniform mat4 projection_view_space;
+uniform vec3 frustum_corners[8];
+
 out vec3 f_position;
 out vec3 f_normal;
 out vec2 f_offset;
+
+vec3 get_frustum_normal(int i)
+{
+	switch (i)
+	{
+		case 0:
+		{
+			return normalize(cross(frustum_corners[1] - frustum_corners[0], frustum_corners[2] - frustum_corners[0]));
+			break;
+		}
+		case 1:
+		{
+			return normalize(cross(frustum_corners[5] - frustum_corners[4], frustum_corners[1] - frustum_corners[4]));
+			break;
+		}
+		case 2:
+		{
+			return normalize(cross(frustum_corners[2] - frustum_corners[3], frustum_corners[6] - frustum_corners[3]));
+			break;
+		}
+		case 3:
+		{
+			return -normalize(cross(frustum_corners[5] - frustum_corners[7], frustum_corners[6] - frustum_corners[7]));
+			break;
+		}
+	}
+}
+
+float get_d(int i)
+{
+	switch (i)
+	{
+		case 0:
+		{
+			return dot(frustum_corners[1], -get_frustum_normal(i));
+			break;
+		}
+		case 1:
+		{
+			return dot(frustum_corners[1], -get_frustum_normal(i));
+			break;
+		}
+		case 2:
+		{
+			return dot(frustum_corners[6], -get_frustum_normal(i));
+			break;
+		}
+		case 3:
+		{
+			return dot(frustum_corners[6], -get_frustum_normal(i));
+			break;
+		}
+	}
+}
 
 void main()
 {
@@ -35,6 +91,20 @@ void main()
 
 	for (int i = 0; i < gl_in.length(); ++i)
 	{
+		bool in_frustum = true;
+		for (int j = 0; j < 6; ++j)
+		{
+			vec3 normal = get_frustum_normal(j);
+			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -30)
+			{
+				in_frustum = false;
+				break;
+			}
+		}
+		if (!in_frustum)
+		{
+			continue;
+		}
 		f_position = vec3(gl_in[i].gl_Position);
 		vec4 pos = projection_view_space * gl_in[i].gl_Position; 
 		gl_Position = pos;

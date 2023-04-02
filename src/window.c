@@ -41,7 +41,7 @@ void B_init(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	set_view_distance(1000.0f);
+	set_view_distance(1300.0f);
 }
 
 B_Window B_create_server_window(void)

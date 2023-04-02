@@ -67,6 +67,15 @@ size_t mins(size_t a, size_t b)
 	return b;
 }
 
+int which_side(vec3 normal, vec3 point_on_plane, vec3 location)
+{
+	vec3 n_normal;
+	glm_vec3_negate_to(normal, n_normal);
+	float distance = glm_vec3_dot(n_normal, point_on_plane);
+
+	return ((glm_vec3_dot(location, normal) + distance) > 0);
+}
+
 void cat_to(char *first, char *second, char *dest, size_t size)
 {
 	char first_copy[size];
@@ -388,38 +397,60 @@ int _bg_free(void *ptr)
 
 void print_mat4(mat4 mat)
 {
-	fprintf(stderr, "%f\t", mat[0][0]);
-	fprintf(stderr, "%f\t", mat[0][1]);
-	fprintf(stderr, "%f\t", mat[0][2]);
-	fprintf(stderr, "%f\t\n", mat[0][3]);
+	fprintf(stdout, "%f\t", mat[0][0]);
+	fprintf(stdout, "%f\t", mat[0][1]);
+	fprintf(stdout, "%f\t", mat[0][2]);
+	fprintf(stdout, "%f\t\n", mat[0][3]);
 
-	fprintf(stderr, "%f\t", mat[1][0]);
-	fprintf(stderr, "%f\t", mat[1][1]);
-	fprintf(stderr, "%f\t", mat[1][2]);
-	fprintf(stderr, "%f\t\n", mat[1][3]);
+	fprintf(stdout, "%f\t", mat[1][0]);
+	fprintf(stdout, "%f\t", mat[1][1]);
+	fprintf(stdout, "%f\t", mat[1][2]);
+	fprintf(stdout, "%f\t\n", mat[1][3]);
 
-	fprintf(stderr, "%f\t", mat[2][0]);
-	fprintf(stderr, "%f\t", mat[2][1]);
-	fprintf(stderr, "%f\t", mat[2][2]);
-	fprintf(stderr, "%f\t\n", mat[2][3]);
+	fprintf(stdout, "%f\t", mat[2][0]);
+	fprintf(stdout, "%f\t", mat[2][1]);
+	fprintf(stdout, "%f\t", mat[2][2]);
+	fprintf(stdout, "%f\t\n", mat[2][3]);
 
-	fprintf(stderr, "%f\t", mat[3][0]);
-	fprintf(stderr, "%f\t", mat[3][1]);
-	fprintf(stderr, "%f\t", mat[3][2]);
-	fprintf(stderr, "%f\t\n\n", mat[3][3]);
+	fprintf(stdout, "%f\t", mat[3][0]);
+	fprintf(stdout, "%f\t", mat[3][1]);
+	fprintf(stdout, "%f\t", mat[3][2]);
+	fprintf(stdout, "%f\t\n\n", mat[3][3]);
 }
 
 void print_vec4(vec4 vector)
 {
-	fprintf(stderr, "%f %f %f %f\n", vector[0], vector[1], vector[2], vector[3]);
+	fprintf(stdout, "%f %f %f %f\n", vector[0], vector[1], vector[2], vector[3]);
 }
 
 void print_vec3(vec3 vector)
 {
-	fprintf(stderr, "%f %f %f\n", vector[0], vector[1], vector[2]);
+	fprintf(stdout, "%f %f %f\n", vector[0], vector[1], vector[2]);
 }
+
+void print_vec3_indented(vec3 vector, int num_tabs)
+{
+	char string[512];
+	memset(string, 0, 512);
+	char *ptr = string;
+	/* Takes about 40 characters to print a vec3 */
+	if (num_tabs > (512 - 40))
+	{
+		fprintf(stderr, "print_vec3_tab error: too many tabs -- buffer overflow\n");
+		exit(0);
+	}
+	for (int i = 0; i < num_tabs; ++i)
+	{
+		snprintf(ptr, 512-i, "\t");
+		ptr++;
+	}
+
+	snprintf(ptr, 512-num_tabs, "%f %f %f\n", vector[0], vector[1], vector[2]);
+	fwrite(string, 1, strnlen(string, 512), stdout);
+}
+
 
 void print_vec2(vec2 vector)
 {
-	fprintf(stderr, "%f %f\n", vector[0], vector[1]);
+	fprintf(stdout, "%f %f\n", vector[0], vector[1]);
 }

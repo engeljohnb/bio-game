@@ -30,33 +30,6 @@ uniform vec3 frustum_corners[8];
 out vec3 f_position;
 out vec3 f_normal;
 
-vec3 get_frustum_vector(int i)
-{
-	switch (i)
-	{
-		case 0:
-		{
-			return frustum_corners[0] - frustum_corners[2];
-			break;
-		}
-		case 1:
-		{
-			return frustum_corners[1] - frustum_corners[4];
-			break;
-		}
-		case 2:
-		{
-			return frustum_corners[6] - frustum_corners[3];
-			break;
-		}
-		case 3:
-		{
-			return frustum_corners[5] - frustum_corners[7];
-			break;
-		}
-	}
-}
-
 vec3 get_frustum_normal(int i)
 {
 	switch (i)
@@ -130,8 +103,7 @@ void main()
 	for (int j = 0; j < 4; ++j)
 	{
 		vec3 normal = get_frustum_normal(j);
-		vec3 check = xz_location - get_frustum_vector(j);
-		if ((dot(normal, check) + get_d(j)) < 0)
+		if ((dot(normal, xz_location) + get_d(j)) < -10)
 		{
 			in_frustum = false;
 			break;

@@ -80,6 +80,11 @@ void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 void get_frustum_normals(mat4 projection_view, vec3 dest[4]);
 void get_frustum_corners(mat4 projection_view, vec3 dest[8]);
 
+/* Checks which side of a plane location is on -- returns 0 if it is on the side opposite of the direction of the normal, 
+ * and returns 1 if it's on the side of the direction of the normal */
+int which_side(vec3 normal, vec3 point_on_plane, vec3 location);
+
+
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
  * I'm just too lazy to go back and change each call.
  *
@@ -91,6 +96,7 @@ void print_vec4(vec4 vector);
 void print_vec3(vec3 vector);
 void print_vec2(vec2 vector);
 void print_mat4(mat4 mat);
+void print_vec3_indented(vec3 vector, int num_tabs);
 /* Appends second to first and stores the resulting string in dest. Size is the size of dest. */
 void cat_to(char *first, char *second, char *dest, size_t size);
 void *_bg_malloc(size_t size);

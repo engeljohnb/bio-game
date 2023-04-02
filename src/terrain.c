@@ -24,6 +24,7 @@
 #include "time.h"
 #include "noise.h"
 #include "utils.h"
+#include "input.h"
 #include "terrain.h"
 
 int g_terrain_heightmap_width;
@@ -358,9 +359,14 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	offset[0] += x_offset * TERRAIN_XZ_SCALE*4;
 	offset[1] += z_offset * TERRAIN_XZ_SCALE*4;
 	float view_distance = get_view_distance();
+
+	vec3 frustum_corners[8];
+	get_frustum_corners(projection_view, frustum_corners);
+
 	/* If the grass is too far away to see, don't draw. */
-	if ((player_position[0] - offset[0] > view_distance) ||
-	    (player_position[2] - offset[1] > view_distance))
+	vec3 n_player_facing;
+	glm_vec3_negate_to(player_facing, n_player_facing);
+	if (!which_side(player_facing, frustum_corners[7], VEC3(offset[1], 0, offset[2])))
 	{
 		return;
 	}
@@ -382,8 +388,6 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
 
-	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
 	for (int i = 0; i < 8; ++i)
 	{
 		char name[128] = {0};
@@ -429,7 +433,6 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			float tessellation_level, 
 			B_Texture texture)
 {
-
 	glUseProgram(shader);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -443,8 +446,40 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
 	B_set_uniform_float(shader, "height_scale", TERRAIN_HEIGHT_SCALE);
 
+	vec3 frustum_corners[8];
+	get_frustum_corners(projection_view, frustum_corners);
+	for (int i = 0; i < 8; ++i)
+	{
+		char name[128] = {0};
+		snprintf(name, 128, "frustum_corners[%i]", i);
+		B_set_uniform_vec3(shader, name, frustum_corners[i]);
+	}
+	
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
+}
+
+
+void get_block_corners(vec3 dest[4], int index)
+{
+	int x_index = index % 3;
+	int z_index = index / 3;
+
+	dest[0][0] = (x_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[0][1] = 0;
+	dest[0][2] = (z_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+
+	dest[1][0] = ((x_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[1][1] = 0;
+	dest[1][2] = (z_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+
+	dest[2][0] = (x_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[2][1] = 0;
+	dest[2][2] = ((z_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+
+	dest[3][0] = ((x_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[3][1] = 0;
+	dest[3][2] = ((z_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
 }
 
 void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
@@ -456,9 +491,10 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 	int x_offset = -1;
 	int z_offset = -MAX_TERRAIN_BLOCKS;
+	vec3 frustum_corners[8];
+	get_frustum_corners(projection_view, frustum_corners);
 	for (int i = 0; i < 9; ++i)
 	{
 		int index = player_block_index + z_offset + x_offset;
@@ -474,13 +510,50 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 			z_offset = -MAX_TERRAIN_BLOCKS;
 		}
 
-		B_draw_terrain_mesh(block->terrain_meshes[i],
-				    shader,
-				    projection_view,
-				    index,
-				    player_block_index,
-				    block->tessellation_level,
-				    block->heightmap_texture);
+		vec3 player_facing;
+		vec3 n_player_facing;
+		{
+			vec3 b_m_a;
+			vec3 c_m_a;
+			glm_vec3_sub(frustum_corners[1], frustum_corners[0], b_m_a);
+			glm_vec3_sub(frustum_corners[2], frustum_corners[0], c_m_a);
+			glm_vec3_cross(b_m_a, c_m_a, player_facing);
+			glm_vec3_normalize(player_facing);
+			glm_vec3_negate_to(player_facing, n_player_facing);
+		}
+
+		vec3 block_corners[4] = {0};
+		get_block_corners(block_corners, i);
+		int visible = 0;
+
+		if (player_block_index == index)
+		{
+			visible = 1;
+		}
+		else
+		{
+			for (int j = 0; j < 4; ++j)
+			{
+				if ((which_side(player_facing, frustum_corners[1], block_corners[j])) &&
+				    (which_side(n_player_facing, frustum_corners[7], block_corners[j])))
+				{
+					visible = 1;
+					break;
+				}
+			}
+		}
+
+		if (visible)
+		{
+			B_draw_terrain_mesh(block->terrain_meshes[i],
+					    shader,
+					    projection_view,
+					    index,
+					    player_block_index,
+					    block->tessellation_level,
+					    block->heightmap_texture);
+			
+		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
