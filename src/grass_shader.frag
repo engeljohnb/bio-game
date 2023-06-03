@@ -7,9 +7,11 @@ layout (location = 2) out vec3 frag_color;
 in vec3 f_position;
 in vec3 f_normal;
 
+uniform vec3 color;
+
 void main()
 {
 	frag_normal = f_normal;
-	frag_color = vec3(0.4, 1.0, 0.6);
+	frag_color = color;//vec3(0.4f, 1.0f, 0.6f);
 	frag_position = f_position * 0.01;
 }

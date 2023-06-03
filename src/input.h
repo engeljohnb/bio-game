@@ -42,6 +42,7 @@ typedef struct
 {
 	uint8_t		quit;
 	uint8_t 	movement;
+	int		elevate;
 	unsigned int	id;
 	float		look_x;
 	float		look_y;
@@ -68,4 +69,5 @@ typedef struct
 CommandConfig default_command_config(void);
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config);
 int query_log_command(void);
+int should_print_debug(void);
 #endif

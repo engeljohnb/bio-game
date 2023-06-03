@@ -3,32 +3,11 @@
 #include "utils.h"
 #include "terrain_collisions.h"
 
-/*void get_texel_from_position(vec3 pos, TerrainChunk *terrain_chunk, int *x, int *z)
-{
-	size_t section_heightmap_height = round(terrain_chunk->heightmap_width/3);
-	size_t section_heightmap_width = round(terrain_chunk->heightmap_height/3);
-	
-	float mesh_height = TERRAIN_XZ_SCALE*4;
-	float mesh_width = TERRAIN_XZ_SCALE*4;
-
-	float percent_x = glm_percent(0, mesh_width, pos[0]);
-	float percent_z = glm_percent(0, mesh_height, pos[2]);
-
-	int pixel_x = floor(section_heightmap_width * percent_x);
-	int pixel_z = floor(section_heightmap_height * percent_z);
-
-	pixel_x += section_heightmap_width;
-	pixel_z += section_heightmap_height;
-
-	*x = pixel_x;
-	*z = pixel_z;
-}*/
-
 float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 {
-	size_t total_heightmap_width = terrain_chunk->heightmap_width;
-	size_t section_heightmap_height = round(terrain_chunk->heightmap_width/3);
-	size_t section_heightmap_width = round(terrain_chunk->heightmap_height/3);
+	unsigned int total_heightmap_width = terrain_chunk->heightmap_width;
+	unsigned int section_heightmap_height = terrain_chunk->block_width;
+	unsigned int section_heightmap_width = terrain_chunk->block_height;
 
 	float mesh_height = TERRAIN_XZ_SCALE*4;
 	float mesh_width = TERRAIN_XZ_SCALE*4;
@@ -36,14 +15,14 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	float percent_x = glm_percent(0, mesh_width, pos[0]);
 	float percent_z = glm_percent(0, mesh_height, pos[2]);
 
-	int pixel_x = floor(section_heightmap_width * percent_x);
-	int pixel_z = floor(section_heightmap_height * percent_z);
+	int pixel_x = round(section_heightmap_width * percent_x);
+	int pixel_z = round(section_heightmap_height * percent_z);
 
 	pixel_x += section_heightmap_width;
 	pixel_z += section_heightmap_height;
 
 	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
-	return terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*2500);
+	return terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*TERRAIN_HEIGHT_FACTOR);
 }
 
 void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk)
@@ -100,64 +79,6 @@ void find_nearest_grid_square(vec3 pos, TerrainChunk *terrain_chunk, vec2 dest)
 
 	dest[0] = x_index * grid_square_size;
 	dest[1] = z_index * grid_square_size;
-}
-
-void bilinearly_interpolate_vec3(vec3 q00,
-				 vec3 q01,
-				 vec3 q10,
-				 vec3 q11,
-				 vec3 pos,
-				 vec3 dest)
-{
-	vec3 r0;
-	vec3 r1;
-	float scalar0 = (q10[0] - pos[0]) / (q10[0] - q00[0]);
-	float scalar1 = (pos[0] - q00[0]) / (q10[0] - q00[0]);
-
-	vec3 r0_part0;
-	vec3 r0_part1;
-
-	vec3 r1_part0;
-	vec3 r1_part1;
-	
-	glm_vec3_scale(q00, scalar0, r0_part0);
-	glm_vec3_scale(q10, scalar1, r0_part1);
-	glm_vec3_scale(q01, scalar0, r1_part0);
-	glm_vec3_scale(q11, scalar1, r1_part1);
-
-	glm_vec3_add(r0_part0, r0_part1, r0);
-	glm_vec3_add(r1_part0, r1_part1, r1);
-
-	float r_scalar0 = (r1[2] - pos[2]) / (r1[2] - r0[2]);
-	float r_scalar1 = (pos[2] - r0[2]) / (r1[2] - r0[2]);
-
-	glm_vec3_scale(r0, r_scalar0, r0);
-	glm_vec3_scale(r1, r_scalar1, r1);
-
-	glm_vec3_add(r0, r1, dest);
-}
-
-float bilinearly_interpolate_float(float x0,
-				   float x1,
-				   float y0,
-				   float y1,
-				   float q00,
-				   float q01,
-				   float q10,
-			           float q11,
-			    	   float x,
-				   float y)
-{
-	float scalar0x = (x1 - x) / (x1 - x0);
-	float scalar1x = (x - x0) / (x1 - x0);
-
-	float r0 = (q00 * scalar0x) + (q10 * scalar1x);
-	float r1 = (q01 * scalar0x) + (q11 * scalar1x);
-
-	float scalar0y = (y1 - y) / (y1 - y0);
-	float scalar1y = (y - y0) / (y1 - y0);
-
-	return (r0 * scalar0y) + (r1 * scalar1y);
 }
 
 void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_chunk, vec4 dest)

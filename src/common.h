@@ -23,6 +23,12 @@
 #include "utils.h"
 #define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
+/* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
+ * total number of terrain blocks in either the x or z direction. So the total number
+ * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
+#define MAX_TERRAIN_BLOCKS 100000
+#define TERRAIN_XZ_SCALE 300
+
 typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
 typedef unsigned int B_Texture;

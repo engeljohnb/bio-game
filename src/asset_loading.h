@@ -49,5 +49,6 @@ Bone **B_load_bones(const C_STRUCT aiScene *scene, C_STRUCT aiMesh *mesh);
 B_Texture B_send_texture_to_gpu(const char *filename);
 /* Assigns the color_texture of the mesh and all of it's children to the given texture */
 void B_assign_all_color_textures(ActorModel *model, B_Texture texture);
+void assimp_to_cglm_mat4(C_STRUCT aiMatrix4x4 source, mat4 dest);
 void B_free_texture(B_Texture texture);
 #endif

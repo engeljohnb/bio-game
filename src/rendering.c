@@ -63,8 +63,16 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 	int width = 0;
 	int height = 0;
 	get_window_size(&width, &height);
-	width /= 2;
-	height /= 2;
+	if (height > 1440)
+	{
+		width /= 4;
+		height /= 4;
+	}
+	else
+	{
+		height /= 2;
+		width /= 2;
+	}
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

@@ -24,7 +24,9 @@
  * It is highly reusable without source code modifications.
  *
  */
- 
+
+#ifndef __NOISE_H__
+#define __NOISE_H__
 /** 1D, 2D, 3D and 4D float Perlin noise
  */
 extern float noise1( float x );
@@ -39,3 +41,7 @@ extern float pnoise2( float x, float y, int px, int py );
 extern float pnoise3( float x, float y, float z, int px, int py, int pz );
 extern float pnoise4( float x, float y, float z, float w,
                               int px, int py, int pz, int pw );
+
+float fbm2d(float x, float y, float lambda, float omega);
+
+#endif

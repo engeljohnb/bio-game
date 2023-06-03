@@ -1,5 +1,4 @@
-/*
-    Bio-Game is a game for designing your own microorganism. 
+/* Bio-Game is a game for designing your own microorganism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -23,10 +22,20 @@ layout (triangle_strip, max_vertices=3) out;
 
 uniform mat4 projection_view_space;
 uniform vec3 frustum_corners[8];
+uniform int temperature;
+uniform float precipitation;
 
 out vec3 f_position;
 out vec3 f_normal;
 out vec2 f_offset;
+out vec2 f_tex_coords;
+out float f_snow_value;
+
+in ETESS_OUT
+{
+	vec2 g_tex_coords;
+	float g_snow_value;
+} gs_in[];
 
 vec3 get_frustum_normal(int i)
 {
@@ -107,8 +116,11 @@ void main()
 		}
 		f_position = vec3(gl_in[i].gl_Position);
 		vec4 pos = projection_view_space * gl_in[i].gl_Position; 
+		f_tex_coords = gs_in[i].g_tex_coords;
+		f_snow_value = gs_in[i].g_snow_value;
 		gl_Position = pos;
 		EmitVertex();
 	}
+
 	EndPrimitive();
 }

@@ -26,6 +26,7 @@
 #include <cglm/cglm.h>
 #include <arpa/inet.h>
 #include "actor_state.h"
+#include "environment.h"
 #include "window.h"
 #include "camera.h"
 #include "actor_rendering.h"
@@ -35,11 +36,22 @@
 #include "terrain.h"
 #include "asset_loading.h"
 #include "terrain_collisions.h"
+#include "grass.h"
 #include "utils.h"
 
-// Frustum culling for the terrain blocks isn't working.
 
+// UP NEXT: The location of the snow patches works, now generate the normal maps.
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
+
+void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
+{
+	vec2 grass_patch_offsets[9];
+	get_grass_patch_offsets(terrain_index, grass_patch_offsets);
+	for (int i = 0; i < 9; ++i)
+	{
+		grass_patches[i] = create_grass_patch(grass_patch_offsets[i], g_buffer, heightmap_texture);
+	}
+}
 
 void game_loop(void)
 {	
@@ -48,10 +60,9 @@ void game_loop(void)
 
 	// Environment init
 	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer);
-	TerrainElementMesh grass;
-	vec2 grass_patch_offsets[9] = {{0.0f}};
-	get_grass_patch_offsets(PLAYER_TERRAIN_INDEX_START, grass_patch_offsets);
-	grass = create_grass_blade(renderer.g_buffer, terrain_chunk.heightmap_texture);
+	Plant grass_patches[9];
+	memset(grass_patches, 0, sizeof(Plant)*9);
+	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, PLAYER_TERRAIN_INDEX_START);
 
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
@@ -110,11 +121,12 @@ void game_loop(void)
 			frame_time -= delta_t;
 		}
 
+		// TODO: Does this need to be done for all actors, or just the player?
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			if (all_actors[i].actor_state.current_terrain_index != all_actors[i].actor_state.prev_terrain_index)
 			{
-				get_grass_patch_offsets(all_actors[i].actor_state.current_terrain_index, grass_patch_offsets);
+				update_grass_patches(grass_patches, all_actors[i].actor_state.current_terrain_index);
 				B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
 			}
 			update_actor_gravity(&all_actors[i].actor_state, &terrain_chunk, delta_t);
@@ -126,6 +138,15 @@ void game_loop(void)
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_chunk, all_actors[player_id].actor_state.command_state.camera_rotation);
 
+		if (should_print_debug())
+		{
+			print_temperatures(all_actors[player_id].actor_state.current_terrain_index);
+		}
+
+		if (all_actors[player_id].actor_state.command_state.elevate)
+		{
+			all_actors[player_id].actor_state.position[1] += 3.0;
+		}
 
 		/* Render */
 		mat4 projection_view;
@@ -136,23 +157,29 @@ void game_loop(void)
 		unsigned int terrain_index = all_actors[player_id].actor_state.current_terrain_index;
 		get_window_size(&window_width, &window_height);
 
-		glViewport(0, 0, window_width/2, window_height/2);
+		if (window_height > 1440)
+		{
+			glViewport(0, 0, window_width/4, window_height/4);
+		}
+		else
+		{
+			glViewport(0, 0, window_width/2, window_height/2);
+		}
 
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
-		draw_grass_patches(grass, 
+		draw_grass_patches(grass_patches,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
-				   terrain_index, 
-				   grass_patch_offsets);
+				   terrain_index);
 
 		PointLight point_light;
 		memset(&point_light, 0, sizeof(PointLight));
 		/* Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
 		 * before sending to the GPU. */
 		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), point_light.position);
-		glm_vec3_copy(VEC3(0.8f, 0.2f, 0.1f), point_light.color);
+		glm_vec3_copy(VEC3(0.8, 0.2, 0.1), point_light.color);
 		point_light.intensity = 2.0f;
 
 		glViewport(0, 0, window_width, window_height);
@@ -169,7 +196,10 @@ void game_loop(void)
 	}
 
 	free_terrain_chunk(&terrain_chunk);
-	B_free_terrain_element_mesh(grass);
+	for (int i = 0; i < 9; ++i)
+	{
+		free_plant(grass_patches[i]);
+	}
 	B_free_window(window);
 	free_renderer(renderer);
 	B_free_shader(terrain_shader);

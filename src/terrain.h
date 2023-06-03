@@ -19,41 +19,53 @@
 #define __TERRAIN_H__
 #include <glad/glad.h>
 #include "common.h"
-/* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
- * total number of terrain blocks in either the x or z direction. So the total number
- * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
-#define MAX_TERRAIN_BLOCKS 100000
-#define TERRAIN_HEIGHT_SCALE 800
-#define TERRAIN_XZ_SCALE 300
 
+#define TERRAIN_HEIGHT_FACTOR 2500
 typedef struct
 {
 	float		value;
 	float		scale;
+	float		snow;
+	float		padding;
 } TerrainHeight;
-
-typedef struct
-{
-	unsigned int 	vao;
-	unsigned int	vbo;
-	unsigned int	ebo;
-	unsigned int	instance_vbo;
-	unsigned int	g_buffer;
-	B_Shader	shader;
-	int		num_vertices;
-	int		num_elements;
-	B_Texture	heightmap_texture;
-} TerrainElementMesh;
 
 typedef struct
 {
 	unsigned int	vao;
 	unsigned int	vbo;
+	unsigned int	ebo;
 	unsigned int	g_buffer;
+	unsigned int	*faces;
+	int		use_ebo;
+	int		num_faces;
 	int		num_vertices;
 	int		num_rows;
 } TerrainMesh;
 
+typedef struct TerrainElementMesh
+{
+	unsigned int		vao;
+	unsigned int		vbo;
+	unsigned int		ebo;
+	unsigned int		num_elements;
+	unsigned int		num_vertices;
+	B_Framebuffer		g_buffer;
+	B_Texture		heightmap_texture;
+	B_Shader		shader;
+} TerrainElementMesh;
+
+typedef struct
+{	
+	vec2 			xz_location;
+	TerrainElementMesh 	mesh;
+	int 			min_temperature;
+	int			max_temperature;
+	int			ideal_min_temperature;
+	int			ideal_max_temperature;
+	float 			min_precipitation;
+	float 			max_precipitation;
+
+} Plant;
 
 /* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map.
  * Whenever a "block" is referred to in the code, it's usally indicating one of these nine meshes, and a "chunk" usually indicates
@@ -61,6 +73,7 @@ typedef struct
 typedef struct
 {
 	TerrainHeight	*heightmap_buffer;
+	float		average_heights[9];
 	float		tessellation_level;
 	int		heightmap_width;
 	int		heightmap_height;
@@ -80,8 +93,17 @@ typedef struct
 	GLfloat		tex_coords[2];
 } T_Vertex;
 
+typedef struct TerrainVertexData
+{
+	T_Vertex	*vertices;
+	unsigned int	*faces;
+	unsigned int	num_vertices;
+	unsigned int	num_faces;
+} TerrainVertexData;
+
 T_Vertex *generate_t_vertices(int width, int height);
 TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int  g_buffer, T_Vertex *vertices, int num_vertices, int num_rows);
+void B_send_terrain_mesh_to_gpu_ebo(TerrainMesh *mesh, TerrainVertexData *vertex_data);
 
 /* Draws the terrain meshes that are currently surrounding the player (* marks the player's current tile).
  * The geography is generated dynamically -- so only one TerrainChunk is needed throughout the game. It's simply repositioned and
@@ -116,32 +138,6 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			int player_block_index, 
 			float tessellation_level, 
 			B_Texture texture);
-TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture);
-void B_free_terrain_element_mesh(TerrainElementMesh mesh);
-
-/* base_offset is the terrain chunk xz coordinates (from 0 to TERRAIN_XZ_SCALE*4) of the center of the patch of grass. If it's outside the current
- * terrain chunk, the grass won't be rendered.
- * 
- * x_offset and z_offset are the player's terrain block index (x=row, z=column) minus the grass patch's terrain block index (x=row, z=column). 
- * They should be 0, 1, or -1.*/
-void B_draw_grass_patch(TerrainElementMesh mesh, 
-			mat4 projection_view,
-			vec3 player_position, 
-			vec3 player_facing,
-			int x_offset, 
-			int z_offset, 
-			int patch_size, 
-			float time, 
-			vec2 base_offset);
-
-void draw_grass_patches(TerrainElementMesh grass, 
-			mat4 projection_view,
-			vec3 player_position, 
-			vec3 player_facing,
-			unsigned int terrain_index, 
-			vec2 offsets[9]);
-void update_grass_patch_offset(vec2 offset, int index_diff);
 void get_terrain_heightmap_size(int *w, int *h);
-void get_grass_patch_offset(unsigned int terrain_index, vec2 offset);
-void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9]);
+TerrainMesh load_terrain_mesh_from_file(B_Framebuffer g_buffer, const char *filename);
 #endif

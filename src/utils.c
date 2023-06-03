@@ -23,6 +23,79 @@
 #include <cglm/cglm.h>
 #include "utils.h"
 
+float signed_angle_vec3_xz(vec3 v0, vec3 v1)
+{
+	float x1 = v0[0];
+	float y1 = v0[2];
+
+	float x2 = v1[0];
+	float y2 = v1[2];
+	float angle = atan2(y1,x1) - atan2(y2,x2);
+	if (absf(angle) > 180)
+	{
+	    angle = angle - 360*SIGN(angle);
+	}
+	return angle;
+}
+	
+void bilinearly_interpolate_vec3(vec3 q00,
+				 vec3 q01,
+				 vec3 q10,
+				 vec3 q11,
+				 vec3 pos,
+				 vec3 dest)
+{
+	vec3 r0;
+	vec3 r1;
+	float scalar0 = (q10[0] - pos[0]) / (q10[0] - q00[0]);
+	float scalar1 = (pos[0] - q00[0]) / (q10[0] - q00[0]);
+
+	vec3 r0_part0;
+	vec3 r0_part1;
+
+	vec3 r1_part0;
+	vec3 r1_part1;
+	
+	glm_vec3_scale(q00, scalar0, r0_part0);
+	glm_vec3_scale(q10, scalar1, r0_part1);
+	glm_vec3_scale(q01, scalar0, r1_part0);
+	glm_vec3_scale(q11, scalar1, r1_part1);
+
+	glm_vec3_add(r0_part0, r0_part1, r0);
+	glm_vec3_add(r1_part0, r1_part1, r1);
+
+	float r_scalar0 = (r1[2] - pos[2]) / (r1[2] - r0[2]);
+	float r_scalar1 = (pos[2] - r0[2]) / (r1[2] - r0[2]);
+
+	glm_vec3_scale(r0, r_scalar0, r0);
+	glm_vec3_scale(r1, r_scalar1, r1);
+
+	glm_vec3_add(r0, r1, dest);
+}
+
+float bilinearly_interpolate_float(float x0,
+				   float x1,
+				   float y0,
+				   float y1,
+				   float q00,
+				   float q01,
+				   float q10,
+			           float q11,
+			    	   float x,
+				   float y)
+{
+	float scalar0x = (x1 - x) / (x1 - x0);
+	float scalar1x = (x - x0) / (x1 - x0);
+
+	float r0 = (q00 * scalar0x) + (q10 * scalar1x);
+	float r1 = (q01 * scalar0x) + (q11 * scalar1x);
+
+	float scalar0y = (y1 - y) / (y1 - y0);
+	float scalar1y = (y - y0) / (y1 - y0);
+
+	return (r0 * scalar0y) + (r1 * scalar1y);
+}
+
 char *get_directory_name(const char *file)
 {
 	char *dir_name = BG_MALLOC(char, 512);

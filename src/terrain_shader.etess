@@ -28,7 +28,13 @@ uniform int player_block_index;
 uniform int i;
 uniform int patches_per_column;
 uniform float xz_scale;
-uniform float height_scale;
+uniform float height_factor;
+
+out ETESS_OUT
+{
+	vec2 g_tex_coords;
+	float g_snow_value;
+} etess_out;
 
 void main()
 {
@@ -63,7 +69,9 @@ void main()
 	tex_coords += 0.33;
 
 	vec2 height = texture(heightmap, tex_coords).rg;
-	pos.y += height.r * (height.g*2500);
+	pos.y += height.r * (height.g*height_factor);
 	vec4 position = vec4(pos, 1.0);
+	etess_out.g_tex_coords = tex_coords;
+	etess_out.g_snow_value = texture(heightmap, tex_coords).b;
 	gl_Position = position;
 }

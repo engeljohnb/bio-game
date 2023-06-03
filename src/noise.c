@@ -521,4 +521,21 @@ float pnoise4( float x, float y, float z, float w,
     return 0.87f * ( LERP( s, n0, n1 ) );
 }
 
+float fbm2d(float x, float y, float lambda, float omega)
+{
+    float value = 0.0f;
+    float o = 1.0f;
+    float l = 1.0f;
+   
+    // Change max value for finer/rougher detail
+    for (int i = 0; i < 6; ++i)
+    {
+	    value += o * noise2(l * x, l * y);
+	    o *= omega;
+	    l *= lambda;
+    }
+    
+    return value;
+}
+
 //---------------------------------------------------------------------

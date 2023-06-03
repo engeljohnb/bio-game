@@ -24,6 +24,13 @@
 #include "input.h"
 #include "utils.h"
 
+int g_print_debug;
+
+int should_print_debug(void)
+{
+	return g_print_debug;
+}
+
 CommandConfig default_command_config(void)
 {
 	CommandConfig config = {0};
@@ -42,6 +49,7 @@ CommandConfig default_command_config(void)
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 {
 	SDL_Event event;
+	g_print_debug = 0;
 	while (SDL_PollEvent(&event))
 	{
 		switch (event.type)
@@ -71,6 +79,11 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				else if (key == config.right)
 				{
 					command_state->movement |= M_RIGHT;
+				}
+				// DEBUG
+				else if (key == SDLK_SPACE)
+				{
+					command_state->elevate = 1;
 				}
 				break;
 			}
@@ -125,6 +138,14 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				else if (key == SDLK_c)
 				{
 					command_state->mode = MODE_SHOW_COLOR;
+				}
+				else if (key == SDLK_v)
+				{
+					g_print_debug = 1;
+				}
+				else if (key == SDLK_SPACE)
+				{
+					command_state->elevate = 0;
 				}
 				break;
 			}

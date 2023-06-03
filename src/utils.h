@@ -27,6 +27,8 @@
 #define VEC3(x, y, z) (vec3){x, y, z}
 #define VEC4(x, y, z, w) (vec4){x, y, z, w}
 #define RAD(a) a*0.0174532925
+#define DEG(a) a/0.0174532925
+#define SIGN(a) ((a > 0) - (a < 0))
 #define VEC3_ZERO (vec3){0.0, 0.0, 0.0}
 #define VEC3_X_UP (vec3){1.0, 0.0, 0.0}
 #define VEC3_Y_UP (vec3){0.0, 1.0, 0.0}
@@ -36,6 +38,27 @@
 #define VEC3_Z_DOWN (vec3){0.0, 0.0, -1.0}
 #define BG_FREE(ptr) _bg_free(ptr)
 #define BG_MALLOC(type, count) (type *)_bg_malloc(sizeof(type)*count)
+
+float signed_angle_vec3_xz(vec3 v0, vec3 v1);
+
+void bilinearly_interpolate_vec3(vec3 q00,
+				 vec3 q01,
+				 vec3 q10,
+				 vec3 q11,
+				 vec3 pos,
+				 vec3 dest);
+
+float bilinearly_interpolate_float(float x0,
+				   float x1,
+				   float y0,
+				   float y1,
+				   float q00,
+				   float q01,
+				   float q10,
+			           float q11,
+			    	   float x,
+				   float y);
+
 
 int B_load_file(const char *filename, char *buff, int size);
 int maxi(int a, int b);
