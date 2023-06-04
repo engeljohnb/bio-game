@@ -148,6 +148,11 @@ void game_loop(void)
 			all_actors[player_id].actor_state.position[1] += 3.0;
 		}
 
+		if (should_print_debug())
+		{
+			fprintf(stderr, "Player terrain index: %lu\n", all_actors[player_id].actor_state.current_terrain_index);
+		}
+
 		/* Render */
 		mat4 projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);

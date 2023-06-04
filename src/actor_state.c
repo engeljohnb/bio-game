@@ -132,8 +132,8 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	state.speed = 0;
 	// Actor begins roughly in the middle of the map.
 	state.current_terrain_index = PLAYER_TERRAIN_INDEX_START;
-	//state.max_speed = 1.7;
-	state.max_speed = 7.0;
+	state.max_speed = 1.7;
+	//state.max_speed = 7.0;
 	state.active = 1;
 	state.id = id;
 	return state;

@@ -104,8 +104,7 @@ TerrainChunk create_terrain_chunk(unsigned int  g_buffer)
 	
 	B_send_terrain_chunk_to_gpu(&block);
 
-	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
-	B_update_terrain_chunk(&block, terrain_index);
+	B_update_terrain_chunk(&block, PLAYER_TERRAIN_INDEX_START);
 	return block;
 }
 
@@ -204,7 +203,9 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			int my_block_index, 
 			int player_block_index, 
 			float tessellation_level, 
-			B_Texture heightmap_texture)
+			B_Texture heightmap_texture,
+			int heightmap_width,
+			int heightmap_height)
 {
 	glUseProgram(shader);
 
@@ -212,6 +213,8 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	glBindTexture(GL_TEXTURE_2D, heightmap_texture);
 	EnvironmentCondition cond = get_environment_condition(my_block_index);
 	B_set_uniform_int(shader, "heightmap", 0);
+	B_set_uniform_int(shader, "heightmap_width", heightmap_width);
+	B_set_uniform_int(shader, "heightmap_height", heightmap_height);
 
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_rows);
@@ -328,7 +331,9 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 					    index,
 					    player_block_index,
 					    block->tessellation_level,
-					    block->heightmap_texture);
+					    block->heightmap_texture,
+					    block->heightmap_width,
+					    block->heightmap_height);
 			
 		}
 	}

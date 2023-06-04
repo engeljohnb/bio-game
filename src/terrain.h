@@ -82,6 +82,7 @@ typedef struct
 	unsigned int	heightmap_size;
 	TerrainMesh	terrain_meshes[9];
 	B_Texture 	heightmap_texture;
+	B_Texture	snow_normal_map;
 	B_Framebuffer	g_buffer;
 	B_Shader 	compute_shader;
 	float		*tex_coords[2];
@@ -137,7 +138,9 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			int my_block_index, 
 			int player_block_index, 
 			float tessellation_level, 
-			B_Texture texture);
+			B_Texture texture,
+			int heightmap_width,
+			int heightmap_height);
 void get_terrain_heightmap_size(int *w, int *h);
 TerrainMesh load_terrain_mesh_from_file(B_Framebuffer g_buffer, const char *filename);
 #endif

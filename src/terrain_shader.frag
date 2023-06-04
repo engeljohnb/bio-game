@@ -27,6 +27,7 @@ in vec3 f_color;
 in vec3 f_normal;
 in vec2 f_tex_coords;
 in float f_snow_value;
+in vec3 f_snow_normal;
 
 uniform int temperature;
 uniform float precipitation;
@@ -104,8 +105,12 @@ void main()
 		frag_color = mix(cold_no_snow, base_color, p);
 	}
 
-	if (f_snow_value > 0.0)
+	if (f_snow_value >= 0.35)
 	{
-		frag_color = mix(frag_color, vec3(1.0, 1.0, 1.0), f_snow_value);
+		if (f_snow_normal != vec3(0.0))
+		{
+			frag_normal = f_snow_normal;
+		}
+		frag_color = snow_color;
 	}
 }

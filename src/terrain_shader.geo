@@ -23,18 +23,21 @@ layout (triangle_strip, max_vertices=3) out;
 uniform mat4 projection_view_space;
 uniform vec3 frustum_corners[8];
 uniform int temperature;
+uniform int heightmap_width;
+uniform int heightmap_height;
 uniform float precipitation;
+uniform sampler2D heightmap;
 
 out vec3 f_position;
 out vec3 f_normal;
 out vec2 f_offset;
 out vec2 f_tex_coords;
 out float f_snow_value;
+out vec3 f_snow_normal;
 
 in ETESS_OUT
 {
 	vec2 g_tex_coords;
-	float g_snow_value;
 } gs_in[];
 
 vec3 get_frustum_normal(int i)
@@ -91,6 +94,75 @@ float get_d(int i)
 	}
 }
 
+#define PLUS_X 0
+#define PLUS_Z 1
+#define MINUS_X 2
+#define MINUS_Z 3
+#define PLUS_XZ 4
+#define MINUS_XZ 5
+#define PLUS_X_MINUS_Z 6
+#define PLUS_Z_MINUS_X 7
+
+vec3 get_snow_border_normal(vec3 normal, vec2 g_tex_coords, float snow_value)
+{
+	float delta_x = 1.0/heightmap_width;
+	float delta_z = 1.0/heightmap_height;
+	vec3 xz_part = vec3(0.0);
+	float max_difference= -1.0;
+	int max_difference_index = -1;
+
+	float differences[8];
+	differences[PLUS_X] = snow_value - texture(heightmap, g_tex_coords + vec2(delta_x, 0.0)).b;
+	differences[PLUS_Z] = snow_value - texture(heightmap, g_tex_coords + vec2(0.0, delta_z)).b;
+	differences[MINUS_X] = snow_value - texture(heightmap, g_tex_coords + vec2(-delta_x, 0.0)).b;
+	differences[MINUS_Z] = snow_value - texture(heightmap, g_tex_coords + vec2(0.0, -delta_z)).b;
+	differences[PLUS_XZ] = snow_value - texture(heightmap, g_tex_coords + vec2(delta_x, delta_z)).b;
+	differences[MINUS_XZ] = snow_value - texture(heightmap, g_tex_coords + vec2(-delta_x, -delta_z)).b;
+	differences[PLUS_X_MINUS_Z] = snow_value - texture(heightmap, g_tex_coords + vec2(delta_x, -delta_z)).b;
+	differences[PLUS_Z_MINUS_X] = snow_value - texture(heightmap, g_tex_coords + vec2(-delta_x, delta_z)).b;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		if (max_difference < differences[i])
+		{
+			max_difference = differences[i];
+			max_difference_index = i;
+		}
+	}
+
+	switch (max_difference_index)
+	{
+		case PLUS_X:
+			xz_part = cross(normal, vec3(0.0, 0.0, 1.0));
+			break;
+		case PLUS_Z:
+			xz_part = cross(normal, vec3(-1.0, 0.0, 0.0));
+			break;
+		case MINUS_X:
+			xz_part = cross(normal, vec3(0.0, 0.0, -1.0));
+			break;
+		case MINUS_Z:
+			xz_part = cross(normal, vec3(-1.0, 0.0, 0.0));
+			break;
+		case PLUS_XZ:
+			xz_part = cross(normal, vec3(-1.0, 0.0, 1.0));
+			break;
+		case MINUS_XZ:
+			xz_part = cross(normal, vec3(1.0, 0.0, -1.0));
+			break;
+		case PLUS_X_MINUS_Z:
+			xz_part = cross(normal, vec3(1.0, 0.0, 1.0));
+			break;
+		case PLUS_Z_MINUS_X:
+			xz_part = cross(normal, vec3(-1.0, 0.0, -1.0));
+			break;
+		default:
+			return normal;
+	}
+
+	return normalize(mix(normalize(xz_part), normal, (1.0/(snow_value-0.33))));
+}
+
 void main()
 {
 	vec3 a = vec3(gl_in[0].gl_Position);
@@ -117,7 +189,13 @@ void main()
 		f_position = vec3(gl_in[i].gl_Position);
 		vec4 pos = projection_view_space * gl_in[i].gl_Position; 
 		f_tex_coords = gs_in[i].g_tex_coords;
-		f_snow_value = gs_in[i].g_snow_value;
+		f_snow_value = texture(heightmap, gs_in[i].g_tex_coords).b;
+		f_snow_normal = f_normal;
+		if ((f_snow_value >= 0.33) && (f_snow_value < 0.357))
+		{
+			f_snow_normal = get_snow_border_normal(f_normal, f_tex_coords, f_snow_value);
+		}
+
 		gl_Position = pos;
 		EmitVertex();
 	}

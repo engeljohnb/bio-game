@@ -118,13 +118,13 @@ B_Shader B_compile_terrain_shader(const char *vert_path, const char *frag_path, 
 	char *fragment_buffer = BG_MALLOC(char, 4096);
 	char *ctess_buffer = BG_MALLOC(char, 4096);
 	char *etess_buffer = BG_MALLOC(char, 8192);
-	char *geo_buffer = BG_MALLOC(char, 4096);
+	char *geo_buffer = BG_MALLOC(char, 8192);
 	
 	B_load_file(vert_path, vertex_buffer, 4096);
 	B_load_file(frag_path, fragment_buffer, 4096);
 	B_load_file(ctess_path, ctess_buffer, 4096);
 	B_load_file(etess_path, etess_buffer, 8192);
-	B_load_file(geo_path, geo_buffer, 4096);
+	B_load_file(geo_path, geo_buffer, 8192);
 
 	const char *vertex_source = vertex_buffer;
 	const char *fragment_source = fragment_buffer;

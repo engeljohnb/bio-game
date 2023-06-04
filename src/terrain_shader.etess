@@ -33,7 +33,6 @@ uniform float height_factor;
 out ETESS_OUT
 {
 	vec2 g_tex_coords;
-	float g_snow_value;
 } etess_out;
 
 void main()
@@ -72,6 +71,5 @@ void main()
 	pos.y += height.r * (height.g*height_factor);
 	vec4 position = vec4(pos, 1.0);
 	etess_out.g_tex_coords = tex_coords;
-	etess_out.g_snow_value = texture(heightmap, tex_coords).b;
 	gl_Position = position;
 }
