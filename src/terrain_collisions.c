@@ -22,7 +22,12 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	pixel_z += section_heightmap_height;
 
 	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
-	return terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*TERRAIN_HEIGHT_FACTOR);
+	float final_height = terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*TERRAIN_HEIGHT_FACTOR);
+	if (terrain_chunk->heightmap_buffer[index].snow >= 0.36)
+	{
+		final_height += 2.5;
+	}
+	return final_height;
 }
 
 void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk)

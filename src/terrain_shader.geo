@@ -37,6 +37,7 @@ out vec3 f_snow_normal;
 
 in ETESS_OUT
 {
+	float xz_scale;
 	vec2 g_tex_coords;
 } gs_in[];
 
@@ -103,6 +104,25 @@ float get_d(int i)
 #define PLUS_X_MINUS_Z 6
 #define PLUS_Z_MINUS_X 7
 
+vec3 get_snow_normal(vec3 position, vec2 g_tex_coords, float xz_scale)
+{
+	float delta_x = 1.0/heightmap_width;
+	float delta_z = 1.0/heightmap_height;
+
+	float offset_x = delta_x * xz_scale;
+	float offset_z = delta_z * xz_scale;
+
+	float height_dx = texture(heightmap, g_tex_coords + vec2(delta_x, 0.0)).r * texture(heightmap, g_tex_coords + vec2(delta_x, 0.0)).g;
+	float height_dz = texture(heightmap, g_tex_coords + vec2(0.0, delta_z)).r * texture(heightmap, g_tex_coords + vec2(0.0, delta_z)).g;
+	float height_dxdz = texture(heightmap, g_tex_coords + vec2(delta_x, delta_z)).r * texture(heightmap, g_tex_coords + vec2(delta_x, delta_z)).g;
+
+	vec3 pos_dx = vec3(position.x + offset_x, height_dx, position.z);
+	vec3 pos_dz = vec3(position.x, height_dz, position.z + offset_z);
+	vec3 pos_dxdz = vec3(position.x+offset_x, height_dxdz, position.z + offset_z);
+
+	return normalize(cross(pos_dz - pos_dx, pos_dxdz - pos_dx));
+}
+
 vec3 get_snow_border_normal(vec3 normal, vec2 g_tex_coords, float snow_value)
 {
 	float delta_x = 1.0/heightmap_width;
@@ -160,7 +180,7 @@ vec3 get_snow_border_normal(vec3 normal, vec2 g_tex_coords, float snow_value)
 			return normal;
 	}
 
-	return normalize(mix(normalize(xz_part), normal, (1.0/(snow_value-0.33))));
+	return normalize(mix(normalize(xz_part), normal, (1.0/(snow_value-0.35))));
 }
 
 void main()
@@ -191,9 +211,13 @@ void main()
 		f_tex_coords = gs_in[i].g_tex_coords;
 		f_snow_value = texture(heightmap, gs_in[i].g_tex_coords).b;
 		f_snow_normal = f_normal;
-		if ((f_snow_value >= 0.33) && (f_snow_value < 0.357))
+		if ((f_snow_value >= 0.33) && (f_snow_value <= 0.36))
 		{
 			f_snow_normal = get_snow_border_normal(f_normal, f_tex_coords, f_snow_value);
+		}
+		else if (f_snow_value > 0.36)
+		{
+			f_snow_normal = get_snow_normal(vec3(gl_in[i].gl_Position), gs_in[i].g_tex_coords, gs_in[i].xz_scale);
 		}
 
 		gl_Position = pos;

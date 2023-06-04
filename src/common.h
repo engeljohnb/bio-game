@@ -21,8 +21,8 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include "utils.h"
-#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
-//#define PLAYER_TERRAIN_INDEX_START 1250450004 
+//#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
+#define PLAYER_TERRAIN_INDEX_START 1250450004 
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
