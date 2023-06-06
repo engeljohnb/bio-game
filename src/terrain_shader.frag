@@ -87,15 +87,15 @@ float fbm(vec2 x) {
 void main()
 {
 	frag_normal = f_normal;
-	frag_position = (f_position * 0.01);
+	frag_position = (f_position * 0.01f);
 
-	vec3 base_color = vec3(0.4, 1.0, 0.6);
-	vec3 cold_no_snow = vec3(0.0f, 0.64f, 0.74f);
-	vec3 desert_color = vec3(0.3, 0.5, 0.44);
-	vec3 snow_color = vec3(0.2, 0.7, 1.0);
+	vec3 base_color = vec3(0.16f, 0.19f, 0.061f);
+	vec3 cold_no_snow = vec3(0.02f, 0.12f, 0.12f);
+	vec3 desert_color = vec3(0.3f, 0.5f, 0.44f);
+	vec3 snow_color = vec3(0.15f, 0.15f, 0.19f);
 
 	frag_color = base_color;
-	if ((precipitation < 0.2))
+	if ((precipitation < 0.2f))
 	{
 		frag_color = mix(desert_color, base_color, 0.2-precipitation);
 	}
@@ -105,9 +105,9 @@ void main()
 		frag_color = mix(cold_no_snow, base_color, p);
 	}
 
-	if (f_snow_value >= 0.35)
+	if (f_snow_value >= 0.35f)
 	{
-		if (f_snow_normal != vec3(0.0))
+		if (f_snow_normal != vec3(0.0f))
 		{
 			frag_normal = f_snow_normal;
 		}

@@ -12,6 +12,6 @@ uniform vec3 color;
 void main()
 {
 	frag_normal = f_normal;
-	frag_color = color;//vec3(0.4f, 1.0f, 0.6f);
+	frag_color = color;
 	frag_position = f_position * 0.01;
 }

@@ -11,7 +11,7 @@ void update_grass_patches(Plant grass_patches[9], unsigned int player_terrain_in
 Plant create_grass_patch(vec2 xz_location, B_Framebuffer g_buffer, B_Texture heightmap_texture);
 void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh);
 void update_grass_patch_offset(vec2 offset, int index_diff);
-int get_grass_patch_size(unsigned int terrain_index);
+int get_grass_patch_size(EnvironmentCondition environment_condition, unsigned int terrain_index);
 void get_grass_patch_offset(unsigned int terrain_index, vec2 offset);
 void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9]);
 void B_draw_grass_patch(TerrainElementMesh mesh, 
@@ -26,6 +26,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			vec2 base_offset);
 
 void draw_grass_patches(Plant grass_patches[9],
+			EnvironmentCondition environment_condition,		
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,

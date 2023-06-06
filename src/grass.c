@@ -139,7 +139,7 @@ void update_grass_patch_offset(vec2 offset, int index_diff)
 	}
 }
 
-int get_grass_patch_size(unsigned int terrain_index)
+int get_grass_patch_size(EnvironmentCondition environment_condition, unsigned int terrain_index)
 {
 	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
 	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
@@ -149,15 +149,14 @@ int get_grass_patch_size(unsigned int terrain_index)
 
 	float size_factor = 230.0f;
 
-	EnvironmentCondition cond = get_environment_condition(terrain_index);
 	// TODO: Is there a better way to do this than hardcoding?
-	if (cond.temperature < 45)
+	if (environment_condition.temperature < 45)
 	{
-		size_factor *= glm_percent(0, 13, cond.temperature-32);
+		size_factor *= glm_percent(0, 13, environment_condition.temperature-32);
 	}
-	if (cond.precipitation < 0.2)
+	if (environment_condition.precipitation < 0.2)
 	{
-		size_factor *= glm_percent(0, 0.2, cond.precipitation);
+		size_factor *= glm_percent(0, 0.2, environment_condition.precipitation);
 	}
 	return (round(noise2(x, z) * size_factor));
 }
@@ -267,6 +266,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 }
 
 void draw_grass_patches(Plant grass_patches[9],
+			EnvironmentCondition environment_condition,
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
@@ -280,14 +280,13 @@ void draw_grass_patches(Plant grass_patches[9],
 	{
 		int draw = 1;
 		unsigned int grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
-		EnvironmentCondition cond = get_environment_condition(grass_terrain_index);
-		if ((cond.temperature > grass_patches[i].max_temperature) ||
-		    (cond.temperature < grass_patches[i].min_temperature))
+		if ((environment_condition.temperature > grass_patches[i].max_temperature) ||
+		    (environment_condition.temperature < grass_patches[i].min_temperature))
 		{
 			draw = 0;
 		}
-		if ((cond.precipitation > grass_patches[i].max_precipitation) ||
-		    (cond.precipitation < grass_patches[i].min_precipitation))
+		if ((environment_condition.precipitation > grass_patches[i].max_precipitation) ||
+		    (environment_condition.precipitation < grass_patches[i].min_precipitation))
 		{
 			draw = 0;
 		}
@@ -299,18 +298,18 @@ void draw_grass_patches(Plant grass_patches[9],
 			vec3 ideal_color;
 			vec3 lo_temp_color;
 			vec3 hi_temp_color;
-			glm_vec3_copy(VEC3(0.4f, 1.0f, 0.6f), ideal_color);
-			glm_vec3_copy(VEC3(0.3f, 0.5f, 0.44f), hi_temp_color);
-			glm_vec3_copy(VEC3(0.0f, 0.64f, 0.74f), lo_temp_color);
+			glm_vec3_copy(VEC3(0.19f, 0.23f, 0.058f), ideal_color);
+			glm_vec3_copy(VEC3(0.3f, 0.05f, 0.02f), hi_temp_color);
+			glm_vec3_copy(VEC3(0.0f, 0.026f, 0.036f), lo_temp_color);
 
-			if (cond.temperature > grass_patches[i].ideal_max_temperature)
+			if (environment_condition.temperature > grass_patches[i].ideal_max_temperature)
 			{
-				float percent = glm_percent(grass_patches[i].ideal_max_temperature, grass_patches[i].max_temperature, cond.temperature);
+				float percent = glm_percent(grass_patches[i].ideal_max_temperature, grass_patches[i].max_temperature, environment_condition.temperature);
 				glm_vec3_lerp(ideal_color, hi_temp_color, percent, color);
 			}
-			else if (cond.temperature < grass_patches[i].ideal_min_temperature)
+			else if (environment_condition.temperature < grass_patches[i].ideal_min_temperature)
 			{
-				float percent = glm_percent(grass_patches[i].min_temperature, grass_patches[i].ideal_min_temperature, cond.temperature);
+				float percent = glm_percent(grass_patches[i].min_temperature, grass_patches[i].ideal_min_temperature, environment_condition.temperature);
 				glm_vec3_lerp(lo_temp_color, ideal_color, percent, color);
 			}
 			else
@@ -318,7 +317,7 @@ void draw_grass_patches(Plant grass_patches[9],
 				glm_vec3_copy(ideal_color, color);
 			}
 
-			int patch_size = get_grass_patch_size(grass_terrain_index);
+			int patch_size = get_grass_patch_size(environment_condition, grass_terrain_index);
 			B_draw_grass_patch(grass_patches[i].mesh, 
 					   projection_view, 
 					   player_position, 

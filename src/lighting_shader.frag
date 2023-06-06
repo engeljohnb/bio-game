@@ -42,8 +42,12 @@ uniform sampler2D f_normal_texture;
 uniform sampler2D f_position_texture;
 uniform sampler2D f_color_texture;
 
-uniform PointLight point_light;
+uniform PointLight player_light;
+uniform DirectionLight weather_light;
+uniform float view_distance;
 uniform int mode;
+uniform vec3 sky_color;
+uniform vec3 camera_position;
 
 vec4 calculate_direction_light(DirectionLight direction_light, vec3 position, vec3 normal)
 {
@@ -77,23 +81,21 @@ void main()
 	vec2 base_normal = vec2(texture(f_normal_texture, f_tex_coords).rg);
 	vec3 normal = vec3(base_normal.r, base_normal.g, 1-(base_normal.r + base_normal.g));
 	vec3 color = vec3(texture(f_color_texture, f_tex_coords));
-	DirectionLight direction_light;
-	direction_light.direction = normalize(vec3(0.0f, 1.0f, 1.0f));
-	direction_light.intensity = 0.3;
-	direction_light.color = vec3(0.5f, 0.2f, 0.3f);
 	vec4 result = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	result += 0.2;
-	result += calculate_point_light(point_light, position, normal);
-	result += calculate_direction_light(direction_light, position, normal);
+	result += calculate_point_light(player_light, position, normal);
+	result += calculate_direction_light(weather_light, position, normal);
 
 	if (mode == SHOW_LIGHTING)
 	{	if ((position == vec3(0.0f)) || (normal == vec3(0.0f)))
 		{
-			frag_color = vec4(0.3, 0.3, 0.4, 1.0);
+			frag_color = vec4(sky_color, 1.0f);
 		}
 		else
 		{
-			frag_color = result * vec4(color, 1.0);
+			float distance_from_camera = distance(camera_position, position);
+			float percent_distance = distance_from_camera/view_distance;
+			frag_color = mix(result * vec4(color, 1.0f), vec4(sky_color, 1.0f), clamp(pow(percent_distance, 2.0f)-0.25, 0.0f, 1.0));
 		}
 	}
 

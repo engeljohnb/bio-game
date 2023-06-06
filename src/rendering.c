@@ -130,7 +130,13 @@ void free_renderer(Renderer renderer)
 	glDeleteFramebuffers(1, &renderer.g_buffer);
 }
 
-void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode)
+void B_render_lighting(Renderer renderer, 
+		       B_Shader shader, 
+		       PointLight player_light, 
+		       DirectionLight weather_light,
+		       vec3 sky_color,
+		       vec3 camera_position,
+		       int mode)
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -148,11 +154,17 @@ void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_ligh
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, renderer.color_texture);
 
+	vec3 adjusted_camera_position;
+	glm_vec3_scale(camera_position, 0.01, adjusted_camera_position);
 	B_set_uniform_int(shader, "f_position_texture", 1);
 	B_set_uniform_int(shader, "f_normal_texture", 0);
 	B_set_uniform_int(shader, "f_color_texture", 2);
-	B_set_uniform_point_light(shader, "point_light", point_light);
+	B_set_uniform_point_light(shader, "player_light", player_light);
+	B_set_uniform_direction_light(shader, "weather_light", weather_light);
+	B_set_uniform_vec3(shader, "sky_color", sky_color);
+	B_set_uniform_vec3(shader, "camera_position", adjusted_camera_position);
 	B_set_uniform_int(shader, "mode", mode);
+	B_set_uniform_float(shader, "view_distance", (get_view_distance()/100.0f));
 
 	GLuint indices[] = { 0, 1, 2, 3, 4, 5 };
 	glBindVertexArray(renderer.lighting_vao);

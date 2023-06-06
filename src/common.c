@@ -257,6 +257,25 @@ void B_set_uniform_int(B_Shader shader, char *name, int value)
 	glUseProgram(shader);
 	glUniform1i(glGetUniformLocation(shader, name), value);
 }
+void B_set_uniform_direction_light(B_Shader shader, char *name, DirectionLight value)
+{
+	glUseProgram(shader);
+	char intensity_name[256] = {0};
+	char direction_name[256] = {0};
+	char color_name[256] = {0};
+
+	char *intensity = &intensity_name[0];
+	char *direction = &direction_name[0];
+	char *color = &color_name[0];
+
+	cat_to(name, ".intensity", intensity, 256);
+	cat_to(name, ".direction", direction, 256);
+	cat_to(name, ".color", color, 256);
+	
+	glUniform1f(glGetUniformLocation(shader, intensity_name), value.intensity);
+	glUniform3f(glGetUniformLocation(shader, direction_name), value.direction[0], value.direction[1], value.direction[2]);
+	glUniform3f(glGetUniformLocation(shader, color_name), value.color[0], value.color[1], value.color[2]);
+}
 
 void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value)
 {

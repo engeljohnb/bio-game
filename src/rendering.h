@@ -47,7 +47,13 @@ typedef struct
 
 
 B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo);
-void B_render_lighting(Renderer renderer, B_Shader shader, PointLight point_light, int mode);
+void B_render_lighting(Renderer renderer, 
+		       B_Shader shader, 
+		       PointLight point_light, 
+		       DirectionLight weather_light,
+		       vec3 sky_color,
+		       vec3 camera_position,
+		       int mode);
 Renderer create_default_renderer(B_Window window);
 void free_renderer(Renderer renderer);
 #endif

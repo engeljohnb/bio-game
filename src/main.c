@@ -39,9 +39,9 @@
 #include "grass.h"
 #include "utils.h"
 
-
-// UP NEXT: The location of the snow patches works, now generate the normal maps.
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
+
+// TODO: Fix that bug where the grass patches change when you cross a block border.
 
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
 {
@@ -147,11 +147,8 @@ void game_loop(void)
 		{
 			all_actors[player_id].actor_state.position[1] += 3.0;
 		}
-
-		if (should_print_debug())
-		{
-			fprintf(stderr, "Player terrain index: %lu\n", all_actors[player_id].actor_state.current_terrain_index);
-		}
+		
+		EnvironmentCondition environment_condition = get_environment_condition(all_actors[player_id].actor_state.current_terrain_index);
 
 		/* Render */
 		mat4 projection_view;
@@ -174,22 +171,34 @@ void game_loop(void)
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 		draw_grass_patches(grass_patches,
+				   environment_condition,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
 				   terrain_index);
 
-		PointLight point_light;
-		memset(&point_light, 0, sizeof(PointLight));
+		PointLight player_light;
+		memset(&player_light, 0, sizeof(PointLight));
 		/* Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
 		 * before sending to the GPU. */
-		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), point_light.position);
-		glm_vec3_copy(VEC3(0.8, 0.2, 0.1), point_light.color);
-		point_light.intensity = 2.0f;
+		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), player_light.position);
+		glm_vec3_copy(VEC3(1.0, 1.0, 1.0), player_light.color);
+		player_light.intensity = 2.0f;
 
 		glViewport(0, 0, window_width, window_height);
 
-		B_render_lighting(renderer, lighting_shader, point_light, all_actors[player_id].actor_state.command_state.mode);
+		vec3 sky_color;
+		get_sky_color(environment_condition, sky_color);
+
+		DirectionLight weather_light = get_weather_light(environment_condition);
+
+		B_render_lighting(renderer, 
+				  lighting_shader, 
+				  player_light, 
+				  weather_light,
+				  sky_color, 
+				  renderer.camera.position,
+				  all_actors[player_id].actor_state.command_state.mode);
 		B_flip_window(renderer.window);
 
 		frames++;

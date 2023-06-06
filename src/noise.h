@@ -43,5 +43,6 @@ extern float pnoise4( float x, float y, float z, float w,
                               int px, int py, int pz, int pw );
 
 float fbm2d(float x, float y, float lambda, float omega);
+float fbm2d_sky_color(float x, float y, float lambda, float omega);
 
 #endif

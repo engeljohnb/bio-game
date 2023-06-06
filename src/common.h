@@ -22,7 +22,12 @@
 #include <glad/glad.h>
 #include "utils.h"
 //#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
-#define PLAYER_TERRAIN_INDEX_START 1250450004 
+
+/* Snowy area */
+//#define PLAYER_TERRAIN_INDEX_START 1250450004 
+
+/* Warm area */
+#define PLAYER_TERRAIN_INDEX_START 1249249991
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
@@ -34,12 +39,19 @@ typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
 typedef unsigned int B_Texture;
 
-typedef struct 
+typedef struct PointLight
 {
 	vec3 	position;
 	vec3 	color;
 	float 	intensity;
 } PointLight;
+
+typedef struct DirectionLight
+{
+	vec3 	direction;
+	vec3	color;
+	float	intensity;
+} DirectionLight;
 
 
 void set_view_distance(float distance);
@@ -56,5 +68,6 @@ void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);
 void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
 void B_set_uniform_int(B_Shader shader, char *name, int value);
 void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value);
+void B_set_uniform_direction_light(B_Shader shader, char *name, DirectionLight value);
 B_Shader B_compile_grass_shader(const char *vert_path, const char *geo_path, const char *frag_path);
 #endif
