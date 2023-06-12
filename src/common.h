@@ -21,13 +21,15 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include "utils.h"
-//#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
+
+/* Center of map */
+#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
 /* Snowy area */
 //#define PLAYER_TERRAIN_INDEX_START 1250450004 
 
 /* Warm area */
-#define PLAYER_TERRAIN_INDEX_START 1249249991
+//#define PLAYER_TERRAIN_INDEX_START 1249249991
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
@@ -69,5 +71,5 @@ void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value);
 void B_set_uniform_int(B_Shader shader, char *name, int value);
 void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value);
 void B_set_uniform_direction_light(B_Shader shader, char *name, DirectionLight value);
-B_Shader B_compile_grass_shader(const char *vert_path, const char *geo_path, const char *frag_path);
+B_Shader B_compile_simple_shader_with_geo(const char *vert_path, const char *geo_path, const char *frag_path);
 #endif

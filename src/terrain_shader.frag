@@ -90,20 +90,21 @@ void main()
 	frag_position = (f_position * 0.01f);
 
 	vec3 base_color = vec3(0.16f, 0.19f, 0.061f);
-	vec3 cold_no_snow = vec3(0.02f, 0.12f, 0.12f);
-	vec3 desert_color = vec3(0.3f, 0.5f, 0.44f);
+	vec3 cold_no_snow = vec3(0.07f, 0.15f, 0.17f);
+	vec3 desert_color = vec3(0.40f, 0.28f, 0.14f);
 	vec3 snow_color = vec3(0.15f, 0.15f, 0.19f);
 
 	frag_color = base_color;
+
+	if (temperature < 45)
+	{
+		frag_color = mix(cold_no_snow, base_color, float(temperature)/140.0f);
+	}
 	if ((precipitation < 0.2f))
 	{
 		frag_color = mix(desert_color, base_color, 0.2-precipitation);
 	}
-	else if (temperature < 45)
-	{
-		float p = float(temperature-32)/13;
-		frag_color = mix(cold_no_snow, base_color, p);
-	}
+
 
 	if (f_snow_value >= 0.35f)
 	{

@@ -45,8 +45,6 @@ void main()
 	float patch_size_factor = 0.4;
 	float offx = (x_index-patch_size/2)*patch_size*patch_size_factor*rand_num;
 	float offz = (z_index-patch_size/2)*patch_size*patch_size_factor*(rand_num*rand_num/2);
-	//float offx = float(x_index - (300/2));
-	//float offz = float(z_index - (300/2));
 	vec2 final_xz_offset = vec2(base_offset.x + offx, base_offset.y + offz);
 
 	mat4 rotation = rotate(vec3(0, 1, 0), rand_num);

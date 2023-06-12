@@ -40,9 +40,8 @@
 #include "utils.h"
 
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
-
-// TODO: Fix that bug where the grass patches change when you cross a block border.
-
+//	UP NEXT: Implement snow
+//	Then might as well implement night and day cycles while I'm in the neighborhood.
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
 {
 	vec2 grass_patch_offsets[9];
@@ -63,6 +62,8 @@ void game_loop(void)
 	Plant grass_patches[9];
 	memset(grass_patches, 0, sizeof(Plant)*9);
 	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, PLAYER_TERRAIN_INDEX_START);
+
+	ParticleMesh rain_mesh = create_raindrop_mesh(renderer.g_buffer);
 
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
@@ -92,6 +93,10 @@ void game_loop(void)
 	float frame_time = 0;
 	int running = 1;
 	int frames = 0;
+
+	vec3 position;
+	glm_vec3_sub(all_actors[player_id].actor_state.position, VEC3(-200.0f, -20.0f, 0.0f), position);
+	Camera new_camera = create_camera(window, position, VEC3(1.0f, 0.0f, 0.0f));
 
 	while (running)
 	{
@@ -152,7 +157,11 @@ void game_loop(void)
 
 		/* Render */
 		mat4 projection_view;
+		//mat4 new_projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
+
+		//renderer.camera = new_camera;
+		//glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, new_projection_view);
 
 		int window_width = 0;
 		int window_height = 0;
@@ -171,11 +180,20 @@ void game_loop(void)
 		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 		draw_grass_patches(grass_patches,
-				   environment_condition,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
 				   terrain_index);
+
+		if (environment_condition.percent_cloudy > 0.5f)
+		{
+			float percent_rainy = (environment_condition.percent_cloudy * 2.0f) - 1.0f;
+			B_draw_rain(rain_mesh,
+				    percent_rainy,
+				    projection_view,
+				    all_actors[player_id].actor_state.position,
+				    renderer.camera.front);
+		}
 
 		PointLight player_light;
 		memset(&player_light, 0, sizeof(PointLight));

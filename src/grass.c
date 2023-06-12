@@ -116,7 +116,7 @@ void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_grass_shader("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
+	mesh->shader = B_compile_simple_shader_with_geo("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
 }
 
 void update_grass_patch_offset(vec2 offset, int index_diff)
@@ -215,21 +215,17 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 
 	/* If the grass is too far away to see, don't draw. */
 	vec3 n_player_facing;
+	float max_distance = TERRAIN_XZ_SCALE * 2.0f;
 	glm_vec3_negate_to(player_facing, n_player_facing);
-	if (!which_side(player_facing, frustum_corners[7], VEC3(offset[0], 0, offset[1])))
+	float distance_from_player = glm_vec3_distance(player_position, VEC3(offset[0], 0.0f, offset[1]));
+	if (distance_from_player > (view_distance + (max_distance/2.0f)))
 	{
 		return;
 	}
 
 	/* If the patch of grass is behind the player, don't draw */
 	if ((!which_side(n_player_facing, frustum_corners[1], VEC3(offset[0], 0, offset[1]))) &&
-	    (glm_vec2_distance(VEC2(player_position[0], player_position[2]), offset) > TERRAIN_XZ_SCALE*2))
-	{
-		return;
-	}
-
-	/* This one just fixes a weird bug. */
-	if (glm_vec2_distance(VEC2(player_position[0], player_position[2]), offset) > TERRAIN_XZ_SCALE*4)
+	    (glm_vec2_distance(VEC2(player_position[0], player_position[2]), offset) > max_distance))
 	{
 		return;
 	}
@@ -251,7 +247,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
 	B_set_uniform_vec3(mesh.shader, "color", color);
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
-	B_set_uniform_float(mesh.shader, "max_distance", TERRAIN_XZ_SCALE*2);
+	B_set_uniform_float(mesh.shader, "max_distance", max_distance);;
 
 	for (int i = 0; i < 8; ++i)
 	{
@@ -266,7 +262,6 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 }
 
 void draw_grass_patches(Plant grass_patches[9],
-			EnvironmentCondition environment_condition,
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
@@ -280,6 +275,7 @@ void draw_grass_patches(Plant grass_patches[9],
 	{
 		int draw = 1;
 		unsigned int grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
+		EnvironmentCondition environment_condition = get_environment_condition(grass_terrain_index);
 		if ((environment_condition.temperature > grass_patches[i].max_temperature) ||
 		    (environment_condition.temperature < grass_patches[i].min_temperature))
 		{
@@ -357,7 +353,6 @@ void B_free_terrain_element_mesh(TerrainElementMesh mesh)
 {
 	glDeleteBuffers(1, &mesh.vbo);
 	glDeleteVertexArrays(1, &mesh.vao);
-	//BG_FREE(mesh.offsets);
 }
 
 void free_plant(Plant plant)

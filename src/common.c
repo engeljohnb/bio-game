@@ -63,7 +63,7 @@ B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path)
 	return program_id;
 }
 
-B_Shader B_compile_grass_shader(const char *vert_path, const char *geo_path, const char *frag_path)
+B_Shader B_compile_simple_shader_with_geo(const char *vert_path, const char *geo_path, const char *frag_path)
 {	
 	unsigned int program_id = glCreateProgram();
 	unsigned int vertex_id = glCreateShader(GL_VERTEX_SHADER);

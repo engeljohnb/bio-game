@@ -26,7 +26,6 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			vec2 base_offset);
 
 void draw_grass_patches(Plant grass_patches[9],
-			EnvironmentCondition environment_condition,		
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,

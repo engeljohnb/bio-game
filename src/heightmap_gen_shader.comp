@@ -223,7 +223,10 @@ void main(void)
 	if (temperature < 32)
 	{
 		//TODO: Make this so snow doesn't roughly correlate with height.
-		snow = fbm(pos+precipitation);
+		if (precipitation > 0.2)
+		{
+			snow = fbm(pos+precipitation);
+		}
 	}
 	
 	imageStore(data, tex_coords, vec4(height,scale,snow,0.0));
