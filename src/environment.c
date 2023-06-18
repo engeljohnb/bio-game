@@ -36,18 +36,76 @@ void B_send_raindrop_mesh_to_gpu(ParticleMesh *mesh)
 	mesh->num_vertices = num_vertices;
 	mesh->shader = B_compile_simple_shader_with_geo("src/rain_shader.vert", "src/rain_shader.geo", "src/rain_shader.frag");
 }
+
+void B_send_snowflake_mesh_to_gpu(ParticleMesh *mesh)
+{
+	size_t stride = sizeof(GLfloat)*3; 
+	int num_vertices = 4;
+	mesh->num_elements = 6;
+
+	GLfloat vertices[] = { 
+		 -1.0f, -1.0f, 0.0f ,
+		  1.0f, -1.0f, 0.0f,
+		 -1.0f, 1.0f, 0.0f,
+		  1.0f, 1.0f, 0.0f,
+	};
+
+	glGenVertexArrays(1, &mesh->vao);
+	glBindVertexArray(mesh->vao);
+
+	glGenBuffers(1, &mesh->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	int indices[] = {0, 1, 2, 1, 2, 3};
+	glGenBuffers(1, &mesh->ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_DYNAMIC_DRAW);
+
+	mesh->num_vertices = num_vertices;
+	mesh->shader = B_compile_simple_shader_with_geo("src/snow_shader.vert", "src/snow_shader.geo", "src/snow_shader.frag");
+}
+
+void B_draw_snow(ParticleMesh mesh,
+		 float percent_rainy,
+		 mat4 projection_view,
+		 vec3 player_pos)
+{
+	glDisable(GL_CULL_FACE);
+	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
+
+	static float time = 0.0f;
+	int num_instances = 1024;
+
+	mat4 scale = GLM_MAT4_IDENTITY_INIT;
+	glm_scale(scale, VEC3(percent_rainy/5.0f, percent_rainy/5.0f, percent_rainy/5.0f));
+
+	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
+	B_set_uniform_float(mesh.shader, "time", time);
+	B_set_uniform_float(mesh.shader, "num_instances", (float)num_instances);
+	B_set_uniform_mat4(mesh.shader, "scale", scale);
+	B_set_uniform_vec3(mesh.shader, "player_pos", player_pos);
+	glBindVertexArray(mesh.vao);
+	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, num_instances);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	time += 1.0f;
+	glEnable(GL_CULL_FACE);
+}
+
 void B_draw_rain(ParticleMesh mesh,
 		 float percent_rainy,
 		 mat4 projection_view,
-		 vec3 player_pos,
-		 vec3 player_facing)
+		 vec3 player_pos)
 {
+	glDisable(GL_CULL_FACE);
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 
 	static float time = 0.0f;
 	int num_instances = 10000 * percent_rainy;
-	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
 
 	mat4 scale = GLM_MAT4_IDENTITY_INIT;
 	glm_scale(scale, VEC3(percent_rainy, percent_rainy, percent_rainy));
@@ -57,18 +115,12 @@ void B_draw_rain(ParticleMesh mesh,
 	B_set_uniform_float(mesh.shader, "num_instances", (float)num_instances);
 	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_vec3(mesh.shader, "player_pos", player_pos);
-	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
-	for (int i = 0; i < 8; ++i)
-	{
-		char name[128] = {0};
-		snprintf(name, 128, "frustum_corners[%i]", i);
-		B_set_uniform_vec3(mesh.shader, name, frustum_corners[i]);
-	}
 	glBindVertexArray(mesh.vao);
 	glDrawElementsInstanced(GL_TRIANGLES, mesh.num_elements, GL_UNSIGNED_INT, 0, num_instances);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	time += 1.0f;
+	glEnable(GL_CULL_FACE);
 }
 
 ParticleMesh create_raindrop_mesh(int g_buffer)
@@ -81,6 +133,16 @@ ParticleMesh create_raindrop_mesh(int g_buffer)
 	return mesh;
 }
 
+ParticleMesh create_snowflake_mesh(int g_buffer)
+{
+	ParticleMesh mesh;
+	memset(&mesh, 0, sizeof(ParticleMesh));
+	mesh.g_buffer = g_buffer;
+	B_send_snowflake_mesh_to_gpu(&mesh);
+
+	return mesh;
+}
+
 float get_current_rain_level(void)
 {	
 	uint64_t ticks = SDL_GetTicks64();
@@ -89,7 +151,7 @@ float get_current_rain_level(void)
 	float percent = (1.0f + pnoise1(in_game_seconds/1000.0f, 2)) / 2.0f;
 
 	/* Because I wanted more sunshine */
-	percent += noise1(in_game_seconds/1000.0f);
+	percent += noise1(in_game_seconds/1000.0f)/2.0f;
 	return 1.0f - glm_clamp((((percent - 0.5f) * 500.0f) + 0.5f)/100.0f, 0.0f, 1.0f);
 }
 

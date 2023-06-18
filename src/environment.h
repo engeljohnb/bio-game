@@ -28,10 +28,16 @@ void get_sky_color(EnvironmentCondition environment_condition, vec3 dest);
 EnvironmentCondition get_environment_condition(unsigned int terrain_index);
 DirectionLight get_weather_light(EnvironmentCondition environment_condition);
 ParticleMesh create_raindrop_mesh(int g_buffer);
+
+void B_draw_snow(ParticleMesh mesh,
+		 float percent_rainy,
+		 mat4 projection_view,
+		 vec3 player_pos);
+
 void B_draw_rain(ParticleMesh mesh,
 		 float percent_rainy,
 		 mat4 projection_view,
-		 vec3 player_pos,
-		 vec3 player_facing);
+		 vec3 player_pos);
+ParticleMesh create_snowflake_mesh(int g_buffer);
 void print_temperatures(unsigned int player_terrain_index);
 #endif

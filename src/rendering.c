@@ -25,7 +25,9 @@
 
 B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position_texture, B_Texture *color_texture, unsigned int *lighting_vao, unsigned int *lighting_vbo)
 {
-	GLfloat texture_vertices[] = { 
+
+	GLfloat texture_vertices[] =
+	{
 	// position		// tex_coords
 	 -1.0f, -1.0f, 0.0f ,   0.0f, 0.0f, //0
 	  1.0f, -1.0f, 0.0f,    1.0f, 0.0f, //2

@@ -42,6 +42,7 @@
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 //	UP NEXT: Implement snow
 //	Then might as well implement night and day cycles while I'm in the neighborhood.
+//TODO: Put all the shaders separate from the rest of the source?
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
 {
 	vec2 grass_patch_offsets[9];
@@ -64,6 +65,7 @@ void game_loop(void)
 	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, PLAYER_TERRAIN_INDEX_START);
 
 	ParticleMesh rain_mesh = create_raindrop_mesh(renderer.g_buffer);
+	ParticleMesh snow_mesh = create_snowflake_mesh(renderer.g_buffer);
 
 	// Player init
 	Actor all_actors[MAX_PLAYERS];
@@ -188,11 +190,21 @@ void game_loop(void)
 		if (environment_condition.percent_cloudy > 0.5f)
 		{
 			float percent_rainy = (environment_condition.percent_cloudy * 2.0f) - 1.0f;
-			B_draw_rain(rain_mesh,
-				    percent_rainy,
-				    projection_view,
-				    all_actors[player_id].actor_state.position,
-				    renderer.camera.front);
+			if (environment_condition.temperature < 32)
+			{
+				B_draw_snow(snow_mesh,
+					    percent_rainy,
+					    projection_view,
+					    all_actors[player_id].actor_state.position);
+			}
+			else
+			{
+				B_draw_rain(rain_mesh,
+					    percent_rainy,
+					    projection_view,
+					    all_actors[player_id].actor_state.position);
+
+			}
 		}
 
 		PointLight player_light;
