@@ -41,7 +41,7 @@ void get_terrain_heightmap_size(int *w, int *h)
 	*h = g_terrain_heightmap_height;
 }
 
-void B_update_terrain_chunk(TerrainChunk *block, int player_block_index)
+void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index)
 {
 	int x_offset = -1;
 	int z_offset = -MAX_TERRAIN_BLOCKS;
@@ -94,7 +94,7 @@ TerrainChunk create_terrain_chunk(unsigned int  g_buffer)
 	block.heightmap_height = block.block_height*3;
 	g_terrain_heightmap_width = block.heightmap_width;
 	g_terrain_heightmap_height = block.heightmap_height;
-	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
+	block.compute_shader = B_compile_compute_shader("render_progs/heightmap_gen_shader.comp");
 	
 	block.g_buffer = g_buffer;
 	block.heightmap_size = block.heightmap_width * block.heightmap_height;
@@ -118,7 +118,7 @@ TerrainChunk create_server_terrain_chunk(void)
 
 	block.heightmap_width = block.block_width*3;;
 	block.heightmap_height = block.block_height*3;
-	block.compute_shader = B_compile_compute_shader("src/heightmap_gen_shader.comp");
+	block.compute_shader = B_compile_compute_shader("render_progs/heightmap_gen_shader.comp");
 	
 	block.heightmap_size = block.heightmap_width * block.heightmap_height;
 	block.heightmap_buffer = BG_MALLOC(TerrainHeight, block.heightmap_size);
@@ -127,7 +127,7 @@ TerrainChunk create_server_terrain_chunk(void)
 
 	B_send_terrain_chunk_to_gpu(&block);
 
-	int terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
+	uint64_t terrain_index = (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2);
 	B_update_terrain_chunk(&block, terrain_index);
 	return block;
 }
@@ -200,8 +200,8 @@ TerrainMesh B_create_terrain_mesh(unsigned int g_buffer)
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,
-			int my_block_index, 
-			int player_block_index, 
+			uint64_t my_block_index, 
+			uint64_t player_block_index, 
 			float tessellation_level, 
 			B_Texture heightmap_texture,
 			int heightmap_width,
@@ -262,7 +262,7 @@ void get_block_corners(vec3 dest[4], int index)
 	dest[3][2] = ((z_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
 }
 
-void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index)
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index)
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -277,7 +277,7 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 	get_frustum_corners(projection_view, frustum_corners);
 	for (int i = 0; i < 9; ++i)
 	{
-		int index = player_block_index + z_offset + x_offset;
+		uint64_t index = player_block_index + z_offset + x_offset;
 		x_offset++;
 		if (x_offset > 1)
 		{

@@ -21,7 +21,7 @@
 #include "common.h"
 
 #define TERRAIN_HEIGHT_FACTOR 2500
-typedef struct
+typedef struct TerrainHeight
 {
 	float		value;
 	float		scale;
@@ -29,7 +29,7 @@ typedef struct
 	float		padding;
 } TerrainHeight;
 
-typedef struct
+typedef struct TerrainMesh
 {
 	unsigned int	vao;
 	unsigned int	vbo;
@@ -54,7 +54,7 @@ typedef struct TerrainElementMesh
 	B_Shader		shader;
 } TerrainElementMesh;
 
-typedef struct
+typedef struct Plant
 {	
 	vec2 			xz_location;
 	TerrainElementMesh 	mesh;
@@ -70,7 +70,7 @@ typedef struct
 /* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map.
  * Whenever a "block" is referred to in the code, it's usally indicating one of these nine meshes, and a "chunk" usually indicates
  * all nine of them together. */
-typedef struct
+typedef struct TerrainChunk
 {
 	TerrainHeight	*heightmap_buffer;
 	float		average_heights[9];
@@ -88,7 +88,7 @@ typedef struct
 	float		*tex_coords[2];
 } TerrainChunk;
 
-typedef struct
+typedef struct T_Vertex
 {
 	GLfloat		position[3];
 	GLfloat		tex_coords[2];
@@ -129,14 +129,14 @@ TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
 void free_terrain_chunk(TerrainChunk *block);
 void B_free_terrain_mesh(TerrainMesh mesh);
 void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
-void B_update_terrain_chunk(TerrainChunk *block, int player_block_index);
+void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, int player_block_index);
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index);
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,
-			int my_block_index, 
-			int player_block_index, 
+			uint64_t my_block_index, 
+			uint64_t player_block_index, 
 			float tessellation_level, 
 			B_Texture texture,
 			int heightmap_width,

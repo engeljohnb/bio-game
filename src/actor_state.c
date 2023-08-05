@@ -29,6 +29,13 @@
 
 #define GRAPHICAL_RENDER 1
 
+void randomly_teleport_actor(ActorState *actor_state)
+{
+	actor_state->prev_terrain_index = actor_state->current_terrain_index;
+	actor_state->current_terrain_index = (uint64_t)random();
+	actor_state->command_state.random_teleport = 0;
+}
+
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state)
 {
 	glm_vec3_zero(command_state->move_direction);

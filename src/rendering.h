@@ -33,7 +33,7 @@
  *
  * It's not really organized. Whenever I find myself passing the same variable to every draw function,
  * I just go ahead and throw it in the Renderer. */
-typedef struct
+typedef struct Renderer
 {
 	Camera		camera;
 	B_Window	window;

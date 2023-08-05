@@ -38,7 +38,7 @@ enum RENDER_MODE
 	MODE_SHOW_COLOR 
 };
 
-typedef struct
+typedef struct CommandState
 {
 	uint8_t		quit;
 	uint8_t 	movement;
@@ -50,11 +50,12 @@ typedef struct
 	vec3		move_direction;
 	int		mode;	
 	mat4		camera_rotation;
+	int		random_teleport;
 } CommandState;
 
 
 /* Configuration for what keys execute what commands. default_command_config returns the default setting */
-typedef struct
+typedef struct CommandConfig
 {
 	int		x_inverted;
 	int		y_inverted;
@@ -63,7 +64,6 @@ typedef struct
 	int		forward;
 	int 		backward;
 	int		alt_quit;
-	int		toggle_anti_aliasing;
 } CommandConfig;
 
 CommandConfig default_command_config(void);

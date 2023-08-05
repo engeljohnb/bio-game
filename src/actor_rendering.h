@@ -26,7 +26,7 @@
 
 #define MAX_BONES 25
 
-typedef struct
+typedef struct A_Vertex
 {
 	GLfloat	position[3];
 	GLfloat	normal[3];

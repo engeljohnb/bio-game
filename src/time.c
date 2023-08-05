@@ -51,7 +51,6 @@ double B_get_seconds_into_current_phase(void)
 float B_get_frame_time(void)
 {
 	static unsigned int prev_time = 0;
-	//TODO: Change this to SDL_GetTicks64
 	unsigned long current_time = SDL_GetTicks64();
 	float frame_time = (float)(current_time - prev_time);
 	/*if (frame_time < delta_t)

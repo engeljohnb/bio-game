@@ -29,7 +29,7 @@
  * It probably could have been combined with the Actor object itself, but it's a leftover from when
  * the game was intended to be multiplayer. The ActorState was to be the minimum information
  * that needed to be sent over the network. */
-typedef struct
+typedef struct ActorState
 {
 	vec3			position;
 	vec3			front;
@@ -48,6 +48,7 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing);
 /* Applies the changes to an ActorState commanded by the command state */
 void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t);
 void update_actor_state_direction(ActorState *actor_state, CommandState *command_state);
+void randomly_teleport_actor(ActorState *actor_state);
 int actor_outside_terrain_boundaries(ActorState *actor_state);
 
 #endif

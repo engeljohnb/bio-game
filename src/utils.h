@@ -103,9 +103,9 @@ void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
 void get_frustum_normals(mat4 projection_view, vec3 dest[4]);
 void get_frustum_corners(mat4 projection_view, vec3 dest[8]);
 
-// TODO: What on earth does this even mean??
 /* Checks which side of a plane location is on -- returns 0 if it is on the side opposite of the direction of the normal, 
- * and returns 1 if it's on the side of the direction of the normal */
+ * and returns 1 if it's on the same side as the direction of the normal.
+ * Normal is the normal of the plane. */
 int which_side(vec3 normal, vec3 point_on_plane, vec3 location);
 
 

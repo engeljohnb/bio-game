@@ -9,7 +9,7 @@
 // DEBUG
 #include "input.h"
 
-void update_grass_patches(Plant grass_patches[9], unsigned int player_terrain_index)
+void update_grass_patches(Plant grass_patches[9], uint64_t player_terrain_index)
 {
 	vec2 offsets[9];
 	get_grass_patch_offsets(player_terrain_index, offsets);
@@ -116,7 +116,7 @@ void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("src/grass_shader.vert", "src/grass_shader.geo", "src/grass_shader.frag");
+	mesh->shader = B_compile_simple_shader_with_geo("render_progs/grass_shader.vert", "render_progs/grass_shader.geo", "render_progs/grass_shader.frag");
 }
 
 void update_grass_patch_offset(vec2 offset, int index_diff)
@@ -139,7 +139,7 @@ void update_grass_patch_offset(vec2 offset, int index_diff)
 	}
 }
 
-int get_grass_patch_size(EnvironmentCondition environment_condition, unsigned int terrain_index)
+int get_grass_patch_size(EnvironmentCondition environment_condition, uint64_t terrain_index)
 {
 	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
 	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
@@ -149,7 +149,6 @@ int get_grass_patch_size(EnvironmentCondition environment_condition, unsigned in
 
 	float size_factor = 230.0f;
 
-	// TODO: Is there a better way to do this than hardcoding?
 	if (environment_condition.temperature < 45)
 	{
 		size_factor *= glm_percent(0, 13, environment_condition.temperature-32);
@@ -161,7 +160,7 @@ int get_grass_patch_size(EnvironmentCondition environment_condition, unsigned in
 	return (round(noise2(x, z) * size_factor));
 }
 
-void get_grass_patch_offset(unsigned int terrain_index, vec2 offset)
+void get_grass_patch_offset(uint64_t terrain_index, vec2 offset)
 {
 	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
 	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
@@ -170,7 +169,7 @@ void get_grass_patch_offset(unsigned int terrain_index, vec2 offset)
 	offset[1] = noise1((float)z_index/MAX_TERRAIN_BLOCKS) * TERRAIN_XZ_SCALE*4*3; 
 }
 
-void get_grass_patch_offsets(unsigned int terrain_index, vec2 offsets[9])
+void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9])
 {
 	get_grass_patch_offset(terrain_index-MAX_TERRAIN_BLOCKS-1, offsets[0]);
 	get_grass_patch_offset(terrain_index-MAX_TERRAIN_BLOCKS, offsets[1]);
@@ -265,7 +264,7 @@ void draw_grass_patches(Plant grass_patches[9],
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
-			unsigned int terrain_index)
+			uint64_t terrain_index)
 {
 	static float time = 0.0f;
 	int offset = -50;
@@ -274,7 +273,7 @@ void draw_grass_patches(Plant grass_patches[9],
 	for (int i = 0; i < 9; ++i)
 	{
 		int draw = 1;
-		unsigned int grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
+		uint64_t grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
 		EnvironmentCondition environment_condition = get_environment_condition(grass_terrain_index);
 		if ((environment_condition.temperature > grass_patches[i].max_temperature) ||
 		    (environment_condition.temperature < grass_patches[i].min_temperature))

@@ -42,8 +42,8 @@
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 // UP NEXT: What's causing that weird glitch where the lighting abruptly changes?
 // Then make the enviroment light change appropriately with the sky color
-//TODO: Put all the shaders separate from the rest of the source?
-void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
+
+void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, uint64_t terrain_index)
 {
 	vec2 grass_patch_offsets[9];
 	get_grass_patch_offsets(terrain_index, grass_patch_offsets);
@@ -81,15 +81,15 @@ void game_loop(void)
 	unsigned int num_players = player_id+1;
 
 	// Compile shaders
-	B_Shader terrain_shader = B_compile_terrain_shader("src/terrain_shader.vert",
-							   "src/terrain_shader.frag",
-							   "src/terrain_shader.geo",
-							   "src/terrain_shader.ctess",
-							   "src/terrain_shader.etess");
-	B_Shader actor_shader = B_compile_simple_shader("src/actor_shader.vert",
-					                "src/actor_shader.frag");
-	B_Shader lighting_shader = B_compile_simple_shader("src/lighting_shader.vert",
-					          	   "src/lighting_shader.frag");
+	B_Shader terrain_shader = B_compile_terrain_shader("render_progs/terrain_shader.vert",
+							   "render_progs/terrain_shader.frag",
+							   "render_progs/terrain_shader.geo",
+							   "render_progs/terrain_shader.ctess",
+							   "render_progs/terrain_shader.etess");
+	B_Shader actor_shader = B_compile_simple_shader("render_progs/actor_shader.vert",
+					                "render_progs/actor_shader.frag");
+	B_Shader lighting_shader = B_compile_simple_shader("render_progs/lighting_shader.vert",
+					          	   "render_progs/lighting_shader.frag");
 
 	float delta_t = 15.0;
 	float frame_time = 0;
@@ -114,7 +114,7 @@ void game_loop(void)
 		frame_time += B_get_frame_time();
 
 		for (unsigned int i = 0; i < num_players; ++i)
-		{
+		{	
 			update_actor_state_direction(&all_actors[i].actor_state, &all_actors[i].actor_state.command_state);
 		}
 
@@ -124,6 +124,11 @@ void game_loop(void)
 			for (unsigned int i = 0; i < num_players; ++i)
 			{
 				update_actor_state_position(&all_actors[i].actor_state, all_actors[i].actor_state.command_state, delta_t);
+				//DEBUG
+				if (all_actors[i].actor_state.command_state.random_teleport)
+				{
+					randomly_teleport_actor(&all_actors[i].actor_state);
+				}
 			}
 			frame_time -= delta_t;
 		}
@@ -168,7 +173,7 @@ void game_loop(void)
 
 		int window_width = 0;
 		int window_height = 0;
-		unsigned int terrain_index = all_actors[player_id].actor_state.current_terrain_index;
+		uint64_t terrain_index = all_actors[player_id].actor_state.current_terrain_index;
 		get_window_size(&window_width, &window_height);
 
 		if (window_height > 1440)

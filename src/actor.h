@@ -27,7 +27,7 @@
 
 /* An actor is a player or an NPC. The Actor struct has all information about the actor, including graphics,
  * while the ActorState struct (see actor_state.h) has only the information needed for network communication. */
-typedef struct
+typedef struct Actor
 {
 	unsigned int	id;
 	CommandConfig	command_config;

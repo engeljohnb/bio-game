@@ -28,7 +28,7 @@
 #include "window.h"
 #include "input.h"
 
-typedef struct
+typedef struct Camera
 {
 	vec3		position;
 	vec3 		move_direction;

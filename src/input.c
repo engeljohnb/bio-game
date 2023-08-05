@@ -41,7 +41,6 @@ CommandConfig default_command_config(void)
 	config.backward = SDLK_s;
 	config.x_inverted = 1;
 	config.y_inverted = 1;
-	config.toggle_anti_aliasing = SDLK_t;
 	return config;
 }
 
@@ -110,7 +109,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->movement &= ~M_RIGHT;
 				}
-				else if (key == config.toggle_anti_aliasing)
+				/*else if (key == config.toggle_anti_aliasing)
 				{
 					command_state->toggle_anti_aliasing = !command_state->toggle_anti_aliasing;
 					if (command_state->toggle_anti_aliasing)
@@ -121,7 +120,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 					{
 						glDisable(GL_MULTISAMPLE);
 					}
-				}
+				}*/
 				//DEBUG
 				else if (key == SDLK_p)
 				{
@@ -146,6 +145,10 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				else if (key == SDLK_SPACE)
 				{
 					command_state->elevate = 0;
+				}
+				else if (key == SDLK_t)
+				{
+					command_state->random_teleport = 1;
 				}
 				break;
 			}

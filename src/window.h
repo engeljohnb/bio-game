@@ -20,7 +20,7 @@
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
 
-typedef struct
+typedef struct B_Window
 {
 	SDL_Window 	*sdl_window;
 	SDL_GLContext   gl_context;

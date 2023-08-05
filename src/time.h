@@ -26,6 +26,8 @@
 #define SECONDS_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_HOUR*60)
 #define SECONDS_PER_IN_GAME_DAY  (MINUTES_PER_IN_GAME_DAY*60)
 
+/* B_SUNRISE_TIME = 6 in-game hours after midnight. You can think of midnight as being 0,
+ * but some of the math only works when midnight is treated as 24. */
 #define B_SUNRISE_TIME 6.0f
 #define B_MIDDAY_TIME 12.0f
 #define B_SUNSET_TIME 18.0f

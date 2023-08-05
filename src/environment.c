@@ -34,7 +34,7 @@ void B_send_raindrop_mesh_to_gpu(ParticleMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("src/rain_shader.vert", "src/rain_shader.geo", "src/rain_shader.frag");
+	mesh->shader = B_compile_simple_shader_with_geo("render_progs/rain_shader.vert", "render_progs/rain_shader.geo", "render_progs/rain_shader.frag");
 }
 
 void B_send_snowflake_mesh_to_gpu(ParticleMesh *mesh)
@@ -66,7 +66,7 @@ void B_send_snowflake_mesh_to_gpu(ParticleMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_DYNAMIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("src/snow_shader.vert", "src/snow_shader.geo", "src/snow_shader.frag");
+	mesh->shader = B_compile_simple_shader_with_geo("render_progs/snow_shader.vert", "render_progs/snow_shader.geo", "render_progs/snow_shader.frag");
 }
 
 void B_draw_snow(ParticleMesh mesh,
@@ -146,13 +146,11 @@ ParticleMesh create_snowflake_mesh(int g_buffer)
 float get_current_rain_level(void)
 {	
 	uint64_t ticks = SDL_GetTicks64();
-	float in_game_seconds = (float)((ticks/(uint64_t)1000)%1000);
+	float in_game_seconds = (float)((ticks/(uint64_t)1000)%(SECONDS_PER_IN_GAME_DAY));
 
-	float percent = (1.0f + pnoise1(in_game_seconds/1000.0f, 2)) / 2.0f;
-
-	/* Because I wanted more sunshine */
-	percent += noise1(in_game_seconds/1000.0f)/2.0f;
-	return 1.0f - glm_clamp((((percent - 0.5f) * 500.0f) + 0.5f)/100.0f, 0.0f, 1.0f);
+	float percent = ((1.0f + pnoise1(in_game_seconds/(SECONDS_PER_IN_GAME_DAY), 2)) / 2.0f) - 0.09f;
+	/* Logistic function -- so it's always either rainy (or snowy) or sunny, without too much in-between time*/
+	return 1.0f / (1 + pow(2.71828, -10.0f * (percent - 0.5)));
 }
 
 float get_current_rain_chances(float current_rain_level, EnvironmentCondition environment_condition)
@@ -184,20 +182,19 @@ DirectionLight get_weather_light(EnvironmentCondition environment_condition)
 	return dir;
 }
 
-EnvironmentCondition get_environment_condition(unsigned int terrain_index)
+EnvironmentCondition get_environment_condition(uint64_t terrain_index)
 {
-	unsigned int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
-	unsigned int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
+	uint64_t x_index = terrain_index % MAX_TERRAIN_BLOCKS;
+	uint64_t z_index = terrain_index / MAX_TERRAIN_BLOCKS;
 
 	float x = (float)(x_index) / MAX_TERRAIN_BLOCKS;
 	float z = (float)(z_index) / MAX_TERRAIN_BLOCKS;
 
 	float precipitation = (1.0f + fbm2d(x*100, z*100, 6, 0.60))/2.0f;
-	int temperature = round(fbm2d(x, z, 5, 0.80) * 140);
-	if (temperature < 0)
-	{
-		temperature = 0;
-	}
+	int temperature = round((1.0f + fbm2d(x, z, 5, 0.80)/2.0f) * 100) - 55.0f;
+	/* Logistic function -- because otherwise wayy to much of the map is covered in areas right around 50 degrees.
+	 * This creates more polarization in temperatures -- snowy areas and warm areas instead of a bunch of middle ground */
+	temperature = 100.0f / (1.0f + powf(2.71828, -0.5f*(temperature-50.0f)));
 	float percent_cloudy = get_current_rain_level();
 
 	if (percent_cloudy > 1.0f)
@@ -256,7 +253,7 @@ int get_current_tod_phase(double current_time)
 	/* IDK */
 	else
 	{
-		fprintf(stderr, "get_current_tod_phase error: Time does not fit into any phase slot\n");
+		fprintf(stderr, "get_current_tod_phase error: Time %f does not fit into any phase slot\n", current_time);
 		exit(-1);
 	}
 }
@@ -470,6 +467,7 @@ TimeOfDay get_time_of_day(void)
 {
 	TimeOfDay time_of_day = {0};
 	double current_time = B_get_seconds_into_current_phase();
+	//current_time += 15.0 * SECONDS_PER_IN_GAME_HOUR;
 	time_of_day.current_phase = get_current_tod_phase(current_time);
 	get_current_tod_sky_color(time_of_day.current_phase, current_time, time_of_day.sky_color);
 
@@ -485,8 +483,6 @@ TimeOfDay get_time_of_day(void)
 
 void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, vec3 dest)
 {
-	// TODO: Consider getting the average of all 9 terrain blocks so the weather doesn't abruptly change when the
-	// player crosses a block border.
 	vec3 cloudy_color;
 
 	glm_vec3_copy(VEC3(0.06f, 0.06f, 0.068f), cloudy_color);
@@ -494,16 +490,15 @@ void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay t
 	glm_vec3_lerp(tod.sky_color, cloudy_color, environment_condition.percent_cloudy, dest);
 }
 
-// TODO: Why can you still get snow patches in an area with negative precipitation?
-void print_temperatures(unsigned int player_terrain_index)
+void print_temperatures(uint64_t player_terrain_index)
 {
-	unsigned int x_offset = -1;
-	unsigned int z_offset = -MAX_TERRAIN_BLOCKS;
+	uint64_t x_offset = -1;
+	uint64_t z_offset = -MAX_TERRAIN_BLOCKS;
 	for (int i = 0; i < 9; ++i)
 	{
-		int terrain_index = player_terrain_index + x_offset + z_offset;
+		uint64_t terrain_index = player_terrain_index + x_offset + z_offset;
 		EnvironmentCondition cond = get_environment_condition(terrain_index);
-		fprintf(stderr, "%i %i %f\t", terrain_index, cond.temperature, cond.precipitation);
+		fprintf(stderr, "%lu %i %f\t", terrain_index, cond.temperature, cond.precipitation);
 		if ((i == 2) || (i == 5) || (i == 8))
 		{
 			fprintf(stderr, "\n");
