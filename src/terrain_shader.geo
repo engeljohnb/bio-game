@@ -1,4 +1,4 @@
-/* Bio-Game is a game for designing your own microorganism. 
+/* Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify

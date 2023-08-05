@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -21,9 +21,39 @@
 
 #include <SDL2/SDL.h>
 #define FPS_30 33
+#define MINUTES_PER_IN_GAME_DAY 5
+#define MINUTES_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_DAY/24.0f)
+#define SECONDS_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_HOUR*60)
+#define SECONDS_PER_IN_GAME_DAY  (MINUTES_PER_IN_GAME_DAY*60)
+
+#define B_SUNRISE_TIME 6.0f
+#define B_MIDDAY_TIME 12.0f
+#define B_SUNSET_TIME 18.0f
+#define B_MIDNIGHT_TIME 24.0f
+
+enum SUN_POSITIONS
+{
+	B_SUNRISE,
+	B_MIDDAY,
+	B_SUNSET,
+	B_MIDNIGHT,
+};
+
+enum TIME_OF_DAY
+{
+	B_MORNING,
+	B_AFTERNOON,
+	B_EVENING,
+	B_NIGHT,
+};
 
 void B_keep_time(int target_period);
 void B_stopwatch(char *message);
 float B_get_frame_time(void);
-
+double B_get_current_second(void);
+double B_get_current_minute(void);
+double B_get_current_playtime_hour(void);
+double B_get_current_in_game_hour(void);
+double B_get_seconds_into_current_phase(void);
+	
 #endif

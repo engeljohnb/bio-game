@@ -228,20 +228,273 @@ EnvironmentCondition get_environment_condition(unsigned int terrain_index)
 	return cond;
 }
 
-void get_sky_color(EnvironmentCondition environment_condition, vec3 dest)
+int get_current_tod_phase(double current_time)
+{
+	if ((current_time >= (B_SUNRISE_TIME * SECONDS_PER_IN_GAME_HOUR)) &&
+	    (current_time < (B_MIDDAY_TIME * SECONDS_PER_IN_GAME_HOUR)))
+	{
+		return B_MORNING;
+	}
+	
+	else if ((current_time >= (B_MIDDAY_TIME * SECONDS_PER_IN_GAME_HOUR)) &&
+	         (current_time < (B_SUNSET_TIME * SECONDS_PER_IN_GAME_HOUR)))
+	{
+		return B_AFTERNOON;
+	}
+	
+	else if ((current_time >= (B_SUNSET_TIME * SECONDS_PER_IN_GAME_HOUR)) &&
+	         (current_time < (B_MIDNIGHT_TIME * SECONDS_PER_IN_GAME_HOUR)))
+	{
+		return B_EVENING;
+	}
+
+	else if (current_time < (B_SUNRISE_TIME * SECONDS_PER_IN_GAME_HOUR))
+	{
+		return B_NIGHT;
+	}
+
+	/* IDK */
+	else
+	{
+		fprintf(stderr, "get_current_tod_phase error: Time does not fit into any phase slot\n");
+		exit(-1);
+	}
+}
+
+void get_current_tod_light_direction(int current_phase, double current_time, vec3 dest)
+{
+	switch (current_phase)
+	{
+		case B_MORNING:
+		{
+			float seconds_into_phase = (current_time - B_SUNRISE_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 morning_direction;
+			vec3 afternoon_direction;
+
+			glm_vec3_copy(MORNING_LIGHT_DIRECTION, morning_direction);
+			glm_vec3_copy(AFTERNOON_LIGHT_DIRECTION, afternoon_direction);
+
+			glm_vec3_lerp(morning_direction, afternoon_direction, percent, dest);
+			glm_vec3_normalize(dest);
+		} break;
+
+		case B_AFTERNOON:
+		{
+			float seconds_into_phase = (current_time - B_MIDDAY_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 afternoon_direction;
+			vec3 evening_direction;
+
+			glm_vec3_copy(AFTERNOON_LIGHT_DIRECTION, afternoon_direction);
+			glm_vec3_copy(EVENING_LIGHT_DIRECTION, evening_direction);
+
+			glm_vec3_lerp(afternoon_direction, evening_direction, percent, dest);
+			glm_vec3_normalize(dest);
+		} break;
+
+		case B_EVENING:
+		{
+			float seconds_into_phase = (current_time - B_SUNSET_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 evening_direction;
+			vec3 night_direction;
+
+			glm_vec3_copy(EVENING_LIGHT_DIRECTION, evening_direction);
+			glm_vec3_copy(NIGHT_LIGHT_DIRECTION, night_direction);
+
+			glm_vec3_lerp(evening_direction, night_direction, percent, dest);
+			glm_vec3_normalize(dest);
+		} break;
+
+		case B_NIGHT:
+		{
+			float seconds_into_phase = current_time;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 night_direction;
+			vec3 morning_direction;
+
+			glm_vec3_copy(NIGHT_LIGHT_DIRECTION, night_direction);
+			glm_vec3_copy(MORNING_LIGHT_DIRECTION, morning_direction);
+
+			glm_vec3_lerp(night_direction, morning_direction, percent, dest);
+			glm_vec3_normalize(dest);
+		} break;
+
+		default:
+		{
+			fprintf(stderr, "get_current_tod_light_direction error: This definitely should not be executing\n");
+			exit(-1);
+		} break;
+	}
+}
+
+void get_current_tod_sky_color(int current_phase, double current_time, vec3 dest)
+{
+	switch (current_phase)
+	{
+		case B_MORNING:
+		{
+			float seconds_into_phase = current_time - (B_SUNRISE_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 morning_color;
+			vec3 afternoon_color;
+
+			glm_vec3_copy(MORNING_SKY_COLOR, morning_color);
+			glm_vec3_copy(AFTERNOON_SKY_COLOR, afternoon_color);
+
+			glm_vec3_lerp(morning_color, afternoon_color, percent, dest);
+		} break;
+
+		case B_AFTERNOON:
+		{
+			float seconds_into_phase = current_time - (B_MIDDAY_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 afternoon_color;
+			vec3 evening_color;
+
+			glm_vec3_copy(AFTERNOON_SKY_COLOR, afternoon_color);
+			glm_vec3_copy(EVENING_SKY_COLOR, evening_color);
+
+			glm_vec3_lerp(afternoon_color, evening_color, percent, dest);
+		} break;
+
+		case B_EVENING:
+		{
+			float seconds_into_phase = current_time - (B_SUNSET_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 evening_color;
+			vec3 night_color;
+
+			glm_vec3_copy(EVENING_SKY_COLOR, evening_color);
+			glm_vec3_copy(NIGHT_SKY_COLOR, night_color);
+
+			glm_vec3_lerp(evening_color, night_color, percent, dest);
+		} break;
+
+		case B_NIGHT:
+		{
+			float seconds_into_phase = current_time;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+			vec3 night_color;
+			vec3 morning_color;
+
+			glm_vec3_copy(NIGHT_SKY_COLOR, night_color);
+			glm_vec3_copy(MORNING_SKY_COLOR, morning_color);
+
+			glm_vec3_lerp(night_color, morning_color, percent, dest);
+		} break;
+
+		default:
+		{
+			fprintf(stderr, "get_current_tod_sky_color error: This definitely should not be executing\n");
+			exit(-1);
+		} break;
+	}
+}
+
+void get_current_tod_light_color(int current_phase, double current_time, vec3 dest)
+{
+	switch (current_phase)
+	{
+		case B_MORNING:
+		{
+			float seconds_into_phase = current_time - (B_SUNRISE_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 morning_color;
+			vec3 afternoon_color;
+
+			glm_vec3_copy(MORNING_LIGHT_COLOR, morning_color);
+			glm_vec3_copy(AFTERNOON_LIGHT_COLOR, afternoon_color);
+
+			glm_vec3_lerp(morning_color, afternoon_color, percent, dest);
+		} break;
+
+		case B_AFTERNOON:
+		{
+			float seconds_into_phase = current_time - (B_MIDDAY_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 afternoon_color;
+			vec3 evening_color;
+
+			glm_vec3_copy(AFTERNOON_LIGHT_COLOR, afternoon_color);
+			glm_vec3_copy(EVENING_LIGHT_COLOR, evening_color);
+
+			glm_vec3_lerp(afternoon_color, evening_color, percent, dest);
+		} break;
+
+		case B_EVENING:
+		{
+			float seconds_into_phase = current_time - (B_SUNSET_TIME*SECONDS_PER_IN_GAME_HOUR);
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+
+			vec3 evening_color;
+			vec3 night_color;
+
+			glm_vec3_copy(EVENING_LIGHT_COLOR, evening_color);
+			glm_vec3_copy(NIGHT_LIGHT_COLOR, night_color);
+
+			glm_vec3_lerp(evening_color, night_color, percent, dest);
+		} break;
+
+		case B_NIGHT:
+		{
+			float seconds_into_phase = current_time;
+			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+			vec3 night_color;
+			vec3 morning_color;
+
+			glm_vec3_copy(NIGHT_LIGHT_COLOR, night_color);
+			glm_vec3_copy(MORNING_LIGHT_COLOR, morning_color);
+
+			glm_vec3_lerp(night_color, morning_color, percent, dest);
+		} break;
+
+		default:
+		{
+			fprintf(stderr, "get_current_tod_sky_color error: This definitely should not be executing\n");
+			exit(-1);
+		} break;
+	}
+}
+TimeOfDay get_time_of_day(void)
+{
+	TimeOfDay time_of_day = {0};
+	double current_time = B_get_seconds_into_current_phase();
+	time_of_day.current_phase = get_current_tod_phase(current_time);
+	get_current_tod_sky_color(time_of_day.current_phase, current_time, time_of_day.sky_color);
+
+	vec3 light_direction; 
+	vec3 light_color;
+	get_current_tod_light_direction(time_of_day.current_phase, current_time, light_direction);
+	get_current_tod_light_color(time_of_day.current_phase, current_time, light_color);
+	DirectionLight light = create_direction_light(light_direction, light_color, 0.3);
+	time_of_day.sky_lighting = light;
+
+	return time_of_day;
+}
+
+void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, vec3 dest)
 {
 	// TODO: Consider getting the average of all 9 terrain blocks so the weather doesn't abruptly change when the
 	// player crosses a block border.
-	vec3 sunny_color;
 	vec3 cloudy_color;
 
-	glm_vec3_copy(VEC3(0.33f, 0.49f, 0.8f), sunny_color);
 	glm_vec3_copy(VEC3(0.06f, 0.06f, 0.068f), cloudy_color);
 
-	glm_vec3_lerp(sunny_color, cloudy_color, environment_condition.percent_cloudy, dest);
+	glm_vec3_lerp(tod.sky_color, cloudy_color, environment_condition.percent_cloudy, dest);
 }
 
-// TODO: Why can you still get snow in an area with negative precipitation?
+// TODO: Why can you still get snow patches in an area with negative precipitation?
 void print_temperatures(unsigned int player_terrain_index)
 {
 	unsigned int x_offset = -1;

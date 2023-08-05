@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,40 @@
 #include "time.h"
 #include "glad/glad.h"
 
+double B_get_current_second(void)
+{
+	uint64_t current_time = SDL_GetTicks64();
+	return (double)floor((current_time % 60000)/1000.0);
+}
+
+double B_get_current_minute(void)
+{
+	uint64_t current_time = SDL_GetTicks64();
+	return (double)floor((current_time / 60000) % 60);
+}
+
+double B_get_current_playtime_hour(void)
+{
+	uint64_t current_time = SDL_GetTicks64();
+	return (double)floor((current_time / (60000*60*24))%24);
+}
+
+double B_get_current_in_game_hour(void)
+{
+	uint64_t current_time = SDL_GetTicks64();
+	return (double)floor(fmodf(current_time / (6000*MINUTES_PER_IN_GAME_DAY), MINUTES_PER_IN_GAME_DAY));
+}
+
+double B_get_seconds_into_current_phase(void)
+{
+	return fmodf(B_get_current_second() + (B_get_current_minute()*60), SECONDS_PER_IN_GAME_DAY);
+}
+
 float B_get_frame_time(void)
 {
 	static unsigned int prev_time = 0;
 	//TODO: Change this to SDL_GetTicks64
-	unsigned long current_time = SDL_GetTicks();
+	unsigned long current_time = SDL_GetTicks64();
 	float frame_time = (float)(current_time - prev_time);
 	/*if (frame_time < delta_t)
 	{

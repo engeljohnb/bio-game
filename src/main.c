@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -40,8 +40,8 @@
 #include "utils.h"
 
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
-//	UP NEXT: Implement snow
-//	Then might as well implement night and day cycles while I'm in the neighborhood.
+// UP NEXT: What's causing that weird glitch where the lighting abruptly changes?
+// Then make the enviroment light change appropriately with the sky color
 //TODO: Put all the shaders separate from the rest of the source?
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, unsigned int terrain_index)
 {
@@ -156,6 +156,7 @@ void game_loop(void)
 		}
 		
 		EnvironmentCondition environment_condition = get_environment_condition(all_actors[player_id].actor_state.current_terrain_index);
+		//environment_condition.percent_cloudy = 0;
 
 		/* Render */
 		mat4 projection_view;
@@ -218,14 +219,17 @@ void game_loop(void)
 		glViewport(0, 0, window_width, window_height);
 
 		vec3 sky_color;
-		get_sky_color(environment_condition, sky_color);
 
 		DirectionLight weather_light = get_weather_light(environment_condition);
+		TimeOfDay tod = get_time_of_day();
+		
+		get_final_sky_color(environment_condition, tod, sky_color);
 
 		B_render_lighting(renderer, 
 				  lighting_shader, 
 				  player_light, 
 				  weather_light,
+				  tod.sky_lighting,
 				  sky_color, 
 				  renderer.camera.position,
 				  all_actors[player_id].actor_state.command_state.mode);

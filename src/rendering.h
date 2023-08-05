@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@
 #include "camera.h"
 #include "window.h"
 #include "common.h"
+#include "environment.h"
 
 /* Most objects in the game have rendering needs specific to that type of object. However, there are
  * a few things that will tend to be the same with most every object. A Renderer is just a
@@ -51,6 +52,7 @@ void B_render_lighting(Renderer renderer,
 		       B_Shader shader, 
 		       PointLight point_light, 
 		       DirectionLight weather_light,
+		       DirectionLight tod_light,
 		       vec3 sky_color,
 		       vec3 camera_position,
 		       int mode);

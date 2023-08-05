@@ -1,8 +1,10 @@
 #ifndef __ENVIRONMENT_H__
 #define __ENVIRONMENT_H__
 #include <cglm/cglm.h>
+#include "time.h"
 #include "common.h"
 
+/* The weather & lighting conditions that are random at any given time */
 typedef struct EnvironmentCondition
 {
 	/* temperature and precipitation do not change for a given
@@ -12,6 +14,33 @@ typedef struct EnvironmentCondition
 	/* percent_cloudy changes over time */
 	float	percent_cloudy;
 } EnvironmentCondition;
+
+#define MORNING_LIGHT_DIRECTION VEC3(1.0f, 0.0f, 0.0f)
+#define AFTERNOON_LIGHT_DIRECTION VEC3(0.0f, 1.0f, 0.0f)
+#define EVENING_LIGHT_DIRECTION VEC3(-1.0f, 0.0f, 0.0f)
+#define NIGHT_LIGHT_DIRECTION VEC3(-1.0f, -1.0f, -1.0f)
+
+#define MORNING_SKY_COLOR VEC3(0.40f, 0.50f, 0.97f)
+#define AFTERNOON_SKY_COLOR VEC3(0.32f, 0.56f, 0.97f)
+#define EVENING_SKY_COLOR VEC3(0.32f, 0.13f, 0.02f)
+#define NIGHT_SKY_COLOR VEC3(0.0f, 0.0f, 0.0f)
+
+#define MORNING_LIGHT_COLOR VEC3(0.32f, 0.32f, 0.32f)
+#define AFTERNOON_LIGHT_COLOR VEC3(0.39f, 0.39f, 0.32f)
+#define EVENING_LIGHT_COLOR VEC3(0.32f, 0.13f, 0.02f)
+#define NIGHT_LIGHT_COLOR VEC3(0.14f, 0.14f, 0.34f)
+
+
+/* The weather & lighting conditions based on
+ * the in-game time*/
+typedef struct TimeOfDay
+{
+	int		current_phase;
+	vec3		sky_color;
+	//vec3		sun_color;
+	DirectionLight	sky_lighting;
+	//vec3		sun_position;
+} TimeOfDay;
 
 typedef struct ParticleMesh
 {
@@ -24,10 +53,11 @@ typedef struct ParticleMesh
 	B_Shader	shader;
 } ParticleMesh;
 
-void get_sky_color(EnvironmentCondition environment_condition, vec3 dest);
+void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, vec3 dest);
 EnvironmentCondition get_environment_condition(unsigned int terrain_index);
 DirectionLight get_weather_light(EnvironmentCondition environment_condition);
 ParticleMesh create_raindrop_mesh(int g_buffer);
+TimeOfDay get_time_of_day(void);
 
 void B_draw_snow(ParticleMesh mesh,
 		 float percent_rainy,

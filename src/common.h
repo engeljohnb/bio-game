@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -26,10 +26,10 @@
 //#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
 /* Snowy area */
-#define PLAYER_TERRAIN_INDEX_START 1250550005 
+//#define PLAYER_TERRAIN_INDEX_START 1250550005 
 
 /* Warm area */
-//#define PLAYER_TERRAIN_INDEX_START 1249249991
+#define PLAYER_TERRAIN_INDEX_START 1249249991
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
@@ -58,6 +58,7 @@ typedef struct DirectionLight
 
 void set_view_distance(float distance);
 float get_view_distance(void);
+DirectionLight create_direction_light(vec3 direction, vec3 color, float intensity);
 B_Shader B_compile_simple_shader(const char *vert_path, const char *frag_path);
 B_Shader B_compile_terrain_shader(const char *vert_path, const char *frag_path, const char *geo_path, const char *ctess_path, const char *etess_path);
 B_Shader B_compile_compute_shader(const char *comp_path);

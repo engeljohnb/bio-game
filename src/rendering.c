@@ -1,5 +1,5 @@
 /*
-    Bio-Game is a game for designing your own microorganism. 
+    Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
 
     This program is free software: you can redistribute it and/or modify
@@ -136,6 +136,7 @@ void B_render_lighting(Renderer renderer,
 		       B_Shader shader, 
 		       PointLight player_light, 
 		       DirectionLight weather_light,
+		       DirectionLight tod_light,
 		       vec3 sky_color,
 		       vec3 camera_position,
 		       int mode)
@@ -163,6 +164,7 @@ void B_render_lighting(Renderer renderer,
 	B_set_uniform_int(shader, "f_color_texture", 2);
 	B_set_uniform_point_light(shader, "player_light", player_light);
 	B_set_uniform_direction_light(shader, "weather_light", weather_light);
+	B_set_uniform_direction_light(shader, "tod_light", tod_light);
 	B_set_uniform_vec3(shader, "sky_color", sky_color);
 	B_set_uniform_vec3(shader, "camera_position", adjusted_camera_position);
 	B_set_uniform_int(shader, "mode", mode);
