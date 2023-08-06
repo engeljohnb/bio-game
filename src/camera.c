@@ -73,6 +73,8 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 
 void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 rotation)
 {
+	static int camera_scroll = 55;
+	camera_scroll += player.command_state.wheel_increment;
 	glm_vec3_copy(player.position, camera->position);
 	mat4 translate;
 	glm_mat4_identity(translate);
@@ -85,7 +87,7 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 
 	vec3 camera_direction;
 	glm_vec3_copy(camera->front, camera_direction);
-	glm_vec3_scale(camera_direction, 55, camera_direction);
+	glm_vec3_scale(camera_direction, camera_scroll, camera_direction);
 	glm_translate(translate, camera_direction);
 	glm_mat4_mulv3(translate, player.position, 1, camera->position);
 
@@ -98,6 +100,6 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 	//camera->position[1] = 100.0f;
 
 	vec3 target;
-	glm_vec3_add(player.position, VEC3(0, 10, 0), target);
+	glm_vec3_add(player.position, VEC3(0, 10.0f + ((float)camera_scroll-55.0f)/3.0f, 0), target);
 	glm_lookat(camera->position, target, up, camera->view_space);
 }

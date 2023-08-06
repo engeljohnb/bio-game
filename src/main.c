@@ -40,8 +40,10 @@
 #include "utils.h"
 
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
-// UP NEXT: What's causing that weird glitch where the lighting abruptly changes?
-// Then make the enviroment light change appropriately with the sky color
+
+// UP NEXT: Make environment light change appropriately with the sky colors
+//   Then add a pause button
+//   THEN finally start trees or water... your choice.
 
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, uint64_t terrain_index)
 {

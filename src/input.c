@@ -47,6 +47,7 @@ CommandConfig default_command_config(void)
 /* Sets a command state based on user input. */
 int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 {
+	command_state->wheel_increment = 0;
 	SDL_Event event;
 	g_print_debug = 0;
 	while (SDL_PollEvent(&event))
@@ -158,6 +159,12 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				command_state->look_x += (float)event.motion.xrel*0.04;
 				command_state->look_y += (float)event.motion.yrel*0.04;
 				get_rotation_matrix(command_state->look_x, command_state->look_y, command_state->camera_rotation);
+				break;
+			}
+
+			case SDL_MOUSEWHEEL:
+			{
+				command_state->wheel_increment -= event.wheel.y*2;
 				break;
 			}
 			default:

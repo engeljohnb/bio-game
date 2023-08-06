@@ -50,6 +50,7 @@ typedef struct CommandState
 	vec3		move_direction;
 	int		mode;	
 	mat4		camera_rotation;
+	int		wheel_increment;
 	int		random_teleport;
 } CommandState;
 
