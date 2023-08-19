@@ -32,6 +32,7 @@ float get_view_distance(void)
 	return g_view_distance;
 }
 
+
 DirectionLight create_direction_light(vec3 direction, vec3 color, float intensity)
 {
 	DirectionLight light = {0};

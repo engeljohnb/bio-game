@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "common.h"
 #include "actor_rendering.h"
 #include "utils.h"
@@ -31,8 +32,10 @@
 
 void randomly_teleport_actor(ActorState *actor_state)
 {
+	time_t t;
+   	srand((unsigned) time(&t));
 	actor_state->prev_terrain_index = actor_state->current_terrain_index;
-	actor_state->current_terrain_index = (uint64_t)random();
+	actor_state->current_terrain_index = (uint64_t)rand();
 	actor_state->command_state.random_teleport = 0;
 }
 

@@ -55,6 +55,7 @@ void B_render_lighting(Renderer renderer,
 		       DirectionLight tod_light,
 		       vec3 sky_color,
 		       vec3 camera_position,
+		       vec3 player_position,
 		       int mode);
 Renderer create_default_renderer(B_Window window);
 void free_renderer(Renderer renderer);

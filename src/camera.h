@@ -43,5 +43,6 @@ Camera create_camera(B_Window window, vec3 position, vec3 front);
 void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 yaw_dest);
 void look_at(Camera *camera, vec3 target);
 float get_view_distance(void);
+float get_camera_height(void);
 
 #endif

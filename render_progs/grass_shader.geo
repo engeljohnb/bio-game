@@ -27,6 +27,7 @@ uniform float terrain_chunk_size;
 uniform float view_distance;
 uniform vec3 frustum_corners[8];
 uniform float max_distance;
+uniform float sea_level;
 
 out vec3 f_position;
 out vec3 f_normal;
@@ -116,15 +117,21 @@ void main()
 	{
 		render = false;
 	}
+
+	vec2 tex_coords = g_offset/(terrain_chunk_size*3);
+	tex_coords += 0.33;
+	vec4 height_color = texture(heightmap, tex_coords);
+	float height = height_color.r * (height_color.g * 2500)-0.75;
+	if (height < sea_level)
+	{
+		render = false;
+	}
+
 	if (render)
 	{
 		for (int i = 0; i < gl_in.length(); i++)
 		{ 
 			vec3 trans = vec3(scale * gl_in[i].gl_Position);
-			vec2 tex_coords = g_offset/(terrain_chunk_size*3);
-			tex_coords += 0.33;
-			vec4 height_color = texture(heightmap, tex_coords);
-			float height = height_color.r * (height_color.g * 2500)-0.75;
 			trans += vec3(g_offset.x, height, g_offset.y);
 
 			vec4 pos = projection_view * vec4(trans, 1.0);

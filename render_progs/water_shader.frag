@@ -26,12 +26,11 @@ in vec3 f_position;
 in vec3 f_color;
 in vec3 f_normal;
 in vec2 f_tex_coords;
-in float f_snow_value;
-in vec3 f_snow_normal;
+in float f_sea_level;
 
+uniform float camera_height;
 uniform int temperature;
 uniform float precipitation;
-uniform float sea_level;
 
 #define NOISE fbm
 #define BITMAP_WIDTH 1024
@@ -90,34 +89,20 @@ void main()
 	frag_normal = f_normal;
 	frag_position = (f_position * 0.01f);
 
-	vec3 base_color = vec3(0.16f, 0.19f, 0.061f);
-	vec3 cold_no_snow = vec3(0.07f, 0.15f, 0.17f);
-	vec3 desert_color = vec3(0.40f, 0.28f, 0.14f);
-	vec3 snow_color = vec3(0.15f, 0.15f, 0.19f);
-	vec3 underwater_color = vec3(0.07, 0.15, 0.25);
+	vec3 base_color = vec3(0.16f, 0.19f, 0.761f);
+	vec3 underwater_color = vec3(0.20f, 0.22f, 0.82f);
+	vec3 ice_color = vec3(0.15, 0.15, 0.25);
 
-	frag_color = base_color;
-
-	if (temperature < 45)
+	if (camera_height < f_sea_level)
 	{
-		frag_color = mix(cold_no_snow, base_color, float(temperature)/140.0f);
+		frag_color = underwater_color;
 	}
-	if ((precipitation < 0.2f))
+	else if (temperature < 32)
 	{
-		frag_color = mix(desert_color, base_color, 0.2-precipitation);
+		frag_color = ice_color;
 	}
-
-	if ((f_position.y < sea_level) && (precipitation >= 0.2))
+	else
 	{
-		frag_color = vec3(0.07, 0.15, 0.25);
-	}
-
-	else if (f_snow_value >= 0.35f)
-	{
-		if (f_snow_normal != vec3(0.0f))
-		{
-			frag_normal = f_snow_normal;
-		}
-		frag_color = snow_color;
+		frag_color = base_color;
 	}
 }

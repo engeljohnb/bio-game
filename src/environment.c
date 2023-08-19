@@ -3,6 +3,7 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 #include "noise.h"
+#include "camera.h"
 #include "environment.h"
 
 void B_send_raindrop_mesh_to_gpu(ParticleMesh *mesh)
@@ -148,7 +149,7 @@ float get_current_rain_level(void)
 	uint64_t ticks = SDL_GetTicks64();
 	float in_game_seconds = (float)((ticks/(uint64_t)1000)%(SECONDS_PER_IN_GAME_DAY));
 
-	float percent = ((1.0f + pnoise1(in_game_seconds/(SECONDS_PER_IN_GAME_DAY), 2)) / 2.0f) - 0.09f;
+	float percent = ((1.0f + pnoise1(in_game_seconds/(SECONDS_PER_IN_GAME_DAY), 2))/2.0f) - 0.09f;
 	/* Logistic function -- so it's always either rainy (or snowy) or sunny, without too much in-between time*/
 	return 1.0f / (1 + pow(2.71828, -10.0f * (percent - 0.5)));
 }
@@ -481,15 +482,25 @@ TimeOfDay get_time_of_day(void)
 	return time_of_day;
 }
 
-void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, vec3 dest)
+void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, uint64_t terrain_index, vec3 dest)
 {
-	vec3 cloudy_color;
-
-	glm_vec3_copy(VEC3(0.06f, 0.06f, 0.068f), cloudy_color);
-
-	glm_vec3_lerp(tod.sky_color, cloudy_color, environment_condition.percent_cloudy, dest);
+	if (camera_underwater(terrain_index))
+	{
+		glm_vec3_copy(UNDERWATER_SKY_COLOR, dest);
+	}
+	else
+	{
+		vec3 cloudy_color;
+		glm_vec3_copy(VEC3(0.06f, 0.06f, 0.068f), cloudy_color);
+		glm_vec3_lerp(tod.sky_color, cloudy_color, environment_condition.percent_cloudy, dest);
+	}
 }
 
+int camera_underwater(uint64_t terrain_index)
+{
+	EnvironmentCondition cond = get_environment_condition(terrain_index);
+	return ((get_camera_height() < SEA_LEVEL) && (cond.precipitation >= 0.2));
+}
 void print_temperatures(uint64_t player_terrain_index)
 {
 	uint64_t x_offset = -1;

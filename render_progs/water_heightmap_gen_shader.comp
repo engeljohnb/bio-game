@@ -212,22 +212,13 @@ void main(void)
 	float x_offset = (x_index + float(x_block_offset));
 	float z_offset = (z_index + float(z_block_offset));
 
-	vec2 pos = vec2(x_offset, z_offset)/xz_scale*5;
+	vec2 pos = (vec2(x_offset, z_offset)/xz_scale)*40.0;
 	uint x_texel = uint(x_index) + uint(x_counter * vertices_per_row);
 	uint z_texel = uint(z_index) + uint(z_counter * vertices_per_column);
 	ivec2 tex_coords = ivec2(x_texel, z_texel);
 	float height = fbm(pos);
-	float scale = fbm(pos/10);
-	float snow = 0.0;
+	float scale = fbm(pos+50.0);
+	float snow = fbm(pos-50.0);
 
-	if (temperature < 32)
-	{
-		//TODO: Make this so snow doesn't roughly correlate with height.
-		if (precipitation > 0.2)
-		{
-			snow = fbm(pos+precipitation);
-		}
-	}
-	
 	imageStore(data, tex_coords, vec4(height,scale,snow,0.0));
 }

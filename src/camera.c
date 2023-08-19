@@ -27,6 +27,7 @@
 #include "time.h"
 
 extern float delta_t;
+float g_camera_height;
 
 Camera create_camera(B_Window window, vec3 position, vec3 front)
 {
@@ -48,6 +49,8 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 	vec3 frontpos;
 	glm_vec3_add(front, position, frontpos);
 	glm_lookat(frontpos, position, VEC3_Y_UP, camera.view_space);
+
+	g_camera_height = camera.position[1];
 	
 	return camera;
 }
@@ -102,4 +105,11 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 	vec3 target;
 	glm_vec3_add(player.position, VEC3(0, 10.0f + ((float)camera_scroll-55.0f)/3.0f, 0), target);
 	glm_lookat(camera->position, target, up, camera->view_space);
+
+	g_camera_height = camera->position[1];
+}
+
+float get_camera_height(void)
+{
+	return g_camera_height;
 }

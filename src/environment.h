@@ -24,6 +24,7 @@ typedef struct EnvironmentCondition
 #define AFTERNOON_SKY_COLOR VEC3(0.32f, 0.56f, 0.97f)
 #define EVENING_SKY_COLOR VEC3(0.32f, 0.23f, 0.32f)
 #define NIGHT_SKY_COLOR VEC3(0.0f, 0.0f, 0.0f)
+#define UNDERWATER_SKY_COLOR VEC3(0.12, 0.17, 0.42)
 
 #define MORNING_LIGHT_COLOR VEC3(0.32f, 0.32f, 0.32f)
 #define AFTERNOON_LIGHT_COLOR VEC3(0.39f, 0.39f, 0.32f)
@@ -53,7 +54,7 @@ typedef struct ParticleMesh
 	B_Shader	shader;
 } ParticleMesh;
 
-void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, vec3 dest);
+void get_final_sky_color(EnvironmentCondition environment_condition, TimeOfDay tod, uint64_t terrain_index, vec3 dest);
 EnvironmentCondition get_environment_condition(uint64_t terrain_index);
 DirectionLight get_weather_light(EnvironmentCondition environment_condition);
 ParticleMesh create_raindrop_mesh(int g_buffer);
@@ -69,5 +70,6 @@ void B_draw_rain(ParticleMesh mesh,
 		 mat4 projection_view,
 		 vec3 player_pos);
 ParticleMesh create_snowflake_mesh(int g_buffer);
+int camera_underwater(uint64_t terrain_index);
 void print_temperatures(uint64_t player_terrain_index);
 #endif

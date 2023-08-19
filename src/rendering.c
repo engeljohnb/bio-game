@@ -139,6 +139,7 @@ void B_render_lighting(Renderer renderer,
 		       DirectionLight tod_light,
 		       vec3 sky_color,
 		       vec3 camera_position,
+		       vec3 player_position,
 		       int mode)
 {
 	glEnable(GL_CULL_FACE);
@@ -159,6 +160,8 @@ void B_render_lighting(Renderer renderer,
 
 	vec3 adjusted_camera_position;
 	glm_vec3_scale(camera_position, 0.01, adjusted_camera_position);
+
+	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_int(shader, "f_position_texture", 1);
 	B_set_uniform_int(shader, "f_normal_texture", 0);
 	B_set_uniform_int(shader, "f_color_texture", 2);
@@ -167,6 +170,7 @@ void B_render_lighting(Renderer renderer,
 	B_set_uniform_direction_light(shader, "tod_light", tod_light);
 	B_set_uniform_vec3(shader, "sky_color", sky_color);
 	B_set_uniform_vec3(shader, "camera_position", adjusted_camera_position);
+	B_set_uniform_vec3(shader, "player_position", player_position);
 	B_set_uniform_int(shader, "mode", mode);
 	B_set_uniform_float(shader, "view_distance", (get_view_distance()/100.0f));
 

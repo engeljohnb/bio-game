@@ -21,6 +21,13 @@
 #include "common.h"
 
 #define TERRAIN_HEIGHT_FACTOR 2500
+
+enum TERRAIN_CHUNK_TYPES
+{
+	TERRAIN_CHUNK_WATER,
+	TERRAIN_CHUNK_LAND,
+};
+
 typedef struct TerrainHeight
 {
 	float		value;
@@ -72,8 +79,8 @@ typedef struct Plant
  * all nine of them together. */
 typedef struct TerrainChunk
 {
+	int		type;
 	TerrainHeight	*heightmap_buffer;
-	float		average_heights[9];
 	float		tessellation_level;
 	int		heightmap_width;
 	int		heightmap_height;
@@ -88,6 +95,8 @@ typedef struct TerrainChunk
 	float		*tex_coords[2];
 } TerrainChunk;
 
+
+//TODO: Either remove or use the tex_coords on the terrain.
 typedef struct T_Vertex
 {
 	GLfloat		position[3];
@@ -108,7 +117,7 @@ void B_send_terrain_mesh_to_gpu_ebo(TerrainMesh *mesh, TerrainVertexData *vertex
 
 /* Draws the terrain meshes that are currently surrounding the player (* marks the player's current tile).
  * The geography is generated dynamically -- so only one TerrainChunk is needed throughout the game. It's simply repositioned and
- * the height recalculated based on the player's location.
+ * the heightmap recalculated based on the player's location.
  * |-------|-------|-------|
  * |       |       |       |
  * |       |       |       |
@@ -123,7 +132,7 @@ void B_send_terrain_mesh_to_gpu_ebo(TerrainMesh *mesh, TerrainVertexData *vertex
  * |       |       |       |
  * |-------|-------|-------|
  * */
-TerrainChunk create_terrain_chunk(unsigned int g_buffer);
+TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type);
 TerrainChunk create_server_terrain_chunk(void);
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
 void free_terrain_chunk(TerrainChunk *block);
@@ -131,7 +140,7 @@ void B_free_terrain_mesh(TerrainMesh mesh);
 void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
 void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index);
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, float camera_height);
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,

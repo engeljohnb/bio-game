@@ -247,6 +247,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_vec3(mesh.shader, "color", color);
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
 	B_set_uniform_float(mesh.shader, "max_distance", max_distance);;
+	B_set_uniform_float(mesh.shader, "sea_level", SEA_LEVEL);
 
 	for (int i = 0; i < 8; ++i)
 	{

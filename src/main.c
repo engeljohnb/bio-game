@@ -41,9 +41,14 @@
 
 #define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
-// UP NEXT: Make environment light change appropriately with the sky colors
-//   Then add a pause button
-//   THEN finally start trees or water... your choice.
+
+// UP NEXT:
+// 	Finish todo list
+// 	Optimize
+// 	Add pause button
+// 	Implement trees
+// TODO: Make lighting change appropriately with the weather & time of day
+// TODO: Rain schedule and sunlight schedule roughly match.
 
 void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, uint64_t terrain_index)
 {
@@ -61,10 +66,12 @@ void game_loop(void)
 	Renderer renderer = create_default_renderer(window);
 
 	// Environment init
-	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer);
+	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_LAND);
 	Plant grass_patches[9];
 	memset(grass_patches, 0, sizeof(Plant)*9);
 	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, PLAYER_TERRAIN_INDEX_START);
+
+	TerrainChunk water_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_WATER);
 
 	ParticleMesh rain_mesh = create_raindrop_mesh(renderer.g_buffer);
 	ParticleMesh snow_mesh = create_snowflake_mesh(renderer.g_buffer);
@@ -88,6 +95,11 @@ void game_loop(void)
 							   "render_progs/terrain_shader.geo",
 							   "render_progs/terrain_shader.ctess",
 							   "render_progs/terrain_shader.etess");
+	B_Shader water_shader = B_compile_terrain_shader("render_progs/terrain_shader.vert",
+							 "render_progs/water_shader.frag",
+							 "render_progs/water_shader.geo",
+							 "render_progs/terrain_shader.ctess",
+							 "render_progs/water_shader.etess");
 	B_Shader actor_shader = B_compile_simple_shader("render_progs/actor_shader.vert",
 					                "render_progs/actor_shader.frag");
 	B_Shader lighting_shader = B_compile_simple_shader("render_progs/lighting_shader.vert",
@@ -100,7 +112,6 @@ void game_loop(void)
 
 	vec3 position;
 	glm_vec3_sub(all_actors[player_id].actor_state.position, VEC3(-200.0f, -20.0f, 0.0f), position);
-	Camera new_camera = create_camera(window, position, VEC3(1.0f, 0.0f, 0.0f));
 
 	while (running)
 	{
@@ -136,12 +147,17 @@ void game_loop(void)
 		}
 
 		// TODO: Does this need to be done for all actors, or just the player?
+	
+		EnvironmentCondition environment_condition = get_environment_condition(all_actors[player_id].actor_state.current_terrain_index);
+		//environment_condition.percent_cloudy = 0.0f;
+		//environment_condition.percent_cloudy = 1.0f;
 		for (unsigned int i = 0; i < num_players; ++i)
 		{
 			if (all_actors[i].actor_state.current_terrain_index != all_actors[i].actor_state.prev_terrain_index)
 			{
 				update_grass_patches(grass_patches, all_actors[i].actor_state.current_terrain_index);
 				B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
+				B_update_terrain_chunk(&water_chunk, all_actors[i].actor_state.current_terrain_index);
 			}
 			update_actor_gravity(&all_actors[i].actor_state, &terrain_chunk, delta_t);
 		}
@@ -161,17 +177,12 @@ void game_loop(void)
 		{
 			all_actors[player_id].actor_state.position[1] += 3.0;
 		}
-		
-		EnvironmentCondition environment_condition = get_environment_condition(all_actors[player_id].actor_state.current_terrain_index);
-		//environment_condition.percent_cloudy = 0;
+
+
 
 		/* Render */
 		mat4 projection_view;
-		//mat4 new_projection_view;
 		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
-
-		//renderer.camera = new_camera;
-		//glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, new_projection_view);
 
 		int window_width = 0;
 		int window_height = 0;
@@ -187,31 +198,73 @@ void game_loop(void)
 			glViewport(0, 0, window_width/2, window_height/2);
 		}
 
-		draw_terrain_chunk(&terrain_chunk, terrain_shader, projection_view, all_actors[player_id].actor_state.current_terrain_index);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, renderer.g_buffer);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		draw_terrain_chunk(&water_chunk, 
+				   water_shader, 
+				   projection_view, 
+				   all_actors[player_id].actor_state.current_terrain_index, 
+				   renderer.camera.position[1]);
+
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+
+		draw_terrain_chunk(&terrain_chunk, 
+				terrain_shader, 
+				projection_view, 
+				all_actors[player_id].actor_state.current_terrain_index, 
+				renderer.camera.position[1]);
+
+		glDisable(GL_CULL_FACE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		/* Player is on ice */
+		if (should_print_debug())
+		{
+			fprintf(stderr, "Before: %f\n", all_actors[player_id].actor_state.position[1]);
+		}
+
+		if (should_print_debug())
+		{
+			fprintf(stderr, "After: %f\n", all_actors[player_id].actor_state.position[1]);
+		}
+		if ((all_actors[player_id].actor_state.position[1] < (SEA_LEVEL + 5.0f)) &&
+		    (environment_condition.temperature < 32) &&
+		    (environment_condition.precipitation >= 0.2))
+		{
+			all_actors[player_id].actor_state.position[1] = SEA_LEVEL + 5.0f;
+		}
+
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
 		draw_grass_patches(grass_patches,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
 				   terrain_index);
-
+		
 		if (environment_condition.percent_cloudy > 0.5f)
 		{
 			float percent_rainy = (environment_condition.percent_cloudy * 2.0f) - 1.0f;
-			if (environment_condition.temperature < 32)
+			if (!camera_underwater(all_actors[player_id].actor_state.current_terrain_index))
 			{
-				B_draw_snow(snow_mesh,
-					    percent_rainy,
-					    projection_view,
-					    all_actors[player_id].actor_state.position);
-			}
-			else
-			{
-				B_draw_rain(rain_mesh,
-					    percent_rainy,
-					    projection_view,
-					    all_actors[player_id].actor_state.position);
+				if (environment_condition.temperature < 32)
+				{
+					B_draw_snow(snow_mesh,
+						    percent_rainy,
+						    projection_view,
+						    all_actors[player_id].actor_state.position);
+				}
+				else
+				{
+					B_draw_rain(rain_mesh,
+						    percent_rainy,
+						    projection_view,
+						    all_actors[player_id].actor_state.position);
 
+				}
 			}
 		}
 
@@ -230,7 +283,7 @@ void game_loop(void)
 		DirectionLight weather_light = get_weather_light(environment_condition);
 		TimeOfDay tod = get_time_of_day();
 		
-		get_final_sky_color(environment_condition, tod, sky_color);
+		get_final_sky_color(environment_condition, tod, all_actors[player_id].actor_state.current_terrain_index, sky_color);
 
 		B_render_lighting(renderer, 
 				  lighting_shader, 
@@ -239,6 +292,7 @@ void game_loop(void)
 				  tod.sky_lighting,
 				  sky_color, 
 				  renderer.camera.position,
+				  all_actors[player_id].actor_state.position,
 				  all_actors[player_id].actor_state.command_state.mode);
 		B_flip_window(renderer.window);
 
@@ -251,6 +305,7 @@ void game_loop(void)
 	}
 
 	free_terrain_chunk(&terrain_chunk);
+	free_terrain_chunk(&water_chunk);
 	for (int i = 0; i < 9; ++i)
 	{
 		free_plant(grass_patches[i]);

@@ -1,0 +1,87 @@
+/*
+    Bio-Game is a game for designing your own organism. 
+    Copyright (C) 2022 John Engel 
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#version 430 core
+
+layout (quads, equal_spacing, cw) in;
+#define MAX_TERRAIN_BLOCKS 100000
+
+in float tessellation_levels[];
+uniform sampler2D heightmap;
+uniform int my_block_index;
+uniform int player_block_index;
+uniform int i;
+uniform int temperature;
+uniform int patches_per_column;
+uniform float time;
+uniform float sea_level;
+uniform float xz_scale;
+uniform float height_factor;
+
+out ETESS_OUT
+{
+	float xz_scale;
+	vec2 g_tex_coords;
+} etess_out;
+
+void main()
+{
+	float u = gl_TessCoord.x*xz_scale;
+	float v = gl_TessCoord.y*xz_scale;
+
+	int my_x_block_index = (my_block_index % MAX_TERRAIN_BLOCKS);
+	int my_z_block_index = my_block_index / MAX_TERRAIN_BLOCKS;
+
+	int player_x_block_index = player_block_index % MAX_TERRAIN_BLOCKS;
+	int player_z_block_index = player_block_index / MAX_TERRAIN_BLOCKS;
+
+	float x_block_offset = (my_x_block_index - player_x_block_index);
+	float z_block_offset = (my_z_block_index - player_z_block_index);
+
+	float max_xz = (xz_scale * float(patches_per_column*3));
+	float local_max = xz_scale * float(patches_per_column);
+	x_block_offset *= patches_per_column * xz_scale;
+	z_block_offset *= patches_per_column * xz_scale;
+
+	// The x and y offset for how much to displace this vertex within it's own block.
+	float x_index = float(int(gl_PrimitiveID % patches_per_column));
+	float z_index = floor(gl_PrimitiveID / patches_per_column);
+
+	float x_offset = x_index * xz_scale;
+	float z_offset = z_index * xz_scale;
+
+	vec3 pos = vec3(u+x_offset, 0, v+z_offset);
+	pos += vec3(x_block_offset, 0, z_block_offset);
+
+	vec2 tex_coords = pos.xz/(max_xz);
+	tex_coords += 0.33;
+
+	vec2 height = texture(heightmap, tex_coords).rg;
+	float temporal_factor = (sin(time*height.r) + sin(time*height.g))/4.0;
+	pos.y += sea_level;
+	pos.y += height.r * (temporal_factor * height_factor);
+	if (temperature < 32)
+	{
+		pos.y = sea_level;
+	}
+
+	vec4 position = vec4(pos, 1.0);
+	etess_out.g_tex_coords = tex_coords;
+	etess_out.xz_scale = xz_scale;
+	gl_Position = position;
+}
