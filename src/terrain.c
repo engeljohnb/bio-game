@@ -200,7 +200,6 @@ void B_draw_water_mesh(TerrainMesh mesh,
 			int heightmap_height,
 			float camera_height)
 {
-	//TODO: Make it so all shaders that have a "time" parameter use the same time variable.
 	static float time = 0.0f;
 	glUseProgram(shader);
 	EnvironmentCondition cond = get_environment_condition(my_block_index);
@@ -497,20 +496,6 @@ void B_load_ai_terrain_mesh(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node
 		mat4 transform;
 		assimp_to_cglm_mat4(node->mTransformation, transform);
 		glm_mat4_mulv3(transform, vertex_data.vertices[j].position, 1.0, vertex_data.vertices[j].position);
-
-		if (a_mesh->mTextureCoords[0] != NULL)
-		{
-			/* This is weird. Double check the assimp docs once you start using textures */
-			vertex_data.vertices[j].tex_coords[0] = a_mesh->mTextureCoords[0][j].x;
-			vertex_data.vertices[j].tex_coords[1] = a_mesh->mTextureCoords[0][j].y;
-			//vertex_data.vertices[j].tex_coords[2] = 0.0f;
-		}
-		else
-		{
-			vertex_data.vertices[j].tex_coords[0] = 0.0f;
-			vertex_data.vertices[j].tex_coords[1] = 0.0f;
-			//vertex_data.vertices[j].tex_coords[2] = 0.0f;
-		}
 
 	}
 	if (a_mesh->mNumFaces)

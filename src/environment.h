@@ -72,4 +72,5 @@ void B_draw_rain(ParticleMesh mesh,
 ParticleMesh create_snowflake_mesh(int g_buffer);
 int camera_underwater(uint64_t terrain_index);
 void print_temperatures(uint64_t player_terrain_index);
+void log_rain_time(FILE *fp);
 #endif

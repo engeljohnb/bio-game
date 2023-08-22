@@ -147,11 +147,13 @@ ParticleMesh create_snowflake_mesh(int g_buffer)
 float get_current_rain_level(void)
 {	
 	uint64_t ticks = SDL_GetTicks64();
-	float in_game_seconds = (float)((ticks/(uint64_t)1000)%(SECONDS_PER_IN_GAME_DAY));
+	float in_game_milliseconds = (float)((ticks/(uint64_t)100)%(SECONDS_PER_IN_GAME_DAY*14));
 
-	float percent = ((1.0f + pnoise1(in_game_seconds/(SECONDS_PER_IN_GAME_DAY), 2))/2.0f) - 0.09f;
+	float percent = 0.5f + (noise1(in_game_milliseconds/(SECONDS_PER_IN_GAME_DAY*14))/2.0f);
 	/* Logistic function -- so it's always either rainy (or snowy) or sunny, without too much in-between time*/
-	return 1.0f / (1 + pow(2.71828, -10.0f * (percent - 0.5)));
+	float final = 1.0f / (1.0f + pow(2.71828, -25.0f * (percent - 0.6f)));
+	//fprintf(stderr, "%f %f\n", percent, final);
+	return final;
 }
 
 float get_current_rain_chances(float current_rain_level, EnvironmentCondition environment_condition)
@@ -206,15 +208,6 @@ EnvironmentCondition get_environment_condition(uint64_t terrain_index)
 	{
 		percent_cloudy = 0.0f;
 	}
-
-	/*if (percent_cloudy >= 0.5f)
-	{
-		percent_cloudy += (1.0f-percent_cloudy)/2.0f;
-	}
-	else if (percent_cloudy < 0.5f)
-	{
-		percent_cloudy -= (1.0f-percent_cloudy)/2.0f;
-	}*/
 
 	if (precipitation < 0.2f)
 	{
@@ -501,6 +494,29 @@ int camera_underwater(uint64_t terrain_index)
 	EnvironmentCondition cond = get_environment_condition(terrain_index);
 	return ((get_camera_height() < SEA_LEVEL) && (cond.precipitation >= 0.2));
 }
+
+void tod_phase_to_string(int phase, char *dest)
+{
+	switch (phase)
+	{
+		case B_MORNING:
+			snprintf(dest, strlen("MORNING")+1, "%s", "MORNING");
+			break;
+		case B_AFTERNOON:
+			snprintf(dest, strlen("AFTERNOON")+1, "%s", "AFTERNOON");
+			break;
+		case B_EVENING:
+			snprintf(dest, strlen("EVENING")+1, "%s", "EVENING");
+			break;
+		case B_NIGHT:
+			snprintf(dest, strlen("NIGHT")+1, "%s", "NIGHT");
+			break;
+		default:
+			fprintf(stderr, "tod_to_string error: tod phase %i not recognized\n", phase);
+			break;
+	}
+}
+
 void print_temperatures(uint64_t player_terrain_index)
 {
 	uint64_t x_offset = -1;
@@ -524,3 +540,18 @@ void print_temperatures(uint64_t player_terrain_index)
 	fprintf(stderr, "-----------------------------\n\n");
 }
 
+void log_rain_time(FILE *fp)
+{
+	double hour = B_get_current_in_game_hour();
+	double minute = B_get_current_minute();
+	double second = B_get_current_second();
+
+	TimeOfDay tod = get_time_of_day();
+	char phase[128] = {0};
+
+	tod_phase_to_string(tod.current_phase, phase);
+
+	float number_of_days = hour/24.0f;
+
+	fprintf(fp, "%f:%f:%f %s %f %lu\n", hour, minute, second, phase, number_of_days, SDL_GetTicks64());
+}

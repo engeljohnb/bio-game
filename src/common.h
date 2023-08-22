@@ -27,6 +27,15 @@
 /* Center of map */
 //#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
+/* Super duper grassy area */
+//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1745060245)
+
+/* Warm/cold area border */
+//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192526)
+
+/* Warm/cold area border */
+#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192528)
+
 /* Desert */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1649960493)
 
@@ -34,9 +43,9 @@
 //#define PLAYER_TERRAIN_INDEX_START 1250550005 
 
 /* Warm area */
-#define PLAYER_TERRAIN_INDEX_START 1249349995
+//#define PLAYER_TERRAIN_INDEX_START 1249349995
 //#define PLAYER_TERRAIN_INDEX_START 302093068
-#define SEA_LEVEL 90
+#define SEA_LEVEL 100
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number

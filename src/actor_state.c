@@ -76,8 +76,10 @@ int actor_outside_terrain_boundaries(ActorState *actor_state)
 		(actor_state->position[2] <= 3));
 
 }
+
 void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t)
 {
+	glm_vec3_copy(actor_state->position, actor_state->prev_position);
 	if (command_state.movement)
 	{
 		actor_state->speed += 0.005*delta_t;
@@ -140,10 +142,9 @@ ActorState create_actor_state(unsigned int id, vec3 position, vec3 facing)
 	glm_vec3_copy(position, state.position);
 	glm_vec3_copy(facing, state.front);
 	state.speed = 0;
-	// Actor begins roughly in the middle of the map.
+	/* You can change player start location in common.h */
 	state.current_terrain_index = PLAYER_TERRAIN_INDEX_START;
 	state.max_speed = 1.7;
-	//state.max_speed = 7.0;
 	state.active = 1;
 	state.id = id;
 	return state;

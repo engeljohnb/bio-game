@@ -95,12 +95,9 @@ typedef struct TerrainChunk
 	float		*tex_coords[2];
 } TerrainChunk;
 
-
-//TODO: Either remove or use the tex_coords on the terrain.
 typedef struct T_Vertex
 {
 	GLfloat		position[3];
-	GLfloat		tex_coords[2];
 } T_Vertex;
 
 typedef struct TerrainVertexData

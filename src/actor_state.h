@@ -32,6 +32,7 @@
 typedef struct ActorState
 {
 	vec3			position;
+	vec3			prev_position;
 	vec3			front;
 	vec3			right;
 	CommandState		command_state;

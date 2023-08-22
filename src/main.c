@@ -113,6 +113,7 @@ void game_loop(void)
 	vec3 position;
 	glm_vec3_sub(all_actors[player_id].actor_state.position, VEC3(-200.0f, -20.0f, 0.0f), position);
 
+	FILE *rain_log = fopen("rain_time_log.txt", "w");
 	while (running)
 	{
 		// Input update
@@ -221,21 +222,31 @@ void game_loop(void)
 		glDisable(GL_CULL_FACE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		/* Player is on ice */
-		if (should_print_debug())
-		{
-			fprintf(stderr, "Before: %f\n", all_actors[player_id].actor_state.position[1]);
-		}
-
-		if (should_print_debug())
-		{
-			fprintf(stderr, "After: %f\n", all_actors[player_id].actor_state.position[1]);
-		}
-		if ((all_actors[player_id].actor_state.position[1] < (SEA_LEVEL + 5.0f)) &&
-		    (environment_condition.temperature < 32) &&
+		//TODO: Pull this out into it's own function and put it next to update_actor_state_position
+		/* If actor is in a snowy area with water */
+		if ((environment_condition.temperature < 32) &&
 		    (environment_condition.precipitation >= 0.2))
 		{
-			all_actors[player_id].actor_state.position[1] = SEA_LEVEL + 5.0f;
+			/* If the actor goes from above the ice to below it, put them on top of the ice */
+			if ((all_actors[player_id].actor_state.prev_position[1] >= SEA_LEVEL) &&
+			    (all_actors[player_id].actor_state.position[1] < (SEA_LEVEL + 5.0f)))
+			{
+				all_actors[player_id].actor_state.position[1] = SEA_LEVEL + 5.0f;
+			}
+
+			/* If the actor goes from below the ice to above, keep them below the ice */
+			if ((all_actors[player_id].actor_state.prev_position[1] <= SEA_LEVEL) &&
+			    (all_actors[player_id].actor_state.position[1] > (SEA_LEVEL - 5.0f)))
+			{
+				vec3 direction;
+				glm_vec3_sub(all_actors[player_id].actor_state.prev_position,
+					     all_actors[player_id].actor_state.position,
+					     direction);
+				glm_vec3_scale(direction, 1.1f, direction);
+				glm_vec3_add(direction,
+				             all_actors[player_id].actor_state.position, 
+					     all_actors[player_id].actor_state.position);
+			}
 		}
 
 		B_draw_actors(all_actors, actor_shader, num_players, renderer);
@@ -244,9 +255,14 @@ void game_loop(void)
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
 				   terrain_index);
-		
+
+		static float prev_cloudy = 0.0f;	
 		if (environment_condition.percent_cloudy > 0.5f)
 		{
+			if (prev_cloudy <= 0.5f)
+			{
+				log_rain_time(rain_log);
+			}
 			float percent_rainy = (environment_condition.percent_cloudy * 2.0f) - 1.0f;
 			if (!camera_underwater(all_actors[player_id].actor_state.current_terrain_index))
 			{
@@ -267,6 +283,7 @@ void game_loop(void)
 				}
 			}
 		}
+		prev_cloudy = environment_condition.percent_cloudy;
 
 		PointLight player_light;
 		memset(&player_light, 0, sizeof(PointLight));
@@ -299,6 +316,7 @@ void game_loop(void)
 		frames++;
 	}
 
+	fclose(rain_log);
 	for (unsigned int i = 0; i < num_players; ++i)
 	{
 		free_actor(all_actors[i]);
