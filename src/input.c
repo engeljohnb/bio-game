@@ -39,6 +39,8 @@ CommandConfig default_command_config(void)
 	config.right = SDLK_d;
 	config.forward = SDLK_w;
 	config.backward = SDLK_s;
+	config.increase_view_distance = SDLK_RIGHTBRACKET;
+	config.decrease_view_distance = SDLK_LEFTBRACKET;
 	config.x_inverted = 1;
 	config.y_inverted = 1;
 	return config;
@@ -110,18 +112,14 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->movement &= ~M_RIGHT;
 				}
-				/*else if (key == config.toggle_anti_aliasing)
+				else if (key == config.decrease_view_distance)
 				{
-					command_state->toggle_anti_aliasing = !command_state->toggle_anti_aliasing;
-					if (command_state->toggle_anti_aliasing)
-					{
-						glEnable(GL_MULTISAMPLE);
-					}
-					else
-					{
-						glDisable(GL_MULTISAMPLE);
-					}
-				}*/
+					command_state->decrease_view_distance = 1;
+				}
+				else if (key == config.increase_view_distance)
+				{
+					command_state->increase_view_distance = 1;
+				}
 				//DEBUG
 				else if (key == SDLK_p)
 				{
@@ -139,6 +137,10 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->mode = MODE_SHOW_COLOR;
 				}
+				else if (key == SDLK_y)
+				{
+					command_state->mode = MODE_SHOW_HEIGHT;
+				}
 				else if (key == SDLK_v)
 				{
 					g_print_debug = 1;
@@ -151,6 +153,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->random_teleport = 1;
 				}
+				
 				break;
 			}
 

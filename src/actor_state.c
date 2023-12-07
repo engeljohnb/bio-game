@@ -28,8 +28,6 @@
 #include "terrain_collisions.h"
 #include "actor.h"
 
-#define GRAPHICAL_RENDER 1
-
 void randomly_teleport_actor(ActorState *actor_state)
 {
 	time_t t;
@@ -70,16 +68,15 @@ void update_actor_state_direction(ActorState *actor_state, CommandState *command
 
 int actor_outside_terrain_boundaries(ActorState *actor_state)
 {
-	return ((actor_state->position[0] >= TERRAIN_XZ_SCALE*4-3) ||
+	return ((actor_state->position[0] >= get_terrain_xz_scale()*4-3) ||
 		(actor_state->position[0] <= 3) ||
-		(actor_state->position[2] >= TERRAIN_XZ_SCALE*4-3) ||
+		(actor_state->position[2] >= get_terrain_xz_scale()*4-3) ||
 		(actor_state->position[2] <= 3));
 
 }
 
 void update_actor_state_position(ActorState *actor_state, CommandState command_state, float delta_t)
 {
-	glm_vec3_copy(actor_state->position, actor_state->prev_position);
 	if (command_state.movement)
 	{
 		actor_state->speed += 0.005*delta_t;
@@ -105,30 +102,29 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, actor_state->right);
 
 	vec3 velocity;
-	vec3 move_direction_xz;
-	glm_vec3_copy(VEC3(command_state.move_direction[0], 0, command_state.move_direction[2]), move_direction_xz);
+	vec3 move_direction_xz; glm_vec3_copy(VEC3(command_state.move_direction[0], 0, command_state.move_direction[2]), move_direction_xz);
 	glm_vec3_scale(move_direction_xz, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 
-	if (actor_state->position[0] > TERRAIN_XZ_SCALE*4)
+	if (actor_state->position[0] > get_terrain_xz_scale()*4)
 	{
 		actor_state->position[0] = 0;
 		actor_state->current_terrain_index += 1;
 	}
 	if (actor_state->position[0] < 0)
 	{
-		actor_state->position[0] = TERRAIN_XZ_SCALE*4;
+		actor_state->position[0] = get_terrain_xz_scale()*4;
 		actor_state->current_terrain_index -= 1;
 	}
 
-	if (actor_state->position[2] > TERRAIN_XZ_SCALE*4)
+	if (actor_state->position[2] > get_terrain_xz_scale()*4)
 	{
 		actor_state->position[2] = 0;
 		actor_state->current_terrain_index += MAX_TERRAIN_BLOCKS;
 	}
 	if (actor_state->position[2] < 0)
 	{
-		actor_state->position[2] = TERRAIN_XZ_SCALE*4;
+		actor_state->position[2] = get_terrain_xz_scale()*4;
 		actor_state->current_terrain_index -= MAX_TERRAIN_BLOCKS;
 	}
 }

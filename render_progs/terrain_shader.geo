@@ -29,6 +29,7 @@ uniform float precipitation;
 uniform sampler2D heightmap;
 
 out vec3 f_position;
+out vec3 f_color;
 out vec3 f_normal;
 out vec2 f_offset;
 out vec2 f_tex_coords;
@@ -196,7 +197,7 @@ void main()
 		for (int j = 0; j < 6; ++j)
 		{
 			vec3 normal = get_frustum_normal(j);
-			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -30)
+			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -70)
 			{
 				in_frustum = false;
 				break;
@@ -219,6 +220,7 @@ void main()
 		{
 			f_snow_normal = get_snow_normal(vec3(gl_in[i].gl_Position), gs_in[i].g_tex_coords, gs_in[i].xz_scale);
 		}
+		f_color = texture(heightmap, gs_in[i].g_tex_coords).xyz;
 
 		gl_Position = pos;
 		EmitVertex();

@@ -74,7 +74,7 @@ typedef struct Plant
 
 } Plant;
 
-/* A TerrainChunk is a block of nine 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. You could think of them as like a tile map.
+/* A TerrainChunk is a block of nine 4*get_terrain_xz_scale() x 4*get_terrain_xz_scale() terrain_meshes. You could think of them as like a tile map.
  * Whenever a "block" is referred to in the code, it's usally indicating one of these nine meshes, and a "chunk" usually indicates
  * all nine of them together. */
 typedef struct TerrainChunk
@@ -84,14 +84,17 @@ typedef struct TerrainChunk
 	float		tessellation_level;
 	int		heightmap_width;
 	int		heightmap_height;
-	int		block_width;
-	int		block_height;
+	int		width;
+	int		height;
+	/* dimension is the width and breadth of the TerrainChunk in terrain_meshes. */
+	int		dimension;
 	unsigned int	heightmap_size;
-	TerrainMesh	terrain_meshes[9];
+	TerrainMesh	*terrain_meshes;
 	B_Texture 	heightmap_texture;
 	B_Texture	snow_normal_map;
 	B_Framebuffer	g_buffer;
 	B_Shader 	compute_shader;
+	B_Shader 	vertex_compute_shader;
 	float		*tex_coords[2];
 } TerrainChunk;
 
@@ -129,7 +132,7 @@ void B_send_terrain_mesh_to_gpu_ebo(TerrainMesh *mesh, TerrainVertexData *vertex
  * |       |       |       |
  * |-------|-------|-------|
  * */
-TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type);
+TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type, unsigned long terrain_index);
 TerrainChunk create_server_terrain_chunk(void);
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer);
 void free_terrain_chunk(TerrainChunk *block);
@@ -138,6 +141,12 @@ void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
 void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
 void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, float camera_height);
+
+/* sets the terrain_chunk's dimension (the width and breadth of the terrain_chunk in terrain_meshes).
+ * If it's even, it wil be rounded up to the next odd number. It makes the math a little easier if
+ * the terrain chunk has a center tile. */
+int set_terrain_chunk_dimension(int dimension);
+int get_terrain_chunk_dimension(void);
 void B_draw_terrain_mesh(TerrainMesh mesh, 
 			B_Shader shader, 
 			mat4 projection_view,
@@ -145,8 +154,10 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			uint64_t player_block_index, 
 			float tessellation_level, 
 			B_Texture texture,
+			float terrain_chunk_dimesion,
 			int heightmap_width,
-			int heightmap_height);
+			int heightmap_height,
+			int i);
 void get_terrain_heightmap_size(int *w, int *h);
 TerrainMesh load_terrain_mesh_from_file(B_Framebuffer g_buffer, const char *filename);
 #endif

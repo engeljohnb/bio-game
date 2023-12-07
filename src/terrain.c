@@ -34,11 +34,28 @@
 
 int g_terrain_heightmap_width;
 int g_terrain_heightmap_height;
+int g_terrain_chunk_dimension;
 
 void get_terrain_heightmap_size(int *w, int *h)
 {
 	*w = g_terrain_heightmap_width;
 	*h = g_terrain_heightmap_height;
+}
+
+int set_terrain_chunk_dimension(int dimension)
+{
+	int d = dimension;
+	if (even(dimension))
+	{
+		d = dimension+1;
+	}
+	g_terrain_chunk_dimension = d;
+	return g_terrain_chunk_dimension;
+}
+
+int get_terrain_chunk_dimension(void)
+{
+	return g_terrain_chunk_dimension;
 }
 
 void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index)
@@ -49,17 +66,26 @@ void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index)
 	{
 		texture = GL_TEXTURE1;
 	}
-	int x_offset = -1;
-	int z_offset = -MAX_TERRAIN_BLOCKS;
+	int x_max = block->dimension/2;
+	int x_offset = -x_max;
+	int z_offset = -MAX_TERRAIN_BLOCKS*x_max;
 	int x_counter = 0;
 	int z_counter = 0;
 	glUseProgram(block->compute_shader);
 	glActiveTexture(texture);
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
-	B_set_uniform_int(block->compute_shader, "data", 0);
-	B_set_uniform_float(block->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
-	glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	for (int i = 0; i < 9; ++i)
+	if (block->type == TERRAIN_CHUNK_WATER)
+	{
+		B_set_uniform_int(block->compute_shader, "data", 1);
+		glBindImageTexture(1, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	}
+	else
+	{
+		B_set_uniform_int(block->compute_shader, "data", 0);
+		glBindImageTexture(0, block->heightmap_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	}
+	B_set_uniform_float(block->compute_shader, "xz_scale", get_terrain_xz_scale());
+	for (int i = 0; i < block->dimension*block->dimension; ++i)
 	{
 		int index = player_block_index + z_offset + x_offset;
 		EnvironmentCondition environment_condition = get_environment_condition(index);
@@ -70,15 +96,15 @@ void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index)
 		B_set_uniform_float(block->compute_shader, "precipitation", environment_condition.precipitation); 
 		x_counter++;
 		x_offset++;
-		if (x_offset > 1)
+		if (x_offset > x_max)
 		{
-			x_offset = -1;
+			x_offset = -x_max;
 			x_counter = 0;
 			z_offset += MAX_TERRAIN_BLOCKS;
 			z_counter++;
 		}
 
-		glDispatchCompute(block->block_width/8, block->block_height/8, 1);
+		glDispatchCompute(block->width/8, block->height/8, 1);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 	}
 	glBindTexture(GL_TEXTURE_2D, block->heightmap_texture);
@@ -86,41 +112,44 @@ void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index)
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, block->heightmap_buffer);
 }
 
-TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type)
+TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type, unsigned long terrain_index)
 {
-	TerrainChunk block;
+	TerrainChunk chunk = {0};
 
-	block.type = type;
-	for (int i = 0; i < 9; ++i)
+	chunk.type = type;
+	chunk.dimension = get_terrain_chunk_dimension();
+
+	chunk.terrain_meshes = BG_MALLOC(TerrainMesh, chunk.dimension*chunk.dimension);
+	for (int i = 0; i < chunk.dimension*chunk.dimension; ++i)
 	{
-		block.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
+		chunk.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
 	}
-	block.block_width = 64;
-	block.block_height = 64;
+	chunk.width = 64;
+	chunk.height = 64;
 
-	block.heightmap_width = block.block_width*3;
-	block.heightmap_height = block.block_height*3;
+	chunk.heightmap_width = chunk.width*chunk.dimension;
+	chunk.heightmap_height = chunk.height*chunk.dimension;
 	if (type == TERRAIN_CHUNK_LAND)
 	{
-		g_terrain_heightmap_width = block.heightmap_width;
-		g_terrain_heightmap_height = block.heightmap_height;
-		block.compute_shader = B_compile_compute_shader("render_progs/land_heightmap_gen_shader.comp");
+		g_terrain_heightmap_width = chunk.heightmap_width;
+		g_terrain_heightmap_height = chunk.heightmap_height;
+		chunk.compute_shader = B_compile_compute_shader("render_progs/land_heightmap_gen_shader.comp");
 	}
 	else
 	{
-		block.compute_shader = B_compile_compute_shader("render_progs/water_heightmap_gen_shader.comp");
+		chunk.compute_shader = B_compile_compute_shader("render_progs/water_heightmap_gen_shader.comp");
 	}
 	
-	block.g_buffer = g_buffer;
-	block.heightmap_size = block.heightmap_width * block.heightmap_height;
-	block.heightmap_buffer = BG_MALLOC(TerrainHeight, block.heightmap_size);
+	chunk.g_buffer = g_buffer;
+	chunk.heightmap_size = chunk.heightmap_width * chunk.heightmap_height;
+	chunk.heightmap_buffer = BG_MALLOC(TerrainHeight, chunk.heightmap_size);
 
-	block.tessellation_level = 16.0;
+	chunk.tessellation_level = 16.0;
 	
-	B_send_terrain_chunk_to_gpu(&block);
+	B_send_terrain_chunk_to_gpu(&chunk);
 
-	B_update_terrain_chunk(&block, PLAYER_TERRAIN_INDEX_START);
-	return block;
+	B_update_terrain_chunk(&chunk, terrain_index);
+	return chunk;
 }
 
 int get_terrain_heightmap_index_from_position(vec2 pos)
@@ -129,11 +158,11 @@ int get_terrain_heightmap_index_from_position(vec2 pos)
 	int heightmap_height = 0;
 	get_terrain_heightmap_size(&heightmap_width, &heightmap_height); 
 
-	size_t section_heightmap_height = round(heightmap_width/3);
-	size_t section_heightmap_width = round(heightmap_height/3);
+	size_t section_heightmap_height = round(heightmap_width/get_terrain_chunk_dimension());
+	size_t section_heightmap_width = round(heightmap_height/get_terrain_chunk_dimension());
 	
-	float mesh_height = TERRAIN_XZ_SCALE*4;
-	float mesh_width = TERRAIN_XZ_SCALE*4;
+	float mesh_height = get_terrain_xz_scale()*4;
+	float mesh_width = get_terrain_xz_scale()*4;
 
 	float percent_x = glm_percent(0, mesh_width, pos[0]);
 	float percent_z = glm_percent(0, mesh_height, pos[1]);
@@ -147,15 +176,15 @@ int get_terrain_heightmap_index_from_position(vec2 pos)
 	return (pixel_z * heightmap_width) + pixel_x;
 }
 
-void B_send_terrain_chunk_to_gpu(TerrainChunk *block)
+void B_send_terrain_chunk_to_gpu(TerrainChunk *chunk)
 {
 	unsigned int heightmap_texture = 0;
 	glGenTextures(1, &heightmap_texture);
 	glBindTexture(GL_TEXTURE_2D, heightmap_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, block->heightmap_width, block->heightmap_height, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, chunk->heightmap_width, chunk->heightmap_height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	block->heightmap_texture = heightmap_texture;
+	chunk->heightmap_texture = heightmap_texture;
 }
 
 TerrainMesh B_create_terrain_mesh(unsigned int g_buffer)
@@ -196,11 +225,13 @@ void B_draw_water_mesh(TerrainMesh mesh,
 			uint64_t player_block_index, 
 			float tessellation_level,
 			B_Texture heightmap_texture,
+			float terrain_chunk_dimension,
 			int heightmap_width,
 			int heightmap_height,
 			float camera_height)
 {
-	static float time = 0.0f;
+
+	float time = (float)(SDL_GetTicks64()/100.0f);
 	glUseProgram(shader);
 	EnvironmentCondition cond = get_environment_condition(my_block_index);
 	if (cond.precipitation < 0.2)
@@ -220,10 +251,11 @@ void B_draw_water_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
+	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
 	B_set_uniform_float(shader, "height_factor", 22.0f);
 	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_float(shader, "camera_height", camera_height);
+	B_set_uniform_float(shader, "terrain_chunk_dimension", terrain_chunk_dimension);
 	B_set_uniform_int(shader, "temperature", cond.temperature);
 
 	vec3 frustum_corners[8];
@@ -237,7 +269,7 @@ void B_draw_water_mesh(TerrainMesh mesh,
 	
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
-	static int up = 1;
+	/*static int up = 1;
 	if (up)
 	{
 		time += 0.01f;
@@ -256,7 +288,7 @@ void B_draw_water_mesh(TerrainMesh mesh,
 		{
 			up = 1;
 		}
-	}
+	}*/
 }
 
 void B_draw_terrain_mesh(TerrainMesh mesh, 
@@ -266,8 +298,10 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			uint64_t player_block_index, 
 			float tessellation_level, 
 			B_Texture heightmap_texture,
+			float terrain_chunk_dimension,
 			int heightmap_width,
-			int heightmap_height)
+			int heightmap_height,
+			int i)
 {
 	glUseProgram(shader);
 
@@ -277,17 +311,19 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	B_set_uniform_int(shader, "heightmap", 0);
 	B_set_uniform_int(shader, "heightmap_width", heightmap_width);
 	B_set_uniform_int(shader, "heightmap_height", heightmap_height);
+	B_set_uniform_int(shader, "i", i);
 
 	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
 	B_set_uniform_int(shader, "patches_per_column", mesh.num_rows);
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
+	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
 	B_set_uniform_float(shader, "height_factor", TERRAIN_HEIGHT_FACTOR);
 	B_set_uniform_int(shader, "temperature", cond.temperature);
 	B_set_uniform_float(shader, "precipitation", cond.precipitation);
 	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
+	B_set_uniform_float(shader, "terrain_chunk_dimension", (float)terrain_chunk_dimension);
 
 	vec3 frustum_corners[8];
 	get_frustum_corners(projection_view, frustum_corners);
@@ -305,45 +341,47 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 
 void get_block_corners(vec3 dest[4], int index)
 {
-	int x_index = index % 3;
-	int z_index = index / 3;
+	int dimension = get_terrain_chunk_dimension();
+	int x_index = index % dimension;
+	int z_index = index / dimension;
 
-	dest[0][0] = (x_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[0][0] = (x_index * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 	dest[0][1] = 0;
-	dest[0][2] = (z_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[0][2] = (z_index * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 
-	dest[1][0] = ((x_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[1][0] = ((x_index+1) * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 	dest[1][1] = 0;
-	dest[1][2] = (z_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[1][2] = (z_index * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 
-	dest[2][0] = (x_index * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[2][0] = (x_index * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 	dest[2][1] = 0;
-	dest[2][2] = ((z_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[2][2] = ((z_index+1) * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 
-	dest[3][0] = ((x_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[3][0] = ((x_index+1) * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 	dest[3][1] = 0;
-	dest[3][2] = ((z_index+1) * TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4);
+	dest[3][2] = ((z_index+1) * get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4);
 }
 
 void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, float camera_height)
 {
-	int x_offset = -1;
-	int z_offset = -MAX_TERRAIN_BLOCKS;
+	int x_max = block->dimension/2;
+	int x_offset = -(x_max);
+	int z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
 	vec3 frustum_corners[8];
 	get_frustum_corners(projection_view, frustum_corners);
-	for (int i = 0; i < 9; ++i)
+	for (int i = 0; i < block->dimension*block->dimension; ++i)
 	{
 		uint64_t index = player_block_index + z_offset + x_offset;
 		x_offset++;
-		if (x_offset > 1)
+		if (x_offset > x_max)
 		{
 			z_offset += MAX_TERRAIN_BLOCKS;
-			x_offset = -1;
+			x_offset = -x_max;
 		}
 
-		if (z_offset > MAX_TERRAIN_BLOCKS)
+		if (z_offset > MAX_TERRAIN_BLOCKS*x_max)
 		{
-			z_offset = -MAX_TERRAIN_BLOCKS;
+			z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
 		}
 
 		vec3 player_facing;
@@ -360,55 +398,37 @@ void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_vi
 
 		vec3 block_corners[4] = {0};
 		get_block_corners(block_corners, i);
-		int visible = 0;
 
-		if (player_block_index == index)
+		if (block->type == TERRAIN_CHUNK_LAND)
 		{
-			visible = 1;
-		}
-		else
-		{
-			for (int j = 0; j < 4; ++j)
-			{
-				if ((which_side(player_facing, frustum_corners[1], block_corners[j])) &&
-				    (which_side(n_player_facing, frustum_corners[7], block_corners[j])))
-				{
-					visible = 1;
-					break;
-				}
-			}
+			B_draw_terrain_mesh(block->terrain_meshes[i],
+					    shader,
+					    projection_view,
+					    index,
+					    player_block_index,
+					    block->tessellation_level,
+					    block->heightmap_texture,
+					    block->dimension,
+					    block->heightmap_width,
+					    block->heightmap_height,
+					    i);
 		}
 
-		if (visible)
+		if (block->type == TERRAIN_CHUNK_WATER)
 		{
-			if (block->type == TERRAIN_CHUNK_LAND)
-			{
-				B_draw_terrain_mesh(block->terrain_meshes[i],
-						    shader,
-						    projection_view,
-						    index,
-						    player_block_index,
-						    block->tessellation_level,
-						    block->heightmap_texture,
-						    block->heightmap_width,
-						    block->heightmap_height);
-			}
-
-			else if (block->type == TERRAIN_CHUNK_WATER)
-			{
-				B_draw_water_mesh(block->terrain_meshes[i],
-						    shader,
-						    projection_view,
-						    index,
-						    player_block_index,
-						    block->tessellation_level,
-						    block->heightmap_texture,
-						    block->heightmap_width,
-						    block->heightmap_height,
-						    camera_height);
-			}
-			
+			B_draw_water_mesh(block->terrain_meshes[i],
+					    shader,
+					    projection_view,
+					    index,
+					    player_block_index,
+					    block->tessellation_level,
+					    block->heightmap_texture,
+					    block->dimension,
+					    block->heightmap_width,
+					    block->heightmap_height,
+					    camera_height);
 		}
+	
 	}
 }
 
@@ -447,10 +467,13 @@ void B_free_terrain_mesh(TerrainMesh mesh)
 
 void free_terrain_chunk(TerrainChunk *block)
 {
-	for (int i = 0; i < 9; ++i)
+	for (int i = 0; i < block->dimension*block->dimension; ++i)
 	{
 		B_free_terrain_mesh(block->terrain_meshes[i]);
 	}
+	BG_FREE(block->terrain_meshes);
+	B_Texture textures[2] = { block->heightmap_texture, block->snow_normal_map };
+	glDeleteTextures(2, textures);
 
 	BG_FREE(block->heightmap_buffer);
 }

@@ -21,6 +21,7 @@
 #define SHOW_POSITION 1
 #define SHOW_NORMALS 2
 #define SHOW_COLOR 3
+#define SHOW_HEIGHT 4
 
 struct PointLight
 {
@@ -51,6 +52,9 @@ uniform int mode;
 uniform vec3 sky_color;
 uniform vec3 camera_position;
 uniform vec3 player_position;
+
+uniform float rain_fog_percent;
+uniform float dew_fog_percent;
 
 vec4 calculate_direction_light(DirectionLight direction_light, vec3 position, vec3 normal)
 {
@@ -92,7 +96,6 @@ void main()
 		p_light.color.r -= 0.3;
 		w_light.color.r -= 0.3;
 		t_light.color.r -= 0.3;
-
 	}
 
 	vec3 position = vec3(texture(f_position_texture, f_tex_coords));
@@ -107,7 +110,7 @@ void main()
 	{
 		rain_frag = true;
 	}
-	result += 0.2;
+	result += 0.25;
 	result += calculate_point_light(p_light, position, normal);
 	result += calculate_direction_light(w_light, position, normal);
 	result += calculate_direction_light(t_light, position, normal);
@@ -126,7 +129,10 @@ void main()
 		{
 			float distance_from_camera = distance(camera_position, position);
 			float percent_distance = distance_from_camera/view_distance;
-			frag_color = mix(result * vec4(color, 1.0f), vec4(sky_color, 1.0f), clamp(pow(percent_distance, 2.0f)-0.25, 0.0f, 1.0));
+			//frag_color = mix(result * vec4(color, 1.0f), vec4(sky_color, 1.0f), clamp(pow(percent_distance, 2.0f)-0.25, 0.0f, 1.0));
+			float fog_percent = clamp(min((1.0 - rain_fog_percent), (1.0 - dew_fog_percent)) * 10.0, 1.7, 10.0);
+			//float fog_percent = max(rain_fog_percent, dew_fog_percent) * 10.0;
+			frag_color = mix(result * vec4(color, 1.0f), vec4(sky_color, 1.0f), clamp(pow(percent_distance, fog_percent)-0.25, 0.0f, 1.0));
 		}
 	}
 
@@ -137,6 +143,10 @@ void main()
 	else if (mode == SHOW_NORMALS)
 	{
 		frag_color = vec4(normal, 1.0);
+	}
+	else if (mode == SHOW_HEIGHT)
+	{
+		frag_color = vec4(vec3(position.y, position.y, position.y)/75.0,1.0);
 	}
 	else if (mode == SHOW_COLOR)
 	{

@@ -140,6 +140,8 @@ void B_render_lighting(Renderer renderer,
 		       vec3 sky_color,
 		       vec3 camera_position,
 		       vec3 player_position,
+		       float rain_fog_percent,
+		       float dew_fog_percent,
 		       int mode)
 {
 	glEnable(GL_CULL_FACE);
@@ -161,6 +163,8 @@ void B_render_lighting(Renderer renderer,
 	vec3 adjusted_camera_position;
 	glm_vec3_scale(camera_position, 0.01, adjusted_camera_position);
 
+	B_set_uniform_float(shader,"rain_fog_percent", rain_fog_percent);
+	B_set_uniform_float(shader,"dew_fog_percent", dew_fog_percent);
 	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_int(shader, "f_position_texture", 1);
 	B_set_uniform_int(shader, "f_normal_texture", 0);

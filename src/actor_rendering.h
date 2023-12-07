@@ -128,7 +128,6 @@ typedef struct ActorMesh
 	unsigned int 	vao;
 	unsigned int	vbo;
 	unsigned int	ebo;
-	
 } ActorMesh;
 
 /* A ActorModel is all the graphical information required for an actor, including animations.
@@ -146,6 +145,7 @@ typedef struct ActorModel
 	mat4			world_space;
 	mat4			original_position;
 	ActorMesh		*mesh;
+	float			height;
 	int			num_children;
 	struct ActorModel 	**children;
 	struct ActorModel 	*parent;

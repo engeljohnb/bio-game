@@ -35,7 +35,8 @@ enum RENDER_MODE
 	MODE_SHOW_LIGHTING,
 	MODE_SHOW_POSITION,
 	MODE_SHOW_NORMALS,
-	MODE_SHOW_COLOR 
+	MODE_SHOW_COLOR,
+	MODE_SHOW_HEIGHT,
 };
 
 typedef struct CommandState
@@ -51,6 +52,8 @@ typedef struct CommandState
 	int		mode;	
 	mat4		camera_rotation;
 	int		wheel_increment;
+	int		increase_view_distance;
+	int		decrease_view_distance;
 	int		random_teleport;
 } CommandState;
 
@@ -65,6 +68,8 @@ typedef struct CommandConfig
 	int		forward;
 	int 		backward;
 	int		alt_quit;
+	int		increase_view_distance;
+	int		decrease_view_distance;
 } CommandConfig;
 
 CommandConfig default_command_config(void);

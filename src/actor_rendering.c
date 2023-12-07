@@ -23,6 +23,7 @@
 #include "window.h"
 #include "actor_rendering.h"
 #include "asset_loading.h"
+#include "terrain.h"
 #include "utils.h"
 
 void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
@@ -268,7 +269,6 @@ void B_free_mesh(ActorMesh *mesh)
 void B_free_model(ActorModel *model)
 {
 	B_free_texture(model->color_texture);
-	B_free_mesh(model->mesh);
 	for (int i = 0; i < model->num_bones; ++i)
 	{
 		free_bone(model->bone_array[i]);
@@ -283,6 +283,8 @@ void B_free_model(ActorModel *model)
 		BG_FREE(model->children);
 	}
 	
+	B_free_mesh(model->mesh);
+	BG_FREE(model->mesh);
 	BG_FREE(model);
 }
 

@@ -43,7 +43,7 @@ double B_get_current_in_game_hour(void)
 	return (double)floor(fmodf(current_time / (6000*MINUTES_PER_IN_GAME_DAY), MINUTES_PER_IN_GAME_DAY));
 }
 
-double B_get_seconds_into_current_phase(void)
+double B_get_seconds_into_current_day(void)
 {
 	return fmodf(B_get_current_second() + (B_get_current_minute()*60), SECONDS_PER_IN_GAME_DAY);
 }
@@ -53,13 +53,6 @@ float B_get_frame_time(void)
 	static unsigned int prev_time = 0;
 	unsigned long current_time = SDL_GetTicks64();
 	float frame_time = (float)(current_time - prev_time);
-	/*if (frame_time < delta_t)
-	{
-		float remainder = delta_t - frame_time;
-		current_time += remainder;
-		SDL_Delay((unsigned int)remainder);
-		frame_time = delta_t;
-	}*/
 	prev_time = current_time;
 	return frame_time;
 }

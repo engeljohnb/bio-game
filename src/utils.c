@@ -23,6 +23,16 @@
 #include <cglm/cglm.h>
 #include "utils.h"
 
+int even(int a)
+{
+	return (!(a % 2));
+}
+
+float lerp(float a, float b, float f)
+{
+    return a * (1.0 - f) + (b * f);
+}
+
 float signed_angle_vec3_xz(vec3 v0, vec3 v1)
 {
 	float x1 = v0[0];
@@ -38,7 +48,7 @@ float signed_angle_vec3_xz(vec3 v0, vec3 v1)
 	return angle;
 }
 	
-void bilinearly_interpolate_vec3(vec3 q00,
+void _bilinearly_interpolate_vec3(vec3 q00,
 				 vec3 q01,
 				 vec3 q10,
 				 vec3 q11,
@@ -73,6 +83,25 @@ void bilinearly_interpolate_vec3(vec3 q00,
 	glm_vec3_add(r0, r1, dest);
 }
 
+void bilinearly_interpolate_vec3(
+    const vec3 q11, const vec3 q12, 
+    const vec3 q21, const vec3 q22, 
+    const vec3 pos, 
+    vec3 dest)
+{
+    // First interpolate in x direction
+    vec3 tmp1, tmp2;
+    for (int i = 0; i < 3; i++) {
+        tmp1[i] = (1 - pos[0]) * q11[i] + pos[0] * q21[i];
+        tmp2[i] = (1 - pos[0]) * q12[i] + pos[0] * q22[i];
+    }
+
+    // Then interpolate the results in y direction
+    for (int i = 0; i < 3; i++) {
+        dest[i] = (1 - pos[2]) * tmp1[i] + pos[2] * tmp2[i];
+    }
+}
+
 float bilinearly_interpolate_float(float x0,
 				   float x1,
 				   float y0,
@@ -95,6 +124,50 @@ float bilinearly_interpolate_float(float x0,
 
 	return (r0 * scalar0y) + (r1 * scalar1y);
 }
+
+float _bilinearly_interpolate_float(float q11, float q12, float q21, float q22, float x, float y) 
+{
+    // First interpolate in the x direction
+    float tmp1 = (1 - x) * q11 + x * q21;
+    float tmp2 = (1 - x) * q12 + x * q22;
+
+    // Then interpolate the results in the y direction
+    return (1 - y) * tmp1 + y * tmp2;
+}
+
+
+double bilinearly_interpolate_double(double x0,
+				   double x1,
+				   double y0,
+				   double y1,
+				   double q00,
+				   double q01,
+				   double q10,
+			           double q11,
+			    	   double x,
+				   double y)
+{
+	double scalar0x = (x1 - x) / (x1 - x0);
+	double scalar1x = (x - x0) / (x1 - x0);
+
+	double r0 = (q00 * scalar0x) + (q10 * scalar1x);
+	double r1 = (q01 * scalar0x) + (q11 * scalar1x);
+
+	double scalar0y = (y1 - y) / (y1 - y0);
+	double scalar1y = (y - y0) / (y1 - y0);
+
+	return (r0 * scalar0y) + (r1 * scalar1y);
+}
+float percent(float min, float max, float x)
+{
+	return (x - min) / (max - min);
+}
+
+double percent_double(double min, double max, double x)
+{
+	return (x - min) / (max - min);
+}
+
 
 char *get_directory_name(const char *file)
 {

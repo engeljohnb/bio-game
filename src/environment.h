@@ -16,9 +16,9 @@ typedef struct EnvironmentCondition
 } EnvironmentCondition;
 
 #define MORNING_LIGHT_DIRECTION VEC3(1.0f, 0.0f, 0.0f)
-#define AFTERNOON_LIGHT_DIRECTION VEC3(0.0f, 1.0f, 0.0f)
+#define AFTERNOON_LIGHT_DIRECTION VEC3(0.0f, -1.0f, 0.0f)
 #define EVENING_LIGHT_DIRECTION VEC3(-1.0f, 0.0f, 0.0f)
-#define NIGHT_LIGHT_DIRECTION VEC3(-1.0f, -1.0f, -1.0f)
+#define NIGHT_LIGHT_DIRECTION VEC3(0.0f, 1.0f, 0.0f)
 
 #define MORNING_SKY_COLOR VEC3(0.40f, 0.50f, 0.97f)
 #define AFTERNOON_SKY_COLOR VEC3(0.32f, 0.56f, 0.97f)
@@ -27,8 +27,8 @@ typedef struct EnvironmentCondition
 #define UNDERWATER_SKY_COLOR VEC3(0.12, 0.17, 0.42)
 
 #define MORNING_LIGHT_COLOR VEC3(0.32f, 0.32f, 0.32f)
-#define AFTERNOON_LIGHT_COLOR VEC3(0.39f, 0.39f, 0.32f)
-#define EVENING_LIGHT_COLOR VEC3(0.32f, 0.23f, 0.32f)
+#define AFTERNOON_LIGHT_COLOR VEC3(0.39f, 0.39f, 0.34f)
+#define EVENING_LIGHT_COLOR VEC3(0.32f, 0.29f, 0.32f)
 #define NIGHT_LIGHT_COLOR VEC3(0.14f, 0.14f, 0.34f)
 
 
@@ -41,6 +41,7 @@ typedef struct TimeOfDay
 	//vec3		sun_color;
 	DirectionLight	sky_lighting;
 	//vec3		sun_position;
+	float 		dew_fog_percent;
 } TimeOfDay;
 
 typedef struct ParticleMesh
@@ -73,4 +74,5 @@ ParticleMesh create_snowflake_mesh(int g_buffer);
 int camera_underwater(uint64_t terrain_index);
 void print_temperatures(uint64_t player_terrain_index);
 void log_rain_time(FILE *fp);
+void tod_phase_to_string(int phase, char *dest);
 #endif

@@ -160,11 +160,22 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 	b_mesh->num_vertices = a_mesh->mNumVertices;
 	vertex_data.vertices = BG_MALLOC(A_Vertex, a_mesh->mNumVertices);
 	vertex_data.faces = NULL;
+	float max_height = -10000.0;
+	float min_height = 10000.0;
 	for (unsigned int j = 0; j < a_mesh->mNumVertices; ++j)
 	{
 		vertex_data.vertices[j].position[0] = a_mesh->mVertices[j].x;
 		vertex_data.vertices[j].position[1] = a_mesh->mVertices[j].y;
 		vertex_data.vertices[j].position[2] = a_mesh->mVertices[j].z;
+
+		if (vertex_data.vertices[j].position[2] > max_height)
+		{
+			max_height = vertex_data.vertices[j].position[2];
+		}
+		if (vertex_data.vertices[j].position[2] < min_height)
+		{
+			min_height = vertex_data.vertices[j].position[2];
+		}
 
 		if (a_mesh->mNormals != NULL)
 		{
@@ -248,6 +259,7 @@ void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, A
 	model->mesh = b_mesh;
 	model->bone_array = B_load_bones(scene, a_mesh);
 	model->current_animation = NULL;
+	model->height = max_height-min_height;
 }
 
 C_STRUCT aiNode *B_get_root_model(C_STRUCT aiNode *root)

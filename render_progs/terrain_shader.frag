@@ -1,3 +1,4 @@
+#version 430 core
 /*
     Bio-Game is a game for designing your own organism. 
     Copyright (C) 2022 John Engel 
@@ -16,8 +17,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#version 430 core
-
 layout (location = 0) out vec3 frag_normal;
 layout (location = 1) out vec3 frag_position;
 layout (location = 2) out vec3 frag_color;
@@ -29,73 +28,31 @@ in vec2 f_tex_coords;
 in float f_snow_value;
 in vec3 f_snow_normal;
 
+//uniform vec3 interpolation_samples[4];
 uniform int temperature;
 uniform float precipitation;
 uniform float sea_level;
 
-#define NOISE fbm
-#define BITMAP_WIDTH 1024
-#define BITMAP_HEIGHT 1024
-#define NUM_NOISE_OCTAVES 5
-#define MAX_TERRAIN_BLOCKS 100000
 
-#define NUM_OCTAVES 5
-
-float rand(vec2 n) { 
-	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+bool float_close_enough(float a, float b)
+{
+	return ((max(a, b) - min(a, b)) < 1.0);
 }
-
-float noise(vec2 p){
-	vec2 ip = floor(p);
-	vec2 u = fract(p);
-	u = u*u*(3.0-2.0*u);
-	
-	float res = mix(
-		mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
-		mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
-	return res*res;
+bool vec3_equal(vec3 a, vec3 b)
+{
+	return ((float_close_enough(a.x, b.x)) &&
+		(float_close_enough(a.z, b.z)));
 }
-
-float fbm(vec2 x) {
-	float v = 0.0;
-	float a = 0.5;
-	vec2 shift = vec2(100);
-	// Rotate to reduce axial bias
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
-	for (int i = 0; i < NUM_OCTAVES; ++i) {
-		v += a * noise(x);
-		x = rot * x * 2.0 + shift;
-		a *= 0.5;
-	}
-	return v;
-}
-
-//
-// psrdnoise2.glsl
-//
-// Authors: Stefan Gustavson (stefan.gustavson@gmail.com)
-// and Ian McEwan (ijm567@gmail.com)
-// Version 2021-12-02, published under the MIT license (see below)
-//
-// Copyright (c) 2021 Stefan Gustavson and Ian McEwan.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,A
-
 
 void main()
 {
 	frag_normal = f_normal;
 	frag_position = (f_position * 0.01f);
-
 	vec3 base_color = vec3(0.16f, 0.19f, 0.061f);
 	vec3 cold_no_snow = vec3(0.07f, 0.15f, 0.17f);
 	vec3 desert_color = vec3(0.40f, 0.28f, 0.14f);
 	vec3 snow_color = vec3(0.15f, 0.15f, 0.19f);
 	vec3 underwater_color = vec3(0.07, 0.15, 0.25);
-
 	frag_color = base_color;
 
 	if (temperature < 45)
@@ -106,12 +63,10 @@ void main()
 	{
 		frag_color = mix(desert_color, base_color, 0.2-precipitation);
 	}
-
 	if ((f_position.y < sea_level) && (precipitation >= 0.2))
 	{
 		frag_color = vec3(0.07, 0.15, 0.25);
 	}
-
 	else if (f_snow_value >= 0.35f)
 	{
 		if (f_snow_normal != vec3(0.0f))
@@ -120,4 +75,14 @@ void main()
 		}
 		frag_color = snow_color;
 	}
+
+	/*for (int i = 0; i < 4; ++i)
+	{
+		if (vec3_equal(f_position, interpolation_samples[i]))
+		{
+			frag_color = vec3(1.0, 0.0, 0.0);
+		}
+	}*/
+
+//	frag_color = f_color;
 }

@@ -123,19 +123,19 @@ void update_grass_patch_offset(vec2 offset, int index_diff)
 {
 	if (index_diff == 1)
 	{
-		offset[0] -= TERRAIN_XZ_SCALE*4;
+		offset[0] -= get_terrain_xz_scale()*4;
 	}
 	if (index_diff == -1)
 	{
-		offset[0] += TERRAIN_XZ_SCALE*4;
+		offset[0] += get_terrain_xz_scale()*4;
 	}
 	if (index_diff == MAX_TERRAIN_BLOCKS)
 	{
-		offset[1] -= TERRAIN_XZ_SCALE*4;
+		offset[1] -= get_terrain_xz_scale()*4;
 	}
 	if (index_diff == -MAX_TERRAIN_BLOCKS)
 	{
-		offset[1] += TERRAIN_XZ_SCALE*4;
+		offset[1] += get_terrain_xz_scale()*4;
 	}
 }
 
@@ -165,8 +165,8 @@ void get_grass_patch_offset(uint64_t terrain_index, vec2 offset)
 	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
 	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
 
-	offset[0] = noise1((float)x_index/MAX_TERRAIN_BLOCKS) * TERRAIN_XZ_SCALE*4*3;
-	offset[1] = noise1((float)z_index/MAX_TERRAIN_BLOCKS) * TERRAIN_XZ_SCALE*4*3; 
+	offset[0] = noise1((float)x_index/MAX_TERRAIN_BLOCKS) * get_terrain_xz_scale()*4;
+	offset[1] = noise1((float)z_index/MAX_TERRAIN_BLOCKS) * get_terrain_xz_scale()*4; 
 }
 
 void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9])
@@ -196,16 +196,17 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			vec2 base_offset)
 {
 	/* If base offset bleeds into another terrain block, don't draw.*/
-	if ((base_offset[0] > TERRAIN_XZ_SCALE*4) ||
-	    (base_offset[1] > TERRAIN_XZ_SCALE*4))
+	if ((base_offset[0] > get_terrain_xz_scale()*4) ||
+	    (base_offset[1] > get_terrain_xz_scale()*4))
 	{
 		return;
 	}
 
 	vec2 offset;
 	glm_vec2_copy(base_offset, offset);
-	offset[0] += x_offset * TERRAIN_XZ_SCALE*4;
-	offset[1] += z_offset * TERRAIN_XZ_SCALE*4;
+	offset[0] += x_offset * (get_terrain_xz_scale()*4);
+	offset[1] += z_offset * (get_terrain_xz_scale()*4);
+
 	float view_distance = get_view_distance();
 
 	vec3 frustum_corners[8];
@@ -214,7 +215,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 
 	/* If the grass is too far away to see, don't draw. */
 	vec3 n_player_facing;
-	float max_distance = TERRAIN_XZ_SCALE * 2.0f;
+	float max_distance = get_terrain_xz_scale() * 2.0f;
 	glm_vec3_negate_to(player_facing, n_player_facing);
 	float distance_from_player = glm_vec3_distance(player_position, VEC3(offset[0], 0.0f, offset[1]));
 	if (distance_from_player > (view_distance + (max_distance/2.0f)))
@@ -238,7 +239,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_int(mesh.shader, "heightmap", 0);
 	B_set_uniform_float(mesh.shader, "patch_size", (float)patch_size);
 	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
-	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4);
+	B_set_uniform_float(mesh.shader, "terrain_chunk_size", get_terrain_xz_scale()*4.0f);
 	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
 	B_set_uniform_vec2(mesh.shader, "base_offset", offset);
@@ -248,6 +249,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
 	B_set_uniform_float(mesh.shader, "max_distance", max_distance);;
 	B_set_uniform_float(mesh.shader, "sea_level", SEA_LEVEL);
+	B_set_uniform_int(mesh.shader, "terrain_chunk_dimension", get_terrain_chunk_dimension());
+	B_set_uniform_float(mesh.shader, "xz_scale", get_terrain_xz_scale());
 
 	for (int i = 0; i < 8; ++i)
 	{
@@ -268,7 +271,6 @@ void draw_grass_patches(Plant grass_patches[9],
 			uint64_t terrain_index)
 {
 	static float time = 0.0f;
-	int offset = -50;
 	int x_counter = -1;
 	int z_counter = -1;
 	for (int i = 0; i < 9; ++i)
@@ -333,8 +335,6 @@ void draw_grass_patches(Plant grass_patches[9],
 			z_counter++;
 		}
 	}
-	
-	offset += 50;
 	time += 1.0f;
 }
 

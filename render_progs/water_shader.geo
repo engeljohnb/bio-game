@@ -103,7 +103,7 @@ void main()
 		for (int j = 0; j < 6; ++j)
 		{
 			vec3 normal = get_frustum_normal(j);
-			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -30)
+			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -70)
 			{
 				in_frustum = false;
 				break;

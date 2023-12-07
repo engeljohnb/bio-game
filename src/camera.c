@@ -51,7 +51,7 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 	glm_lookat(frontpos, position, VEC3_Y_UP, camera.view_space);
 
 	g_camera_height = camera.position[1];
-	
+
 	return camera;
 }
 
@@ -79,6 +79,7 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 	static int camera_scroll = 55;
 	camera_scroll += player.command_state.wheel_increment;
 	glm_vec3_copy(player.position, camera->position);
+
 	mat4 translate;
 	glm_mat4_identity(translate);
 	vec3 up;

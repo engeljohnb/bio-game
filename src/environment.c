@@ -173,15 +173,16 @@ DirectionLight get_weather_light(EnvironmentCondition environment_condition)
 	vec3 final_color;
 	vec3 direction;
 	glm_vec3_copy(VEC3(0.0f, 1.0f, 1.0f), direction);
-
 	glm_vec3_copy(VEC3(1.0f, 0.92f, 0.83f), sunny_color);
-	glm_vec3_copy(VEC3(0.8f, 0.8f, 1.0f), cloudy_color);
+	glm_vec3_copy(VEC3(0.9f, 0.9f, 0.9f), cloudy_color);
 
 	glm_vec3_lerp(sunny_color, cloudy_color, environment_condition.percent_cloudy, final_color);
 	DirectionLight dir; 
 	glm_vec3_copy(direction, dir.direction);
 	glm_vec3_copy(final_color, dir.color);
-	dir.intensity = (0.8 - environment_condition.percent_cloudy/1.25f);
+	TimeOfDay tod = get_time_of_day();
+	float intensity = glm_percent(0.3f, 0.8f, tod.sky_lighting.intensity);
+	dir.intensity = intensity;//((intensity*0.3f) - environment_condition.percent_cloudy/1.25f);
 	return dir;
 }
 
@@ -214,7 +215,7 @@ EnvironmentCondition get_environment_condition(uint64_t terrain_index)
 		percent_cloudy = 0.0f;
 	}
 
-	EnvironmentCondition cond = { temperature, precipitation, percent_cloudy};
+	EnvironmentCondition cond = { temperature, precipitation, percent_cloudy };
 
 	return cond;
 }
@@ -391,6 +392,27 @@ void get_current_tod_sky_color(int current_phase, double current_time, vec3 dest
 	}
 }
 
+float get_current_tod_light_intensity(int current_phase, double current_time)
+{
+	if ((current_phase == B_NIGHT) || (current_phase == B_MORNING))
+	{
+		float seconds_into_phase = current_time;
+		float percent = seconds_into_phase/(12.0f*SECONDS_PER_IN_GAME_HOUR);
+		return lerp(0.3f, 2.5f, percent); 
+	}
+	else if ((current_phase == B_AFTERNOON) || (current_phase == B_EVENING))
+	{
+		float seconds_into_phase = current_time - (B_MIDDAY_TIME * SECONDS_PER_IN_GAME_HOUR);
+		float percent = seconds_into_phase/(12.0f*SECONDS_PER_IN_GAME_HOUR);
+		return lerp(2.5f, 0.3f, percent);					
+	}
+
+	else
+	{
+		fprintf(stderr, "get_current_tod_light_intensity error: This definitely should not be executing\n");
+		exit(-1);
+	} 
+}
 void get_current_tod_light_color(int current_phase, double current_time, vec3 dest)
 {
 	switch (current_phase)
@@ -452,15 +474,51 @@ void get_current_tod_light_color(int current_phase, double current_time, vec3 de
 
 		default:
 		{
-			fprintf(stderr, "get_current_tod_sky_color error: This definitely should not be executing\n");
+			fprintf(stderr, "get_current_tod_light_color error: This definitely should not be executing\n");
 			exit(-1);
 		} break;
 	}
 }
+
+float get_tod_dew_fog_percent(int current_phase, float current_time)
+{
+	switch (current_phase)
+	{
+		case B_MORNING:
+		{
+			float seconds_into_phase = current_time - (B_SUNRISE_TIME*SECONDS_PER_IN_GAME_HOUR);
+			return seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
+		} break;
+
+		case B_AFTERNOON:
+		{
+			return 0.0f;
+		} break;
+
+		case B_EVENING:
+		{
+			return 0.0f;
+		} break;
+
+		case B_NIGHT:
+		{
+			float seconds_into_phase = current_time;
+			return 1.0f - (seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR));
+		} break;
+
+		default:
+		{
+			fprintf(stderr, "get_current_tod_light_color error: This definitely should not be executing\n");
+			exit(-1);
+		} break;
+	}
+
+}
+
 TimeOfDay get_time_of_day(void)
 {
 	TimeOfDay time_of_day = {0};
-	double current_time = B_get_seconds_into_current_phase();
+	double current_time = B_get_seconds_into_current_day();
 	//current_time += 15.0 * SECONDS_PER_IN_GAME_HOUR;
 	time_of_day.current_phase = get_current_tod_phase(current_time);
 	get_current_tod_sky_color(time_of_day.current_phase, current_time, time_of_day.sky_color);
@@ -469,8 +527,23 @@ TimeOfDay get_time_of_day(void)
 	vec3 light_color;
 	get_current_tod_light_direction(time_of_day.current_phase, current_time, light_direction);
 	get_current_tod_light_color(time_of_day.current_phase, current_time, light_color);
-	DirectionLight light = create_direction_light(light_direction, light_color, 0.3);
+	float light_intensity = get_current_tod_light_intensity(time_of_day.current_phase, current_time);
+	DirectionLight light = create_direction_light(light_direction, light_color, light_intensity);
 	time_of_day.sky_lighting = light;
+
+	time_of_day.dew_fog_percent = get_tod_dew_fog_percent(time_of_day.current_phase, current_time);
+
+	/*fprintf(stderr, "DIRECTION:\t");
+	print_vec3(light_direction);
+	fprintf(stderr, "COLOR:\t\t");
+	print_vec3(light_color);
+	fprintf(stderr, "SKY:\t\t");
+	print_vec3(time_of_day.sky_color);
+	fprintf(stderr, "INT:\t\t%f", light_intensity);
+	char tod_phase[128] = {0};
+	tod_phase_to_string(time_of_day.current_phase, tod_phase);
+	fprintf(stderr, "%s", tod_phase);
+	fprintf(stderr, "\n\n");*/
 
 	return time_of_day;
 }

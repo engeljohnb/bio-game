@@ -196,24 +196,11 @@ float psrdnoise(vec2 x, vec2 period, float alpha, out vec2 gradient)
 
 void main(void)
 {
+	float grid_square_width = (xz_scale*4.0)/16.0;
+	float grid_square_height = (xz_scale*4.0)/16.0;
 
-	float vertices_per_column = (gl_WorkGroupSize.x * gl_NumWorkGroups.x);
-	float vertices_per_row = (gl_WorkGroupSize.y * gl_NumWorkGroups.y);
-
-	uint x_block_index = my_block_index % MAX_TERRAIN_BLOCKS;
-	uint z_block_index = my_block_index / MAX_TERRAIN_BLOCKS;
-	uint x_block_offset = x_block_index * uint(vertices_per_column);
-	uint z_block_offset = z_block_index * uint(vertices_per_row);
-
-	float x_index = float(gl_GlobalInvocationID.x);
-	float z_index = float(gl_GlobalInvocationID.y);
-	float x_offset = (x_index + float(x_block_offset));
-	float z_offset = (z_index + float(z_block_offset));
-
-	vec2 pos = (vec2(x_offset, z_offset)/xz_scale)*5;
-	uint x_texel = uint(x_index) + uint(x_counter * vertices_per_row);
-	uint z_texel = uint(z_index) + uint(z_counter * vertices_per_column);
-	ivec2 tex_coords = ivec2(x_texel, z_texel);
+	vec2 pos = vec2((grid_square_width*gl_GlobalInvocationID.x), (grid_square_height*gl_GlobalInvocationID.y));
+	ivec2 tex_coords = ivec2(int(pos.x/grid_square_width), int(pos.y/grid_square_height));
 	float height = fbm(pos);
 	float scale = fbm(pos/10);
 	float snow = 0.0;
@@ -227,5 +214,4 @@ void main(void)
 	}
 	
 	imageStore(data, tex_coords, vec4(height,scale,snow,0.0));
-	//imageStore(data, tex_coords, vec4(1.0));
 }

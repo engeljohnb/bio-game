@@ -21,6 +21,7 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 #include "common.h"
+#include "terrain.h"
 #include "window.h"
 
 int g_window_width = -1;
@@ -41,7 +42,8 @@ void B_init(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	set_view_distance((float)((TERRAIN_XZ_SCALE*4)));
+	set_terrain_chunk_dimension(3);
+	set_view_distance((float)(get_terrain_xz_scale()*4));
 }
 
 B_Window B_create_server_window(void)

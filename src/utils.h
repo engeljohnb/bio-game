@@ -39,15 +39,35 @@
 #define BG_FREE(ptr) _bg_free(ptr)
 #define BG_MALLOC(type, count) (type *)_bg_malloc(sizeof(type)*count)
 
+int even(int a);
+float percent(float min, float max, float x);
+double percent_double(double min, double max, double x);
 float signed_angle_vec3_xz(vec3 v0, vec3 v1);
 
-void bilinearly_interpolate_vec3(vec3 q00,
+double bilinearly_interpolate_double(double x0,
+				   double x1,
+				   double y0,
+				   double y1,
+				   double q00,
+				   double q01,
+				   double q10,
+			           double q11,
+			    	   double x,
+				   double y);
+
+void _bilinearly_interpolate_vec3(vec3 q00,
 				 vec3 q01,
 				 vec3 q10,
 				 vec3 q11,
 				 vec3 pos,
 				 vec3 dest);
 
+void bilinearly_interpolate_vec3(
+    const vec3 q11, const vec3 q12, 
+    const vec3 q21, const vec3 q22, 
+    const vec3 pos, 
+    vec3 dest);
+float _bilinearly_interpolate_float(float q11, float q12, float q21, float q22, float x, float y);
 float bilinearly_interpolate_float(float x0,
 				   float x1,
 				   float y0,
@@ -126,4 +146,5 @@ void cat_to(char *first, char *second, char *dest, size_t size);
 void *_bg_malloc(size_t size);
 int file_exists(const char *filename);
 char *get_directory_name(const char *file);
+float lerp(float a, float b, float f);
 #endif

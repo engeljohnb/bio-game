@@ -20,7 +20,7 @@
 #define __TIME_H__
 
 #include <SDL2/SDL.h>
-#define FPS_30 33
+#define DELTA_T 15
 #define MINUTES_PER_IN_GAME_DAY 5
 #define MINUTES_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_DAY/24.0f)
 #define SECONDS_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_HOUR*60)
@@ -56,6 +56,6 @@ double B_get_current_second(void);
 double B_get_current_minute(void);
 double B_get_current_playtime_hour(void);
 double B_get_current_in_game_hour(void);
-double B_get_seconds_into_current_phase(void);
+double B_get_seconds_into_current_day(void);
 	
 #endif

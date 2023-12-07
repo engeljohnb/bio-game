@@ -30,13 +30,24 @@ const int MAX_BONES = 25;
 out vec3 f_normal;
 out vec3 f_position;
 out vec2 f_tex_coords;
+uniform float terrain_block_size;
+uniform float terrain_chunk_dimension;
+uniform sampler2D terrain_heightmap;
 uniform mat4 world_space;
 uniform mat4 projection_view_space;
 uniform mat4 bone_matrices[25];
 
+mat4 translate(vec3 delta)
+{
+    return mat4(
+        vec4(1.0, 0.0, 0.0, 0.0),
+        vec4(0.0, 1.0, 0.0, 0.0),
+        vec4(0.0, 0.0, 1.0, 0.0),
+        vec4(delta, 1.0));
+}
+
 void main()
 {
-	mat3 normal_world_space = mat3(transpose(inverse(world_space)));
 	vec4 final_position = vec4(v_position, 1.0f);
 	vec3 final_normal = vec3(normal);
 	for (int i = 0; i < 4; ++i)
@@ -52,6 +63,8 @@ void main()
 		final_normal += local_normal;
 	}
 
+
+	mat3 normal_world_space = transpose(inverse(mat3(world_space)));
 	gl_Position = (projection_view_space * world_space * final_position);
 	f_normal = normalize(normal_world_space * final_normal);
 	f_position = vec3(world_space * vec4(v_position, 1.0));

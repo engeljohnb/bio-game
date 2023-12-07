@@ -22,22 +22,24 @@
 #include <glad/glad.h>
 #include "utils.h"
 
+/* NOTE TO STRANGERS: The worlds are generated differently on different machines. These shortcuts are for me
+ * during development, but won't work on your machine. Sorry :\ */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)9200029000)
 
 /* Center of map */
 //#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
 /* Super duper grassy area */
-//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1745060245)
+#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1745060245)
 
 /* Warm/cold area border */
-//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192526)
-
-/* Warm/cold area border */
-#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192528)
+//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192528)
 
 /* Desert */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1649960493)
+
+/* Weird floating ice */
+//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1032650346)
 
 /* Snowy area */
 //#define PLAYER_TERRAIN_INDEX_START 1250550005 
@@ -45,13 +47,14 @@
 /* Warm area */
 //#define PLAYER_TERRAIN_INDEX_START 1249349995
 //#define PLAYER_TERRAIN_INDEX_START 302093068
+
 #define SEA_LEVEL 100
 
 /* MAX_TERRAIN_BLOCKS is not the total maximum number of terrain blocks, but rather the 
  * total number of terrain blocks in either the x or z direction. So the total number
  * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
 #define MAX_TERRAIN_BLOCKS 100000
-#define TERRAIN_XZ_SCALE 300
+//#define get_terrain_xz_scale() (300*get_view_distance_factor())
 
 typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
@@ -71,7 +74,8 @@ typedef struct DirectionLight
 	float	intensity;
 } DirectionLight;
 
-
+int get_terrain_xz_scale(void);
+int set_terrain_xz_scale(int xz_scale);
 void set_view_distance(float distance);
 float get_view_distance(void);
 DirectionLight create_direction_light(vec3 direction, vec3 color, float intensity);
