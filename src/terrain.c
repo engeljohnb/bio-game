@@ -231,7 +231,7 @@ void B_draw_water_mesh(TerrainMesh mesh,
 			float camera_height)
 {
 
-	float time = (float)(SDL_GetTicks64()/100.0f);
+	float time = (float)(SDL_GetTicks64()/150.0f);
 	glUseProgram(shader);
 	EnvironmentCondition cond = get_environment_condition(my_block_index);
 	if (cond.precipitation < 0.2)
@@ -269,26 +269,6 @@ void B_draw_water_mesh(TerrainMesh mesh,
 	
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
-	/*static int up = 1;
-	if (up)
-	{
-		time += 0.01f;
-	}
-	else
-	{
-		time -= 0.01f;
-	}
-	if (time > 10000.0f)
-	{
-		if (up)
-		{
-			up = 0;
-		}
-		else
-		{
-			up = 1;
-		}
-	}*/
 }
 
 void B_draw_terrain_mesh(TerrainMesh mesh, 

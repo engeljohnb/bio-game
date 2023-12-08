@@ -78,6 +78,13 @@ void my_rotate(vec3 forward, vec3 up, mat4 result)
 	glm_mat4_copy(rotation, result);
 }
 
+void set_actor_action(Actor *actor, int action)
+{
+	actor->model->current_animation = actor->animations[action];
+	actor->model->current_animation->time_reference = SDL_GetTicks64()/10.0f;
+	actor->model->current_animation->current_time = 0.0f;
+}
+
 void update_actor_model(ActorModel *model, ActorState actor_state)
 {
 	glm_mat4_copy(model->original_position, model->world_space);

@@ -20,7 +20,6 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			int x_offset, 
 			int z_offset, 
 			int patch_size, 
-			float time, 
 			vec2 base_offset);
 
 void draw_grass_patches(Plant grass_patches[9],

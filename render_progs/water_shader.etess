@@ -38,6 +38,7 @@ out ETESS_OUT
 {
 	float xz_scale;
 	vec2 g_tex_coords;
+	float g_sea_level;
 } etess_out;
 
 void main()

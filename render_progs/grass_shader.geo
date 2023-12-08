@@ -122,7 +122,7 @@ void main()
 	}
 
 	int half_dimension = int(terrain_chunk_dimension)/2;
-	float min_xz = -(xz_scale*4.0) * float(half_dimension);
+	float min_xz = -half_dimension*(4.0*xz_scale);
 	float max_xz = float(half_dimension+1) * (xz_scale*4.0);
 	min_xz -= 0.03*xz_scale;
 	max_xz -= 0.03*xz_scale;
@@ -132,6 +132,7 @@ void main()
 	vec4 height_color = texture(heightmap, tex_coords);
 	float height = height_color.r * (height_color.g * 2500);
 	height += 0.5;
+
 	if (height < sea_level)
 	{
 		render = false;

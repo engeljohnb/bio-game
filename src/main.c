@@ -43,6 +43,7 @@
 
 
 // UP NEXT:
+// 	Make it so grass and actor animations don't slow down with a slow frame rate.
 // 	Add pause button
 // 	Implement trees
 
@@ -138,6 +139,7 @@ void game_loop(void)
 	glm_vec3_sub(all_actors[player_id].actor_state.position, VEC3(-200.0f, -20.0f, 0.0f), position);
 
 	FILE *rain_log = fopen("rain_time_log.txt", "w");
+	
 	while (running)
 	{
 		// Input update
@@ -231,7 +233,7 @@ void game_loop(void)
 
 		// TODO: Does this need to be done for all actors, or just the player?
 	
-		environment_condition.percent_cloudy = 0.0f;
+		//environment_condition.percent_cloudy = 0.0f;
 		//environment_condition.percent_cloudy = 1.0f;
 		for (unsigned int i = 0; i < num_actors; ++i)
 		{
@@ -284,7 +286,6 @@ void game_loop(void)
 			glViewport(0, 0, window_width/2, window_height/2);
 		}
 
-
 		glBindFramebuffer(GL_FRAMEBUFFER, renderer.g_buffer);
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -294,6 +295,7 @@ void game_loop(void)
 				   projection_view, 
 				   all_actors[player_id].actor_state.current_terrain_index, 
 				   renderer.camera.position[1]);
+
 
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
@@ -308,6 +310,7 @@ void game_loop(void)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		B_draw_actors(all_actors, actor_shader, num_actors, renderer);
+
 		draw_grass_patches(grass_patches,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
@@ -331,6 +334,7 @@ void game_loop(void)
 						    projection_view,
 						    all_actors[player_id].actor_state.position);
 				}
+
 				else
 				{
 					B_draw_rain(rain_mesh,
@@ -343,6 +347,7 @@ void game_loop(void)
 		}
 		prev_cloudy = environment_condition.percent_cloudy;
 
+
 		PointLight player_light;
 		memset(&player_light, 0, sizeof(PointLight));
 		/* Positions of lights and actors are scaled by 0.01 during the lighting pass, so coordinates of lights should be multiplied by 100
@@ -350,7 +355,7 @@ void game_loop(void)
 		glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(0.0, 100.0, -30.0), player_light.position);
 		glm_vec3_copy(VEC3(1.0, 1.0, 1.0), player_light.color);
 		player_light.intensity = 2.0f;
-
+		
 		glViewport(0, 0, window_width, window_height);
 
 		vec3 sky_color;
@@ -372,7 +377,6 @@ void game_loop(void)
 				  tod.dew_fog_percent,
 				  all_actors[player_id].actor_state.command_state.mode);
 		B_flip_window(renderer.window);
-
 		frames++;
 	}
 

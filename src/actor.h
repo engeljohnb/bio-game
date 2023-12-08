@@ -25,6 +25,11 @@
 
 #define CURRENT_PLAYER 0
 
+enum
+{
+	ACTOR_ACTION_WALK
+};
+
 /* An actor is a player or an NPC. The Actor struct has all information about the actor, including graphics,
  * while the ActorState struct (see actor_state.h) has only the information needed for network communication. */
 typedef struct Actor
@@ -43,4 +48,5 @@ void update_actor(Actor *actor, ActorState actor_state);
 void B_draw_actors(Actor *all_actors, B_Shader shader, unsigned int num_actors, Renderer renderer);
 void free_actor(Actor actor);
 Actor create_default_npc(unsigned int id);
+void set_actor_action(Actor *actor, int action);
 #endif

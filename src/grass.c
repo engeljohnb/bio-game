@@ -192,7 +192,6 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			int x_offset, 
 			int z_offset, 
 			int patch_size, 
-			float time, 
 			vec2 base_offset)
 {
 	/* If base offset bleeds into another terrain block, don't draw.*/
@@ -229,6 +228,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	{
 		return;
 	}
+
+	float time = SDL_GetTicks64()/800.0f;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
@@ -270,7 +271,6 @@ void draw_grass_patches(Plant grass_patches[9],
 			vec3 player_facing,
 			uint64_t terrain_index)
 {
-	static float time = 0.0f;
 	int x_counter = -1;
 	int z_counter = -1;
 	for (int i = 0; i < 9; ++i)
@@ -324,7 +324,6 @@ void draw_grass_patches(Plant grass_patches[9],
 					   x_counter, 
 					   z_counter, 
 					   patch_size, 
-					   time, 
 					   grass_patches[i].xz_location);
 		
 		}
@@ -335,7 +334,6 @@ void draw_grass_patches(Plant grass_patches[9],
 			z_counter++;
 		}
 	}
-	time += 1.0f;
 }
 
 TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)

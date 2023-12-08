@@ -65,7 +65,7 @@ void main()
 		displacement = displacement * inv_recenter;
 	}
 
-	float wind_distance = (time * rand_num)/75;
+	float wind_distance = (time * rand_num);
 	float angle = radians(sin(wind_distance*2))*2;
 
 	vec3 wind_rotation_axis = vec3(1, 0, 1);

@@ -103,6 +103,7 @@ typedef struct AnimationNode
  * The root animation node should be the first in the node_array, unless I've done something wrong. */
 typedef struct Animation
 {
+	float		time_reference;
 	float		current_time;
 	float		duration;
 	int		num_nodes;

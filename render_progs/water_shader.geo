@@ -25,6 +25,7 @@ uniform vec3 frustum_corners[8];
 uniform int temperature;
 uniform float precipitation;
 
+out float f_sea_level;
 out vec3 f_position;
 out vec3 f_normal;
 out vec2 f_offset;
@@ -34,6 +35,7 @@ in ETESS_OUT
 {
 	float xz_scale;
 	vec2 g_tex_coords;
+	float g_sea_level;
 } gs_in[];
 
 vec3 get_frustum_normal(int i)
@@ -116,6 +118,7 @@ void main()
 		f_position = vec3(gl_in[i].gl_Position);
 		vec4 pos = projection_view_space * gl_in[i].gl_Position; 
 		f_tex_coords = gs_in[i].g_tex_coords;
+		f_sea_level = gs_in[i].g_sea_level;
 
 		gl_Position = pos;
 		EmitVertex();

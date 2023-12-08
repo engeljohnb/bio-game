@@ -31,7 +31,6 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	static float current_time = 0.0f;
 	glBindVertexArray(model->mesh->vao);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -47,7 +46,7 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 	{
 		for (int i = 0; i < model->current_animation->num_nodes; ++i)
 		{
-			advance_animation(model->current_animation->node_array[i], current_time);
+			advance_animation(model->current_animation->node_array[i], model->current_animation->current_time);
 		}
 		apply_animation(model->current_animation->node_array, model->current_animation->node_array[0], 
 				 model->bone_array, model->bone_array[0], 
@@ -65,10 +64,12 @@ void B_draw_actor_model(ActorModel *model, Camera camera, B_Shader shader)
 			snprintf(string, 128, "bone_matrices[%i]", i);
 			B_set_uniform_mat4(shader, string, GLM_MAT4_IDENTITY);
 		}
-		current_time += 15.0;
-		if (current_time >= model->current_animation->duration)
+
+		model->current_animation->current_time += ((SDL_GetTicks64()/10.0f) - model->current_animation->time_reference);
+		if (model->current_animation->current_time >= model->current_animation->duration)
 		{
-			current_time = 0.0f;
+			model->current_animation->current_time = 0.0f;
+			model->current_animation->time_reference = SDL_GetTicks64()/10.0f;
 		}
 	}
 
