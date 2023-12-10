@@ -195,18 +195,22 @@ void main()
 	f_normal = normalize(cross((b-a), (c-a)));
 	for (int i = 0; i < gl_in.length(); ++i)
 	{
-		if (camera_height > sea_level)
+		// If it's a desert, there's no water, so always draw all of the land.
+		if (precipitation > 0.2)
 		{
-			if (gl_in[i].gl_Position.y < sea_level-7.0)
+			if (camera_height > sea_level)
 			{
-				continue;
+				if (gl_in[i].gl_Position.y < sea_level-15.0)
+				{
+					continue;
+				}
 			}
-		}
-		else
-		{
-			if (gl_in[i].gl_Position.y > sea_level+7.0)
+			else
 			{
-				continue;
+				if (gl_in[i].gl_Position.y > sea_level+15.0)
+				{
+					continue;
+				}
 			}
 		}
 
