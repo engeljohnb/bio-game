@@ -21,6 +21,7 @@
 #include <libgen.h>
 #include <string.h>
 #include <cglm/cglm.h>
+#include <limits.h>
 #include "utils.h"
 
 int even(int a)
@@ -171,7 +172,7 @@ double percent_double(double min, double max, double x)
 
 char *get_directory_name(const char *file)
 {
-	char *dir_name = BG_MALLOC(char, 512);
+	char *dir_name = BG_MALLOC(char, PATH_MAX);
 	dir_name = realpath(file, dir_name);
 	dir_name = dirname(dir_name);
 	if (dir_name == NULL)
@@ -512,7 +513,12 @@ int B_load_file(const char *filename, char *buff, int size)
 		read_size = size;
 	}
 	memset(buff, 0, size);
-	fread(buff, read_size, 1, fp);
+	if ((fread(buff, read_size, 1, fp) == 0) && (ferror(fp)))
+	{
+		fclose(fp);
+		fprintf(stderr, "Couldn't read file %s\n", filename);
+		exit(-1);
+	}
 
 	fclose(fp);
 	return 0;

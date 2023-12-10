@@ -5,6 +5,7 @@
 #include "grass.h"
 #include "noise.h"
 #include "utils.h"
+#include "camera.h"
 
 // DEBUG
 #include "input.h"
@@ -271,6 +272,10 @@ void draw_grass_patches(Plant grass_patches[9],
 			vec3 player_facing,
 			uint64_t terrain_index)
 {
+	if (get_camera_height() < SEA_LEVEL)
+	{
+		return;
+	}
 	int x_counter = -1;
 	int z_counter = -1;
 	for (int i = 0; i < 9; ++i)

@@ -39,6 +39,7 @@ out ETESS_OUT
 	float xz_scale;
 	vec2 g_tex_coords;
 	float g_sea_level;
+	float g_terrain_height;
 } etess_out;
 
 void main()
@@ -48,10 +49,8 @@ void main()
 
 	int my_x_block_index = (my_block_index % MAX_TERRAIN_BLOCKS);
 	int my_z_block_index = my_block_index / MAX_TERRAIN_BLOCKS;
-
 	int player_x_block_index = player_block_index % MAX_TERRAIN_BLOCKS;
 	int player_z_block_index = player_block_index / MAX_TERRAIN_BLOCKS;
-
 	float x_block_offset = (my_x_block_index - player_x_block_index);
 	float z_block_offset = (my_z_block_index - player_z_block_index);
 
@@ -61,34 +60,34 @@ void main()
 	// The x and y offset for how much to displace this vertex within it's own block.
 	float x_index = float(int(gl_PrimitiveID % patches_per_column));
 	float z_index = floor(gl_PrimitiveID / patches_per_column);
-
 	float x_offset = x_index;
 	float z_offset = z_index;
 
-	vec3 pos = vec3(u+x_offset, 0, v+z_offset);
-	pos += vec3(x_block_offset, 0, z_block_offset);
+	vec3 pos = vec3(u+x_offset+x_block_offset, 0, v+z_offset+z_block_offset);
 
 	int half_dimension = int(terrain_chunk_dimension)/2;
 	float min_xz = float(half_dimension) * -4.0;
 	float max_xz = float(half_dimension+1) * 4.0;
-
 	min_xz -= 0.03;
 	max_xz -= 0.03;
-
 	vec2 tex_coords = (pos.xz - min_xz)/(max_xz-min_xz);
 
 	pos *= xz_scale;
 	vec2 height = texture(heightmap, tex_coords).rg;
+	float terrain_height = height.r * (height.g * 2500.0);
 	float temporal_factor = (sin(time*height.r) + cos(time*height.g))/4.0;
 	pos.y += sea_level;
 	pos.y += height.r * (temporal_factor * height_factor);
 	if (temperature < 32)
 	{
+	
 		pos.y = sea_level;
 	}
 
 	vec4 position = vec4(pos, 1.0);
-	etess_out.g_tex_coords = tex_coords;
 	etess_out.xz_scale = xz_scale;
+	etess_out.g_tex_coords = tex_coords;
+	etess_out.g_sea_level = sea_level;
+	etess_out.g_terrain_height = terrain_height;
 	gl_Position = position;
 }

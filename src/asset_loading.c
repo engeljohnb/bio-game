@@ -29,8 +29,8 @@ char *B_get_texture_name(const char *parent_directory, const char *node_name)
 {
 	// First, remove all the numbers and dots -- we only need the base name.
 	char new_node_name[256] = {0};
-	strncpy(new_node_name, node_name, 256);
-	for (size_t i = 0; i < strnlen(new_node_name, 256); ++i)
+	strncpy(new_node_name, node_name, 255);
+	for (size_t i = 0; i < strnlen(new_node_name, 255); ++i)
 	{
 		if (new_node_name[i] == '.')
 		{
@@ -364,10 +364,12 @@ ActorModel *B_load_model_from_file(const char *filename)
 {
 	ActorModel *model = NULL;
 	model = BG_MALLOC(ActorModel, 1);
+
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	char *dir_name = get_directory_name(filename);
 	B_load_ai_scene(scene, model, dir_name);
 	aiReleaseImport(scene);
+
 	BG_FREE(dir_name);
 	return model;
 }

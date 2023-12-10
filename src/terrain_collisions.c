@@ -57,6 +57,37 @@ float get_height_from_pixel_index(unsigned int index, TerrainChunk *terrain_chun
 	return final_height;
 }
 
+float get_raw_terrain_height_outside_bounds(vec3 pos, TerrainChunk *terrain_chunk)
+{
+	unsigned int total_heightmap_width = terrain_chunk->heightmap_width;
+	unsigned int total_heightmap_height= terrain_chunk->heightmap_height;
+
+	int half_dimension = (int)terrain_chunk->dimension/2;
+	float mesh_height = (get_terrain_xz_scale()*4) * terrain_chunk->dimension;
+	float mesh_width = (get_terrain_xz_scale()*4) * terrain_chunk->dimension;
+
+	float percent_x = percent(-1200*half_dimension, mesh_width, pos[0]);
+	float percent_z = percent(-1200*half_dimension, mesh_height, pos[2]);
+
+	int pixel_x = round(total_heightmap_width * percent_x);
+	int pixel_z = round(total_heightmap_height * percent_z);
+
+	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
+
+	if (index > terrain_chunk->heightmap_size)
+	{
+		fprintf(stderr, "get_raw_terrain_height_outside_bounds error: Trying to access index %u from buffer of size %u.\n", index, terrain_chunk->heightmap_size);
+		exit(-1);
+	}
+
+	float final_height = terrain_chunk->heightmap_buffer[index].value * (terrain_chunk->heightmap_buffer[index].scale*TERRAIN_HEIGHT_FACTOR);
+	if (terrain_chunk->heightmap_buffer[index].snow >= 0.36)
+	{
+		final_height += 2.5;
+	}
+	return final_height;
+}
+
 float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 {
 	unsigned int total_heightmap_width = terrain_chunk->heightmap_width;
@@ -72,13 +103,13 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	int pixel_x = round(section_heightmap_width * percent_x);
 	int pixel_z = round(section_heightmap_height * percent_z);
 
-	int offset = terrain_chunk->dimension/2;
-	pixel_x += section_heightmap_width*offset;
-	pixel_z += section_heightmap_height*offset;
+	int half_dimension = terrain_chunk->dimension/2;
+	pixel_x += section_heightmap_width*half_dimension;
+	pixel_z += section_heightmap_height*half_dimension;
 
 	unsigned int index = (pixel_z * total_heightmap_width) + pixel_x;
 
-	if (index >= terrain_chunk->heightmap_size)
+	if (index > terrain_chunk->heightmap_size)
 	{
 		fprintf(stderr, "get_raw_terrain_height error: Trying to access index %u from buffer of size %u.\n", index, terrain_chunk->heightmap_size);
 		exit(-1);
@@ -92,60 +123,10 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	return final_height;
 }
 
+
 void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk)
 {
 	pos[1] = get_terrain_height(pos, terrain_chunk);
-}
-
-void find_nearest_grid_coord(vec3 pos, TerrainChunk *terrain_chunk, vec2 dest)
-{
-	vec2 player_coord;
-	glm_vec2_copy(VEC2(pos[0], pos[2]), player_coord);
-
-	int range_start = 0;
-	int range_end = terrain_chunk->heightmap_size;
-	int current_index = terrain_chunk->heightmap_size/2;
-	for (size_t i = 0; i < terrain_chunk->heightmap_size; ++i)
-	{
-		float x0 = (float)(current_index % terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-		float z0 = floor(current_index / terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-
-		float x1 = (float)((current_index-1) % terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-		float z1 = floor((current_index-1) / terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-
-		float distance0 = glm_vec2_distance(VEC2(x0, z0), player_coord);
-		float distance1 = glm_vec2_distance(VEC2(x1, z1), player_coord);
-
-		if (distance0 >= distance1)
-		{
-			range_end -= (range_end - range_start)/2;
-		}
-		else
-		{
-			range_start += (range_end - range_start)/2;
-		}
-		if (range_start == range_end)
-		{
-			glm_vec3_copy(VEC2(x0, z0), dest);
-			return;
-		}
-		current_index = range_end - ((range_end-range_start)/2);
-	}
-
-	float x = (float)(current_index % terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-	float z = floor(current_index / terrain_chunk->heightmap_width) * get_terrain_xz_scale();
-	glm_vec3_copy(VEC2(x, z), dest);
-}
-
-void find_nearest_grid_square(vec3 pos, TerrainChunk *terrain_chunk, vec2 dest)
-{
-	/* Size / num_vertices */
-	float grid_square_size = (get_terrain_xz_scale() * 4) / (4 * terrain_chunk->tessellation_level * terrain_chunk->dimension);
-	int x_index = (int)round(pos[0] / grid_square_size);
-	int z_index = (int)round(pos[2] / grid_square_size);
-
-	dest[0] = x_index * grid_square_size;
-	dest[1] = z_index * grid_square_size;
 }
 
 void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_chunk, vec4 dest)

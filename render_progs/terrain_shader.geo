@@ -23,9 +23,11 @@ layout (triangle_strip, max_vertices=3) out;
 uniform mat4 projection_view_space;
 uniform vec3 frustum_corners[8];
 uniform int temperature;
+uniform float camera_height;
 uniform int heightmap_width;
 uniform int heightmap_height;
 uniform float precipitation;
+uniform float sea_level;
 uniform sampler2D heightmap;
 
 out vec3 f_position;
@@ -35,6 +37,7 @@ out vec2 f_offset;
 out vec2 f_tex_coords;
 out float f_snow_value;
 out vec3 f_snow_normal;
+out float f_sea_level;
 
 in ETESS_OUT
 {
@@ -190,16 +193,29 @@ void main()
 	vec3 b = vec3(gl_in[1].gl_Position);
 	vec3 c = vec3(gl_in[2].gl_Position);
 	f_normal = normalize(cross((b-a), (c-a)));
-
 	for (int i = 0; i < gl_in.length(); ++i)
 	{
+		if (camera_height > sea_level)
+		{
+			if (gl_in[i].gl_Position.y < sea_level-2.0)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if (gl_in[i].gl_Position.y > sea_level+5.0)
+			{
+				continue;
+			}
+		}
+
 		bool in_frustum = true;
 		for (int j = 0; j < 6; ++j)
 		{
 			vec3 normal = get_frustum_normal(j);
 			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -70)
 			{
-				in_frustum = false;
 				break;
 			}
 		}
@@ -221,6 +237,8 @@ void main()
 			f_snow_normal = get_snow_normal(vec3(gl_in[i].gl_Position), gs_in[i].g_tex_coords, gs_in[i].xz_scale);
 		}
 		f_color = texture(heightmap, gs_in[i].g_tex_coords).xyz;
+
+		f_sea_level = sea_level;
 
 		gl_Position = pos;
 		EmitVertex();

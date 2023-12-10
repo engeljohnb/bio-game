@@ -27,8 +27,8 @@ in vec3 f_color;
 in vec3 f_normal;
 in vec2 f_tex_coords;
 in float f_sea_level;
+in float f_camera_height;
 
-uniform float camera_height;
 uniform int temperature;
 uniform float precipitation;
 
@@ -93,7 +93,7 @@ void main()
 	vec3 underwater_color = vec3(0.20f, 0.22f, 0.82f);
 	vec3 ice_color = vec3(0.15, 0.15, 0.25);
 
-	if (camera_height < f_sea_level)
+	if (f_camera_height < f_sea_level)
 	{
 		frag_color = underwater_color;
 	}

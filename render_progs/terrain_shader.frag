@@ -27,11 +27,10 @@ in vec3 f_normal;
 in vec2 f_tex_coords;
 in float f_snow_value;
 in vec3 f_snow_normal;
+in float f_sea_level;
 
-//uniform vec3 interpolation_samples[4];
 uniform int temperature;
 uniform float precipitation;
-uniform float sea_level;
 
 
 bool float_close_enough(float a, float b)
@@ -63,7 +62,7 @@ void main()
 	{
 		frag_color = mix(desert_color, base_color, 0.2-precipitation);
 	}
-	if ((f_position.y < sea_level) && (precipitation >= 0.2))
+	if ((f_position.y < f_sea_level) && (precipitation >= 0.2))
 	{
 		frag_color = vec3(0.07, 0.15, 0.25);
 	}
@@ -75,14 +74,4 @@ void main()
 		}
 		frag_color = snow_color;
 	}
-
-	/*for (int i = 0; i < 4; ++i)
-	{
-		if (vec3_equal(f_position, interpolation_samples[i]))
-		{
-			frag_color = vec3(1.0, 0.0, 0.0);
-		}
-	}*/
-
-//	frag_color = f_color;
 }

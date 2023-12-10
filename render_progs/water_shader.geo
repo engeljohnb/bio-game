@@ -25,7 +25,9 @@ uniform vec3 frustum_corners[8];
 uniform int temperature;
 uniform float precipitation;
 
+uniform float camera_height;
 out float f_sea_level;
+out float f_camera_height;
 out vec3 f_position;
 out vec3 f_normal;
 out vec2 f_offset;
@@ -36,6 +38,7 @@ in ETESS_OUT
 	float xz_scale;
 	vec2 g_tex_coords;
 	float g_sea_level;
+	float g_terrain_height;
 } gs_in[];
 
 vec3 get_frustum_normal(int i)
@@ -94,6 +97,7 @@ float get_d(int i)
 
 void main()
 {
+
 	vec3 a = vec3(gl_in[0].gl_Position);
 	vec3 b = vec3(gl_in[1].gl_Position);
 	vec3 c = vec3(gl_in[2].gl_Position);
@@ -101,6 +105,11 @@ void main()
 
 	for (int i = 0; i < gl_in.length(); ++i)
 	{
+		/*if (gs_in[i].g_terrain_height > gs_in[i].g_sea_level+5.0)
+		{
+			continue;
+		}*/
+
 		bool in_frustum = true;
 		for (int j = 0; j < 6; ++j)
 		{
@@ -119,6 +128,7 @@ void main()
 		vec4 pos = projection_view_space * gl_in[i].gl_Position; 
 		f_tex_coords = gs_in[i].g_tex_coords;
 		f_sea_level = gs_in[i].g_sea_level;
+		f_camera_height = camera_height;
 
 		gl_Position = pos;
 		EmitVertex();

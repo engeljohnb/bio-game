@@ -55,9 +55,9 @@ Actor create_player(unsigned int id)
 
 Actor create_default_npc(unsigned int id)
 {
-	Actor actor;
-	memset(&actor, 0, sizeof(Actor));
-	memset(&actor.model, 0, sizeof(ActorModel));
+	Actor actor = {0};
+	//memset(&actor, 0, sizeof(Actor));
+	//memset(&(actor.model), 0, sizeof(ActorModel));
 	actor.actor_state = create_actor_state(id, VEC3(0, 0, -5), VEC3_Z_UP);
 	actor.id = id;
 	actor.command_config = default_command_config();

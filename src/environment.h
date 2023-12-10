@@ -75,4 +75,5 @@ int camera_underwater(uint64_t terrain_index);
 void print_temperatures(uint64_t player_terrain_index);
 void log_rain_time(FILE *fp);
 void tod_phase_to_string(int phase, char *dest);
+DirectionLight combine_lights(DirectionLight a, DirectionLight b, float t);
 #endif

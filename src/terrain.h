@@ -140,7 +140,7 @@ void B_free_terrain_mesh(TerrainMesh mesh);
 void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
 void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, float camera_height);
+void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
 
 /* sets the terrain_chunk's dimension (the width and breadth of the terrain_chunk in terrain_meshes).
  * If it's even, it wil be rounded up to the next odd number. It makes the math a little easier if
@@ -156,8 +156,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 			B_Texture texture,
 			float terrain_chunk_dimesion,
 			int heightmap_width,
-			int heightmap_height,
-			int i);
+			int heightmap_height);
 void get_terrain_heightmap_size(int *w, int *h);
 TerrainMesh load_terrain_mesh_from_file(B_Framebuffer g_buffer, const char *filename);
 #endif

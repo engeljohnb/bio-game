@@ -45,8 +45,7 @@ uniform sampler2D f_color_texture;
 
 uniform float sea_level;
 uniform PointLight player_light;
-uniform DirectionLight weather_light;
-uniform DirectionLight tod_light;
+uniform DirectionLight environment_light;
 uniform float view_distance;
 uniform int mode;
 uniform vec3 sky_color;
@@ -85,17 +84,14 @@ vec4 calculate_point_light(PointLight point_light, vec3 position, vec3 normal)
 void main()
 {
 	PointLight p_light = player_light;
-	DirectionLight w_light = weather_light;
-	DirectionLight t_light = tod_light;
+	DirectionLight e_light = environment_light;
 	if (player_position.y < sea_level)
 	{
 		p_light.color.b += 0.4;
-		w_light.color.b += 0.4;
-		t_light.color.b += 0.4;
+		e_light.color.b += 0.4;
 
 		p_light.color.r -= 0.3;
-		w_light.color.r -= 0.3;
-		t_light.color.r -= 0.3;
+		e_light.color.r -= 0.3;
 	}
 
 	vec3 position = vec3(texture(f_position_texture, f_tex_coords));
@@ -112,8 +108,7 @@ void main()
 	}
 	result += 0.25;
 	result += calculate_point_light(p_light, position, normal);
-	result += calculate_direction_light(w_light, position, normal);
-	result += calculate_direction_light(t_light, position, normal);
+	result += calculate_direction_light(e_light, position, normal);
 
 	if (mode == SHOW_LIGHTING)
 	{	

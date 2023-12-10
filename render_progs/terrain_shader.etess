@@ -25,7 +25,6 @@ in float tessellation_levels[];
 uniform sampler2D heightmap;
 uniform int my_block_index;
 uniform int player_block_index;
-uniform int i;
 uniform int patches_per_column;
 uniform float terrain_chunk_dimension;
 uniform float xz_scale;

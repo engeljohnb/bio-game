@@ -43,7 +43,7 @@
 
 
 // UP NEXT:
-// 	Make it so grass and actor animations don't slow down with a slow frame rate.
+// 	Continue optimizing. Is it time to learn about multithreading?
 // 	Add pause button
 // 	Implement trees
 
@@ -134,12 +134,13 @@ void game_loop(void)
 	float frame_time = 0;
 	int running = 1;
 	int frames = 0;
+	int underwater_view = 0;
 
 	vec3 position;
 	glm_vec3_sub(all_actors[player_id].actor_state.position, VEC3(-200.0f, -20.0f, 0.0f), position);
 
 	FILE *rain_log = fopen("rain_time_log.txt", "w");
-	
+
 	while (running)
 	{
 		// Input update
@@ -232,9 +233,6 @@ void game_loop(void)
 		}
 
 		// TODO: Does this need to be done for all actors, or just the player?
-	
-		//environment_condition.percent_cloudy = 0.0f;
-		//environment_condition.percent_cloudy = 1.0f;
 		for (unsigned int i = 0; i < num_actors; ++i)
 		{
 			if (all_actors[i].actor_state.current_terrain_index != all_actors[i].actor_state.prev_terrain_index)
@@ -249,7 +247,6 @@ void game_loop(void)
 				print_vec3(all_actors[i].actor_state.position);
 			}
 		}
-	//	all_actors[player_id].actor_state.position[1] = 4500.0f;
 
 		for (unsigned int i = 0; i < num_actors; ++i)
 		{
@@ -266,7 +263,6 @@ void game_loop(void)
 		{
 			all_actors[player_id].actor_state.position[1] += 3.0;
 		}
-
 
 		/* Render */
 		mat4 projection_view;
@@ -287,14 +283,15 @@ void game_loop(void)
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, renderer.g_buffer);
+
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		draw_terrain_chunk(&water_chunk, 
 				   water_shader, 
 				   projection_view, 
-				   all_actors[player_id].actor_state.current_terrain_index, 
-				   renderer.camera.position[1]);
+				   all_actors[player_id].actor_state.current_terrain_index,
+				   all_actors[player_id].actor_state.front);
 
 
 		glEnable(GL_CULL_FACE);
@@ -303,8 +300,8 @@ void game_loop(void)
 		draw_terrain_chunk(&terrain_chunk, 
 				terrain_shader, 
 				projection_view, 
-				all_actors[player_id].actor_state.current_terrain_index, 
-				renderer.camera.position[1]);
+				all_actors[player_id].actor_state.current_terrain_index,
+				all_actors[player_id].actor_state.front);
 
 		glDisable(GL_CULL_FACE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -362,14 +359,14 @@ void game_loop(void)
 
 		TimeOfDay tod = get_time_of_day();
 		DirectionLight weather_light = get_weather_light(environment_condition);
+		DirectionLight environment_light = combine_lights(tod.sky_lighting, weather_light, 0.5f);
 		
 		get_final_sky_color(environment_condition, tod, all_actors[player_id].actor_state.current_terrain_index, sky_color);
 
 		B_render_lighting(renderer, 
 				  lighting_shader, 
 				  player_light, 
-				  weather_light,
-				  tod.sky_lighting,
+				  environment_light,
 				  sky_color, 
 				  renderer.camera.position,
 				  all_actors[player_id].actor_state.position,

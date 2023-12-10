@@ -95,7 +95,6 @@ bool is_inside(vec3 normal, vec3 point, float d)
 
 void main()
 {
-	int offset_factor = terrain_chunk_dimension/2;
 	vec3 a = vec3(gl_in[0].gl_Position);
 	vec3 b = vec3(gl_in[1].gl_Position);
 	vec3 c = vec3(gl_in[2].gl_Position);
@@ -107,27 +106,14 @@ void main()
 	vec3 xz_location = vec3(g_offset.x, gs_in[0].g_player_pos.y, g_offset.y);
 
 	bool render = true;
-	for (int j = 0; j < 4; ++j)
-	{
-		vec3 normal = get_frustum_normal(j);
-		if ((dot(normal, xz_location) + get_d(j)) < -10)
-		{
-			render = false;
-			break;
-		}
-	}
-	if (distance(g_base_offset, g_offset) > max_distance)
-	{
-		render = false;
-	}
 
 	int half_dimension = int(terrain_chunk_dimension)/2;
-	float min_xz = -half_dimension*(4.0*xz_scale);
-	float max_xz = float(half_dimension+1) * (xz_scale*4.0);
-	min_xz -= 0.03*xz_scale;
-	max_xz -= 0.03*xz_scale;
+	float min_xz = -float(half_dimension)*4.0;
+	float max_xz = float(half_dimension+1) * 4.0;
+	min_xz -= 0.03;
+	max_xz -= 0.03;
 
-	vec2 tex_coords = (g_offset - min_xz)/(max_xz-min_xz);
+	vec2 tex_coords = ((g_offset/xz_scale) - min_xz)/(max_xz-min_xz);
 
 	vec4 height_color = texture(heightmap, tex_coords);
 	float height = height_color.r * (height_color.g * 2500);
@@ -136,6 +122,22 @@ void main()
 	if (height < sea_level)
 	{
 		render = false;
+	}
+	if (distance(g_base_offset, g_offset) > max_distance)
+	{
+		render = false;
+	}
+	for (int i = 0; i < 4; ++i)
+	{
+		vec3 normal = get_frustum_normal(i);
+		if ((dot(normal, xz_location) + get_d(i)) < -10)
+		{
+			render = false;
+		}
+		if (!render)
+		{
+			break;
+		}
 	}
 
 	if (render)
@@ -148,11 +150,6 @@ void main()
 			vec4 pos = projection_view * vec4(trans, 1.0);
 			gl_Position = pos;
 			f_position = trans;
-			
-			if (!render)
-			{
-				continue;
-			}
 			EmitVertex();
 		}
 	}
