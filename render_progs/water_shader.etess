@@ -22,7 +22,8 @@ layout (quads, equal_spacing, cw) in;
 #define MAX_TERRAIN_BLOCKS 100000
 
 in float tessellation_levels[];
-uniform sampler2D heightmap;
+uniform sampler2D water_heightmap;
+uniform sampler2D land_heightmap;
 uniform int my_block_index;
 uniform int player_block_index;
 uniform int i;
@@ -73,8 +74,9 @@ void main()
 	vec2 tex_coords = (pos.xz - min_xz)/(max_xz-min_xz);
 
 	pos *= xz_scale;
-	vec2 height = texture(heightmap, tex_coords).rg;
-	float terrain_height = height.r * (height.g * 2500.0);
+	vec2 height = texture(water_heightmap, tex_coords).rg;
+	vec2 land_height = texture(land_heightmap, tex_coords).rg;
+	float terrain_height = land_height.r * (land_height.g * 2500.0);
 	float temporal_factor = (sin(time*height.r) + cos(time*height.g))/4.0;
 	pos.y += sea_level;
 	pos.y += height.r * (temporal_factor * height_factor);

@@ -57,7 +57,7 @@ typedef struct TerrainElementMesh
 	unsigned int		num_elements;
 	unsigned int		num_vertices;
 	B_Framebuffer		g_buffer;
-	B_Texture		heightmap_texture;
+	B_Texture		heightmap;
 	B_Shader		shader;
 } TerrainElementMesh;
 
@@ -90,7 +90,7 @@ typedef struct TerrainChunk
 	int		dimension;
 	unsigned int	heightmap_size;
 	TerrainMesh	*terrain_meshes;
-	B_Texture 	heightmap_texture;
+	B_Texture 	heightmap;
 	B_Texture	snow_normal_map;
 	B_Framebuffer	g_buffer;
 	B_Shader 	compute_shader;
@@ -140,23 +140,14 @@ void B_free_terrain_mesh(TerrainMesh mesh);
 void B_send_terrain_chunk_to_gpu(TerrainChunk *block);
 void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
-void draw_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
+void draw_land_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
+void draw_water_terrain_chunk(TerrainChunk *block, B_Texture land_heightmap, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
 
 /* sets the terrain_chunk's dimension (the width and breadth of the terrain_chunk in terrain_meshes).
  * If it's even, it wil be rounded up to the next odd number. It makes the math a little easier if
  * the terrain chunk has a center tile. */
 int set_terrain_chunk_dimension(int dimension);
 int get_terrain_chunk_dimension(void);
-void B_draw_terrain_mesh(TerrainMesh mesh, 
-			B_Shader shader, 
-			mat4 projection_view,
-			uint64_t my_block_index, 
-			uint64_t player_block_index, 
-			float tessellation_level, 
-			B_Texture texture,
-			float terrain_chunk_dimesion,
-			int heightmap_width,
-			int heightmap_height);
 void get_terrain_heightmap_size(int *w, int *h);
 TerrainMesh load_terrain_mesh_from_file(B_Framebuffer g_buffer, const char *filename);
 #endif

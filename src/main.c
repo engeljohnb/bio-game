@@ -75,13 +75,13 @@ void check_actor_collisions_ice(ActorState *actor_state, EnvironmentCondition en
 		}
 	}
 }
-void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap_texture, uint64_t terrain_index)
+void create_grass_patches(Plant grass_patches[9], B_Framebuffer g_buffer, B_Texture heightmap, uint64_t terrain_index)
 {
 	vec2 grass_patch_offsets[9];
 	get_grass_patch_offsets(terrain_index, grass_patch_offsets);
 	for (int i = 0; i < 9; ++i)
 	{
-		grass_patches[i] = create_grass_patch(grass_patch_offsets[i], g_buffer, heightmap_texture);
+		grass_patches[i] = create_grass_patch(grass_patch_offsets[i], g_buffer, heightmap);
 	}
 }
 
@@ -94,7 +94,7 @@ void game_loop(void)
 	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_LAND, PLAYER_TERRAIN_INDEX_START);
 	Plant grass_patches[9];
 	memset(grass_patches, 0, sizeof(Plant)*9);
-	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, PLAYER_TERRAIN_INDEX_START);
+	create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap, PLAYER_TERRAIN_INDEX_START);
 
 	TerrainChunk water_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_WATER, PLAYER_TERRAIN_INDEX_START);
 
@@ -166,7 +166,7 @@ void game_loop(void)
 			{
 				free_plant(grass_patches[i]);
 			}
-			create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, all_actors[player_id].actor_state.current_terrain_index);
+			create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap, all_actors[player_id].actor_state.current_terrain_index);
 			update_grass_patches(grass_patches, all_actors[player_id].actor_state.current_terrain_index);
 
 		}
@@ -193,7 +193,7 @@ void game_loop(void)
 				{
 					free_plant(grass_patches[i]);
 				}
-				create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap_texture, all_actors[player_id].actor_state.current_terrain_index);
+				create_grass_patches(grass_patches, renderer.g_buffer, terrain_chunk.heightmap, all_actors[player_id].actor_state.current_terrain_index);
 				update_grass_patches(grass_patches, all_actors[player_id].actor_state.current_terrain_index);
 
 			}
@@ -287,21 +287,22 @@ void game_loop(void)
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		draw_terrain_chunk(&water_chunk, 
-				   water_shader, 
-				   projection_view, 
-				   all_actors[player_id].actor_state.current_terrain_index,
-				   all_actors[player_id].actor_state.front);
+		draw_water_terrain_chunk(&water_chunk, 
+					   terrain_chunk.heightmap,
+					   water_shader, 
+					   projection_view, 
+					   all_actors[player_id].actor_state.current_terrain_index,
+					   all_actors[player_id].actor_state.front);
 
 
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 
-		draw_terrain_chunk(&terrain_chunk, 
-				terrain_shader, 
-				projection_view, 
-				all_actors[player_id].actor_state.current_terrain_index,
-				all_actors[player_id].actor_state.front);
+		draw_land_terrain_chunk(&terrain_chunk, 
+					terrain_shader, 
+					projection_view, 
+					all_actors[player_id].actor_state.current_terrain_index,
+					all_actors[player_id].actor_state.front);
 
 		glDisable(GL_CULL_FACE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

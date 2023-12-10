@@ -21,11 +21,11 @@ void update_grass_patches(Plant grass_patches[9], uint64_t player_terrain_index)
 	}
 }
 
-Plant create_grass_patch(vec2 xz_location, B_Framebuffer g_buffer, B_Texture heightmap_texture)
+Plant create_grass_patch(vec2 xz_location, B_Framebuffer g_buffer, B_Texture heightmap)
 {
 	Plant grass;
 	memset(&grass, 0, sizeof(Plant));
-	TerrainElementMesh mesh = create_grass_blade(g_buffer, heightmap_texture);
+	TerrainElementMesh mesh = create_grass_blade(g_buffer, heightmap);
 	
 	grass.xz_location[0] = xz_location[0];
 	grass.xz_location[1] = xz_location[1];
@@ -234,7 +234,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, mesh.heightmap_texture);
+	glBindTexture(GL_TEXTURE_2D, mesh.heightmap);
 	mat4 scale;
 	glm_mat4_identity(scale);
 	glm_scale(scale, VEC3(8,8,8));
@@ -341,12 +341,12 @@ void draw_grass_patches(Plant grass_patches[9],
 	}
 }
 
-TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap_texture)
+TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap)
 {
 	TerrainElementMesh mesh;
 	memset(&mesh, 0, sizeof(TerrainElementMesh));
 	mesh.g_buffer = g_buffer;
-	mesh.heightmap_texture = heightmap_texture;
+	mesh.heightmap = heightmap;
 	B_send_grass_blade_to_gpu(&mesh);
 
 	return mesh;
