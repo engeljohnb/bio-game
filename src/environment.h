@@ -16,9 +16,9 @@ typedef struct EnvironmentCondition
 } EnvironmentCondition;
 
 #define MORNING_LIGHT_DIRECTION VEC3(1.0f, 0.0f, 0.0f)
-#define AFTERNOON_LIGHT_DIRECTION VEC3(0.0f, -1.0f, 0.0f)
+#define AFTERNOON_LIGHT_DIRECTION VEC3(0.0f, 1.0f, 0.0f)
 #define EVENING_LIGHT_DIRECTION VEC3(-1.0f, 0.0f, 0.0f)
-#define NIGHT_LIGHT_DIRECTION VEC3(0.0f, 1.0f, 0.0f)
+#define NIGHT_LIGHT_DIRECTION VEC3(0.0f, -1.0f, 0.0f)
 
 #define MORNING_SKY_COLOR VEC3(0.40f, 0.50f, 0.97f)
 #define AFTERNOON_SKY_COLOR VEC3(0.32f, 0.56f, 0.97f)

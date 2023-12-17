@@ -54,7 +54,7 @@ B_Window B_create_window(void)
 	SDL_Window *size_window = SDL_CreateWindow("Get-size", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	SDL_GetWindowSize(size_window, &window_width, &window_height);
 	SDL_DestroyWindow(size_window);
-	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 10, 10, window_width, window_height, SDL_WINDOW_OPENGL);
+	SDL_Window *sdl_window = SDL_CreateWindow("Bio-Game", 0, 0, window_width, window_height, SDL_WINDOW_OPENGL);
 	if (sdl_window == NULL)
 	{
 		fprintf(stderr, "Could not create window: %s\n", SDL_GetError());

@@ -259,7 +259,7 @@ void get_current_tod_light_direction(int current_phase, double current_time, vec
 	{
 		case B_MORNING:
 		{
-			float seconds_into_phase = (current_time - B_SUNRISE_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float seconds_into_phase = current_time - (B_SUNRISE_TIME*SECONDS_PER_IN_GAME_HOUR);
 			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
 
 			vec3 morning_direction;
@@ -274,7 +274,7 @@ void get_current_tod_light_direction(int current_phase, double current_time, vec
 
 		case B_AFTERNOON:
 		{
-			float seconds_into_phase = (current_time - B_MIDDAY_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float seconds_into_phase = current_time - (B_MIDDAY_TIME*SECONDS_PER_IN_GAME_HOUR);
 			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
 
 			vec3 afternoon_direction;
@@ -289,7 +289,7 @@ void get_current_tod_light_direction(int current_phase, double current_time, vec
 
 		case B_EVENING:
 		{
-			float seconds_into_phase = (current_time - B_SUNSET_TIME)*SECONDS_PER_IN_GAME_HOUR;
+			float seconds_into_phase = current_time - (B_SUNSET_TIME*SECONDS_PER_IN_GAME_HOUR);
 			float percent = seconds_into_phase/(6.0f*SECONDS_PER_IN_GAME_HOUR);
 
 			vec3 evening_direction;
@@ -520,6 +520,9 @@ TimeOfDay get_time_of_day(void)
 	TimeOfDay time_of_day = {0};
 	double current_time = B_get_seconds_into_current_day();
 	time_of_day.current_phase = get_current_tod_phase(current_time);
+	char tod_string[128] = {0};
+	tod_phase_to_string(time_of_day.current_phase, tod_string);
+
 	get_current_tod_sky_color(time_of_day.current_phase, current_time, time_of_day.sky_color);
 
 	vec3 light_direction; 

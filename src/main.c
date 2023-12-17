@@ -43,8 +43,7 @@
 
 
 // UP NEXT:
-// 	Fix whatever weird thing is happening with the lighting when day and night switch.
-//	Also, I believe the game still randomly crashes.
+//	I believe the game still randomly crashes.
 // 	Continue optimizing. Is it time to learn about multithreading?
 // 	Add pause button
 // 	Implement trees
