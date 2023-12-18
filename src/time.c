@@ -59,11 +59,14 @@ float B_get_frame_time(void)
 
 void B_stopwatch(char *message)
 {
-	glFinish();
 	static unsigned long prev_time = 0;
-	unsigned long time = SDL_GetTicks();
-	fprintf(stdout, "%lu %s\n", (time-prev_time), message);
-	prev_time = time;
+	if (BENCHMARK)
+	{
+		glFinish();
+		unsigned long time = SDL_GetTicks();
+		fprintf(stdout, "%lu %s\n", (time-prev_time), message);
+		prev_time = time;
+	}
 }
 
 void B_keep_time(int target_period)

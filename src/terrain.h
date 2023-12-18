@@ -63,7 +63,6 @@ typedef struct TerrainElementMesh
 
 typedef struct Plant
 {	
-	vec2 			xz_location;
 	TerrainElementMesh 	mesh;
 	int 			min_temperature;
 	int			max_temperature;
@@ -89,7 +88,7 @@ typedef struct TerrainChunk
 	/* dimension is the width and breadth of the TerrainChunk in terrain_meshes. */
 	int		dimension;
 	unsigned int	heightmap_size;
-	TerrainMesh	*terrain_meshes;
+	TerrainMesh	terrain_mesh;
 	B_Texture 	heightmap;
 	B_Texture	snow_normal_map;
 	B_Framebuffer	g_buffer;

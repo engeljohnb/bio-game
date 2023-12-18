@@ -10,25 +10,12 @@
 // DEBUG
 #include "input.h"
 
-void update_grass_patches(Plant grass_patches[9], uint64_t player_terrain_index)
-{
-	vec2 offsets[9];
-	get_grass_patch_offsets(player_terrain_index, offsets);
-	for (int i = 0; i < 9; ++i)
-	{
-		grass_patches[i].xz_location[0] = offsets[i][0];
-		grass_patches[i].xz_location[1] = offsets[i][1];
-	}
-}
-
-Plant create_grass_patch(vec2 xz_location, B_Framebuffer g_buffer, B_Texture heightmap)
+Plant create_grass_patch(B_Framebuffer g_buffer, B_Texture heightmap)
 {
 	Plant grass;
 	memset(&grass, 0, sizeof(Plant));
 	TerrainElementMesh mesh = create_grass_blade(g_buffer, heightmap);
 	
-	grass.xz_location[0] = xz_location[0];
-	grass.xz_location[1] = xz_location[1];
 	grass.mesh = mesh;
 	grass.min_temperature = 32;
 	grass.max_temperature = 140;
@@ -266,7 +253,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void draw_grass_patches(Plant grass_patches[9],
+void draw_grass_patches(Plant grass_patch,
+			vec2 offsets[9],
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
@@ -283,13 +271,13 @@ void draw_grass_patches(Plant grass_patches[9],
 		int draw = 1;
 		uint64_t grass_terrain_index = terrain_index + x_counter + (z_counter * MAX_TERRAIN_BLOCKS);
 		EnvironmentCondition environment_condition = get_environment_condition(grass_terrain_index);
-		if ((environment_condition.temperature > grass_patches[i].max_temperature) ||
-		    (environment_condition.temperature < grass_patches[i].min_temperature))
+		if ((environment_condition.temperature > grass_patch.max_temperature) ||
+		    (environment_condition.temperature < grass_patch.min_temperature))
 		{
 			draw = 0;
 		}
-		if ((environment_condition.precipitation > grass_patches[i].max_precipitation) ||
-		    (environment_condition.precipitation < grass_patches[i].min_precipitation))
+		if ((environment_condition.precipitation > grass_patch.max_precipitation) ||
+		    (environment_condition.precipitation < grass_patch.min_precipitation))
 		{
 			draw = 0;
 		}
@@ -305,14 +293,14 @@ void draw_grass_patches(Plant grass_patches[9],
 			glm_vec3_copy(VEC3(0.3f, 0.05f, 0.02f), hi_temp_color);
 			glm_vec3_copy(VEC3(0.0f, 0.026f, 0.036f), lo_temp_color);
 
-			if (environment_condition.temperature > grass_patches[i].ideal_max_temperature)
+			if (environment_condition.temperature > grass_patch.ideal_max_temperature)
 			{
-				float percent = glm_percent(grass_patches[i].ideal_max_temperature, grass_patches[i].max_temperature, environment_condition.temperature);
+				float percent = glm_percent(grass_patch.ideal_max_temperature, grass_patch.max_temperature, environment_condition.temperature);
 				glm_vec3_lerp(ideal_color, hi_temp_color, percent, color);
 			}
-			else if (environment_condition.temperature < grass_patches[i].ideal_min_temperature)
+			else if (environment_condition.temperature < grass_patch.ideal_min_temperature)
 			{
-				float percent = glm_percent(grass_patches[i].min_temperature, grass_patches[i].ideal_min_temperature, environment_condition.temperature);
+				float percent = glm_percent(grass_patch.min_temperature, grass_patch.ideal_min_temperature, environment_condition.temperature);
 				glm_vec3_lerp(lo_temp_color, ideal_color, percent, color);
 			}
 			else
@@ -321,7 +309,7 @@ void draw_grass_patches(Plant grass_patches[9],
 			}
 
 			int patch_size = get_grass_patch_size(environment_condition, grass_terrain_index);
-			B_draw_grass_patch(grass_patches[i].mesh, 
+			B_draw_grass_patch(grass_patch.mesh, 
 					   projection_view, 
 					   player_position, 
 					   player_facing, 
@@ -329,7 +317,7 @@ void draw_grass_patches(Plant grass_patches[9],
 					   x_counter, 
 					   z_counter, 
 					   patch_size, 
-					   grass_patches[i].xz_location);
+					   offsets[i]);
 		
 		}
 		x_counter++;

@@ -120,13 +120,9 @@ TerrainChunk create_terrain_chunk(unsigned int g_buffer, int type, unsigned long
 	chunk.type = type;
 	chunk.dimension = get_terrain_chunk_dimension();
 
-	chunk.terrain_meshes = BG_MALLOC(TerrainMesh, chunk.dimension*chunk.dimension);
-	for (int i = 0; i < chunk.dimension*chunk.dimension; ++i)
-	{
-		chunk.terrain_meshes[i] = B_create_terrain_mesh(g_buffer);
-	}
 	chunk.width = 64;
 	chunk.height = 64;
+	chunk.terrain_mesh = B_create_terrain_mesh(g_buffer);
 
 	chunk.heightmap_width = chunk.width*chunk.dimension;
 	chunk.heightmap_height = chunk.height*chunk.dimension;
@@ -393,7 +389,7 @@ void draw_land_terrain_chunk(TerrainChunk *chunk, B_Shader shader, mat4 projecti
 			exit(-1);
 		}
 
-		B_draw_terrain_mesh(chunk->terrain_meshes[i],
+		B_draw_terrain_mesh(chunk->terrain_mesh,
 					    shader,
 					    projection_view,
 					    index,
@@ -451,7 +447,7 @@ void draw_water_terrain_chunk(TerrainChunk *chunk, B_Texture land_heightmap, B_S
 			fprintf(stderr, "B_draw_water_terrain_chunk error: invalid chunk type\n");
 			exit(-1);
 		}
-		B_draw_water_mesh(chunk->terrain_meshes[i],
+		B_draw_water_mesh(chunk->terrain_mesh,
 					    shader,
 					    projection_view,
 					    index,
@@ -505,9 +501,8 @@ void free_terrain_chunk(TerrainChunk *chunk)
 {
 	for (int i = 0; i < chunk->dimension*chunk->dimension; ++i)
 	{
-		B_free_terrain_mesh(chunk->terrain_meshes[i]);
+		B_free_terrain_mesh(chunk->terrain_mesh);
 	}
-	BG_FREE(chunk->terrain_meshes);
 	B_Texture textures[2] = { chunk->heightmap, chunk->snow_normal_map };
 	glDeleteTextures(2, textures);
 

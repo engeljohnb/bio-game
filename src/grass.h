@@ -6,7 +6,7 @@
 #include "terrain.h"
 
 void update_grass_patches(Plant grass_patches[9], uint64_t player_terrain_index);
-Plant create_grass_patch(vec2 xz_location, B_Framebuffer g_buffer, B_Texture heightmap);
+Plant create_grass_patch(B_Framebuffer g_buffer, B_Texture heightmap);
 void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh);
 void update_grass_patch_offset(vec2 offset, int index_diff);
 int get_grass_patch_size(EnvironmentCondition environment_condition, uint64_t terrain_index);
@@ -22,7 +22,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			int patch_size, 
 			vec2 base_offset);
 
-void draw_grass_patches(Plant grass_patches[9],
+void draw_grass_patches(Plant grass_patch,
+			vec2 offsets[9],
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
