@@ -13,6 +13,8 @@ int get_grass_patch_size(EnvironmentCondition environment_condition, uint64_t te
 void get_grass_patch_offset(uint64_t terrain_index, vec2 offset);
 void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9]);
 void B_draw_grass_patch(TerrainElementMesh mesh, 
+			vec3 camera_position,
+			TerrainChunk *chunk,
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
@@ -23,6 +25,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			vec2 base_offset);
 
 void draw_grass_patches(Plant grass_patch,
+			vec3 camera_position,
+			TerrainChunk *chunk,
 			vec2 offsets[9],
 			mat4 projection_view,
 			vec3 player_position, 

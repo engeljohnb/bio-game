@@ -21,15 +21,9 @@
 #include <stdlib.h>
 #include <cglm/cglm.h>
 #include <glad/glad.h>
+#include "common.h"
 #include "input.h"
 #include "utils.h"
-
-int g_print_debug;
-
-int should_print_debug(void)
-{
-	return g_print_debug;
-}
 
 CommandConfig default_command_config(void)
 {
@@ -51,7 +45,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 {
 	command_state->wheel_increment = 0;
 	SDL_Event event;
-	g_print_debug = 0;
+	set_should_print_debug(0);
 	while (SDL_PollEvent(&event))
 	{
 		switch (event.type)
@@ -82,6 +76,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->movement |= M_RIGHT;
 				}
+
 				// DEBUG
 				else if (key == SDLK_SPACE)
 				{
@@ -120,6 +115,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				{
 					command_state->increase_view_distance = 1;
 				}
+
 				//DEBUG
 				else if (key == SDLK_p)
 				{
@@ -143,7 +139,7 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				}
 				else if (key == SDLK_v)
 				{
-					g_print_debug = 1;
+					set_should_print_debug(1);
 				}
 				else if (key == SDLK_SPACE)
 				{

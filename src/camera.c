@@ -34,7 +34,7 @@ Camera create_camera(B_Window window, vec3 position, vec3 front)
 	float view_distance = get_view_distance();
 	Camera camera;
 	memset(&camera, 0, sizeof(Camera));
-	glm_perspective(RAD(45), (float)window.width/(float)window.height, 1.0f, view_distance, camera.projection_space);
+	glm_perspective(RAD(45.0f), (float)window.width/(float)window.height, 1.0f, view_distance, camera.projection_space);
 	glm_vec3_copy(position, camera.position);
 	glm_vec3_copy(front, camera.front);
 	glm_vec3_copy(VEC3_X_UP, camera.right);
@@ -71,6 +71,28 @@ void my_lookat(vec3 camera_center, vec3 target_center, vec3 up, mat4 target)
 			{ camera_center[0], camera_center[1], camera_center[2], 1 } };
 
 	glm_mat4_copy(result, target);
+
+}
+
+void set_camera(Camera *camera, vec3 position, vec3 direction)
+{
+	int window_width = 0;
+	int window_height = 0;
+	get_window_size(&window_width, &window_height);
+	float view_distance = get_view_distance();
+	glm_perspective(RAD(45.0f), (float)window_width/(float)window_height, 1.0f, view_distance, camera->projection_space);
+	glm_vec3_copy(position, camera->position);
+	glm_vec3_copy(direction, camera->front);
+	glm_vec3_cross(direction, VEC3_Y_UP, camera->right);
+
+	/*mat4 rotation_dest;
+	get_rotation_matrix(0, 0, rotation_dest);
+	glm_mat4_mulv3(rotation_dest, VEC3_Z_DOWN, 0, camera->front);
+	glm_mat4_mulv3(rotation_dest, VEC3_X_DOWN, 0, camera->right);*/
+
+	vec3 frontpos;
+	glm_vec3_add(direction, position, frontpos);
+	glm_lookat(frontpos, position, VEC3_Y_UP, camera->view_space);
 
 }
 

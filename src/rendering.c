@@ -114,9 +114,13 @@ B_Framebuffer B_generate_g_buffer(B_Texture *normal_texture, B_Texture *position
 
 Renderer create_default_renderer(B_Window window)
 {
-	Camera camera = create_camera(window, VEC3(0.0, 0.0, 0.0), VEC3_Z_DOWN);
+	Camera camera = create_camera(window, VEC3(0.0f, 0.0f, 0.0f), VEC3_Z_DOWN);
 	Renderer renderer;
 	renderer.camera = camera;
+	if (USE_ALT_CAMERA)
+	{
+		renderer.alt_camera = create_camera(window, VEC3(0.0f, 0.0f, 0.0f), VEC3_Z_DOWN);
+	}
 	renderer.window = window;
 	renderer.g_buffer = B_generate_g_buffer(&renderer.normal_texture, &renderer.position_texture, &renderer.color_texture,
 						&renderer.lighting_vao, &renderer.lighting_vbo);

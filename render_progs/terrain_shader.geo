@@ -29,6 +29,9 @@ uniform int heightmap_height;
 uniform float precipitation;
 uniform float sea_level;
 uniform sampler2D heightmap;
+uniform int draw_debug;
+uniform vec3 db_grass_patch_centers[9];
+uniform float db_grass_patch_max_distance;
 
 out vec3 f_position;
 out vec3 f_color;
@@ -52,22 +55,18 @@ vec3 get_frustum_normal(int i)
 		case 0:
 		{
 			return normalize(cross(frustum_corners[1] - frustum_corners[0], frustum_corners[2] - frustum_corners[0]));
-			break;
 		}
 		case 1:
 		{
 			return normalize(cross(frustum_corners[5] - frustum_corners[4], frustum_corners[1] - frustum_corners[4]));
-			break;
 		}
 		case 2:
 		{
 			return normalize(cross(frustum_corners[2] - frustum_corners[3], frustum_corners[6] - frustum_corners[3]));
-			break;
 		}
 		case 3:
 		{
 			return -normalize(cross(frustum_corners[5] - frustum_corners[7], frustum_corners[6] - frustum_corners[7]));
-			break;
 		}
 	}
 }
@@ -79,22 +78,18 @@ float get_d(int i)
 		case 0:
 		{
 			return dot(frustum_corners[1], -get_frustum_normal(i));
-			break;
 		}
 		case 1:
 		{
 			return dot(frustum_corners[1], -get_frustum_normal(i));
-			break;
 		}
 		case 2:
 		{
 			return dot(frustum_corners[6], -get_frustum_normal(i));
-			break;
 		}
 		case 3:
 		{
 			return dot(frustum_corners[6], -get_frustum_normal(i));
-			break;
 		}
 	}
 }
@@ -220,9 +215,24 @@ void main()
 			vec3 normal = get_frustum_normal(j);
 			if ((dot(normal, vec3(gl_in[i].gl_Position)) + get_d(j)) < -70)
 			{
+				in_frustum = false;
 				break;
 			}
 		}
+
+		if (draw_debug != 0)
+		{
+			for (int j = 0; j < 9; ++j)
+			{
+				if (((db_grass_patch_max_distance - (distance(vec3(gl_in[i].gl_Position), db_grass_patch_centers[j]))) < 5.5) &&
+				    ((db_grass_patch_max_distance - (distance(vec3(gl_in[i].gl_Position), db_grass_patch_centers[j]))) > -40))
+
+				{
+					in_frustum = true;
+				}
+			}
+		}
+
 		if (!in_frustum)
 		{
 			continue;

@@ -18,13 +18,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <cglm/cglm.h>
-#include <arpa/inet.h>
 #include "actor_state.h"
 #include "environment.h"
 #include "window.h"
@@ -37,16 +36,17 @@
 #include "asset_loading.h"
 #include "terrain_collisions.h"
 #include "grass.h"
+#include "debug.h"
 #include "utils.h"
 
 #define PLAYER_START_POS VEC3(get_terrain_xz_scale()*2, 0, get_terrain_xz_scale()*2)
 
 
 // UP NEXT:
-//	I believe the game still randomly crashes.
 // 	Continue optimizing. Is it time to learn about multithreading?
 // 	Add pause button
 // 	Implement trees
+
 
 void check_actor_collisions_ice(ActorState *actor_state, EnvironmentCondition environment_condition, float actor_height)
 {
@@ -69,10 +69,7 @@ void check_actor_collisions_ice(ActorState *actor_state, EnvironmentCondition en
 			glm_vec3_sub(actor_state->prev_position,
 				     actor_state->position,
 				     direction);
-			glm_vec3_scale(direction, 1.1f, direction);
-			glm_vec3_add(direction,
-				     actor_state->position, 
-				     actor_state->position);
+			glm_vec3_scale(direction, 1.1f, direction); glm_vec3_add(direction, actor_state->position, actor_state->position);
 		}
 	}
 }
@@ -85,7 +82,7 @@ void game_loop(void)
 	// Environment init
 	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_LAND, PLAYER_TERRAIN_INDEX_START);
 	Plant grass_patch = create_grass_patch(renderer.g_buffer, terrain_chunk.heightmap);
-	vec2 grass_patch_offsets[9] = {0};
+	vec2 grass_patch_offsets[9];
 	get_grass_patch_offsets(PLAYER_TERRAIN_INDEX_START, grass_patch_offsets);
 
 	TerrainChunk water_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_WATER, PLAYER_TERRAIN_INDEX_START);
@@ -121,7 +118,6 @@ void game_loop(void)
 					                "render_progs/actor_shader.frag");
 	B_Shader lighting_shader = B_compile_simple_shader("render_progs/lighting_shader.vert",
 					          	   "render_progs/lighting_shader.frag");
-
 	float delta_t = 15.0;
 	float frame_time = 0;
 	int running = 1;
@@ -218,7 +214,6 @@ void game_loop(void)
 		{
 			if (all_actors[i].actor_state.current_terrain_index != all_actors[i].actor_state.prev_terrain_index)
 			{
-				//update_grass_patches(grass_patches, all_actors[i].actor_state.current_terrain_index);
 				get_grass_patch_offsets(all_actors[i].actor_state.current_terrain_index, grass_patch_offsets);
 				B_update_terrain_chunk(&terrain_chunk, all_actors[i].actor_state.current_terrain_index);
 				B_update_terrain_chunk(&water_chunk, all_actors[i].actor_state.current_terrain_index);
@@ -235,6 +230,14 @@ void game_loop(void)
 			update_actor_model(all_actors[i].model, all_actors[i].actor_state);
 		}
 		update_camera(&renderer.camera, all_actors[player_id].actor_state, &terrain_chunk, all_actors[player_id].actor_state.command_state.camera_rotation);
+		if (USE_ALT_CAMERA)
+		{
+			vec3 position;
+			vec3 direction;
+			glm_vec3_add(all_actors[player_id].actor_state.position, VEC3(700.0f, 700.0f, 0.0f), position);
+			glm_vec3_sub(position, all_actors[player_id].actor_state.position, direction);
+			set_camera(&renderer.alt_camera, position, direction);
+		}
 
 		if (should_print_debug())
 		{
@@ -249,7 +252,18 @@ void game_loop(void)
 		B_stopwatch("Input & simulation");
 		/* Render */
 		mat4 projection_view;
-		glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
+		if (USE_ALT_CAMERA)
+		{
+			mat4 mat;
+			glm_mat4_mul(renderer.alt_camera.projection_space, renderer.alt_camera.view_space, projection_view);
+			glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, mat);
+			set_alt_projection_view(mat);
+			set_alt_projection(renderer.camera.projection_space);
+		}
+		else
+		{
+			glm_mat4_mul(renderer.camera.projection_space, renderer.camera.view_space, projection_view);
+		}
 
 		int window_width = 0;
 		int window_height = 0;
@@ -290,11 +304,34 @@ void game_loop(void)
 		B_stopwatch("Draw Water");
 		glCullFace(GL_BACK);
 
-		draw_land_terrain_chunk(&terrain_chunk, 
-					terrain_shader, 
-					projection_view, 
-					all_actors[player_id].actor_state.current_terrain_index,
-					all_actors[player_id].actor_state.front);
+		if (DRAW_DEBUG)
+		{
+			vec3 grass_patch_centers[9];
+			for (int i = 0; i < 9; ++i)
+			{
+				grass_patch_centers[i][0] = grass_patch_offsets[i][0];
+				grass_patch_centers[i][2] = grass_patch_offsets[i][1];
+				grass_patch_centers[i][1] = 0.0f;
+				grass_patch_centers[i][1] = get_terrain_height(grass_patch_centers[i], &terrain_chunk);
+			}
+
+			draw_land_terrain_chunk_debug(&terrain_chunk, 
+						terrain_shader, 
+						projection_view, 
+						all_actors[player_id].actor_state.current_terrain_index,
+						all_actors[player_id].actor_state.front,
+						grass_patch_centers,
+						get_terrain_xz_scale()*2);
+
+		}
+		else
+		{
+			draw_land_terrain_chunk(&terrain_chunk, 
+						terrain_shader, 
+						projection_view, 
+						all_actors[player_id].actor_state.current_terrain_index,
+						all_actors[player_id].actor_state.front);
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		B_stopwatch("Draw Land");
@@ -302,12 +339,15 @@ void game_loop(void)
 		B_draw_actors(all_actors, actor_shader, num_actors, renderer);
 
 		B_stopwatch("Draw Actors");
+
 		draw_grass_patches(grass_patch,
+				   renderer.camera.position,
+				   &terrain_chunk,
 				   grass_patch_offsets,
 				   projection_view,
 				   all_actors[player_id].actor_state.position, 
 				   renderer.camera.front,
-				   terrain_index);
+				   all_actors[player_id].actor_state.current_terrain_index);
 		B_stopwatch("Draw Grass");
 
 		static float prev_cloudy = 0.0f;	
@@ -360,6 +400,7 @@ void game_loop(void)
 		get_final_sky_color(environment_condition, tod, all_actors[player_id].actor_state.current_terrain_index, sky_color);
 
 		B_stopwatch("Weather stuff");
+
 		B_render_lighting(renderer, 
 				  lighting_shader, 
 				  player_light, 

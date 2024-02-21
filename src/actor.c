@@ -110,7 +110,14 @@ void B_draw_actors(Actor *all_actors, B_Shader shader, unsigned int num_actors, 
 	glBindFramebuffer(GL_FRAMEBUFFER, renderer.g_buffer);
 	for (unsigned int i = 0; i < num_actors; ++i)
 	{
-		B_draw_actor_model(all_actors[i].model, renderer.camera, shader);
+		if (USE_ALT_CAMERA)
+		{
+			B_draw_actor_model(all_actors[i].model, renderer.alt_camera, shader);
+		}
+		else
+		{
+			B_draw_actor_model(all_actors[i].model, renderer.camera, shader);
+		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

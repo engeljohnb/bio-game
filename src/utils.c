@@ -22,7 +22,11 @@
 #include <string.h>
 #include <cglm/cglm.h>
 #include <limits.h>
+#include "common.h"
 #include "utils.h"
+
+#define OUTSIDE 0
+#define INSIDE 1
 
 int even(int a)
 {
@@ -320,41 +324,79 @@ void get_frustum_corners(mat4 projection_view, vec3 dest[8])
 
 }
 
-
-void get_frustum_normals(mat4 projection_view, vec3 dest[4])
+void frustum_plane_index_to_string(int i, char dest[])
 {
-	vec4 corners_vec4[8];
-	vec3 corners[8];
-	mat4 inv_projection_view;
-	glm_mat4_inv(projection_view, inv_projection_view);
-	glm_frustum_corners(inv_projection_view, corners_vec4);
-
-	for (int i = 0; i < 8; ++i)
+	switch (i)
 	{
-		glm_vec3(corners_vec4[i], corners[i]);
+		case GLM_NEAR:
+		{
+			strncpy(dest, "NEAR", 128);
+			return;
+		}
+		case GLM_FAR:
+		{
+			strncpy(dest, "FAR", 128);
+			return;
+		}
+		case GLM_LEFT:
+		{
+			strncpy(dest, "LEFT", 128);
+			return;
+		}
+		case GLM_TOP:
+		{
+			strncpy(dest, "TOP", 128);
+			return;
+		}
+		case GLM_BOTTOM:
+		{
+			strncpy(dest, "BOTTOM", 128);
+			return;
+		}
+		case GLM_RIGHT:
+		{
+			strncpy(dest, "RIGHT", 128);
+			return;
+		}
 	}
-
-	get_normal_vec3(corners[2], corners[1], corners[0], dest[0]);
-	get_normal_vec3(corners[5], corners[1], corners[0], dest[1]);
-	get_normal_vec3(corners[2], corners[6], corners[7], dest[2]);
-	get_normal_vec3(corners[4], corners[5], corners[6], dest[3]);
 }
 
-int is_in_frustum_2d(mat4 projection_view, vec2 pos)
+void get_point_on_plane(vec4 plane, vec3 dest)
 {
-	vec4 corners[8];
-	mat4 inv_projection_view;
-	glm_mat4_inv(projection_view, inv_projection_view);
-	glm_frustum_corners(inv_projection_view, corners);
+	/* Don't know why I need to negate the plane coefficient, 
+	 * but as soon as I did, everything worked. */
+	glm_vec3_scale(plane, -plane[3], dest);
+}
 
-	float ftlx = corners[GLM_LTF][0];
-	float ftrx = corners[GLM_RTF][1];
-	float ftrz = corners[GLM_RTF][2];
-	float ntrz = corners[GLM_RTN][2];
-	return !((pos[0] > ftlx-500) &&
-		(pos[0] < ftrx+500) &&
-		(pos[1] < ftrz+500) &&
-		(pos[1] > ntrz-500));
+float signed_distance_to_plane(vec3 p, vec4 plane)
+{
+	vec3 point_on_plane;
+	get_point_on_plane(plane, point_on_plane);
+
+	vec3 sub;
+	glm_vec3_sub(p, point_on_plane, sub);
+
+	return glm_vec3_dot(plane, sub);
+}
+
+int sphere_on_or_beyond_plane(vec3 center, float radius, vec4 plane)
+{
+	return signed_distance_to_plane(center, plane) > -radius;
+}
+
+int sphere_in_frustum(vec3 center, float radius, mat4 projection_view)
+{
+	vec4 frustum_planes[6];
+	glm_frustum_planes(projection_view, frustum_planes);
+
+	for (int i = 0; i < 6; ++i)
+	{
+		if (!sphere_on_or_beyond_plane(center, radius, frustum_planes[i]))
+		{
+			return 0;
+		}
+	}
+	return 1;
 }
 
 float vec2_magnitude(vec2 vec)
@@ -402,6 +444,7 @@ unsigned int length_between(char *haystack,
 	return end - start;
 }
 
+// This is the ugliest  function name I've ever seen
 uint8_t **get_data_after_punctuated(uint8_t *data, char *search_key, char *end_key, unsigned int data_length, unsigned int *number_of_elements, unsigned int **element_sizes)
 {
 	uint8_t *data_iter = data;
@@ -575,9 +618,23 @@ void print_vec4(vec4 vector)
 	fprintf(stdout, "%f %f %f %f\n", vector[0], vector[1], vector[2], vector[3]);
 }
 
+
+void print_radius(float radius)
+{
+	fprintf(stdout, "%f\n", radius);
+}
+void print_center(vec3 vector)
+{
+	fprintf(stdout, "%f %f %f\n", vector[0], vector[1], vector[2]);
+}
+
 void print_vec3(vec3 vector)
 {
 	fprintf(stdout, "%f %f %f\n", vector[0], vector[1], vector[2]);
+}
+void print_plane(vec4 vector)
+{
+	fprintf(stdout, "%f %f %f %f\n", vector[0], vector[1], vector[2], vector[3]);
 }
 
 void print_vec3_indented(vec3 vector, int num_tabs)

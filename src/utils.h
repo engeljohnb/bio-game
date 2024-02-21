@@ -26,8 +26,8 @@
 #define VEC2(x, y) (vec2){x, y}
 #define VEC3(x, y, z) (vec3){x, y, z}
 #define VEC4(x, y, z, w) (vec4){x, y, z, w}
-#define RAD(a) a*0.0174532925
-#define DEG(a) a/0.0174532925
+#define RAD(a) (a*0.0174532925)
+#define DEG(a) (a/0.0174532925)
 #define SIGN(a) ((a > 0) - (a < 0))
 #define VEC3_ZERO (vec3){0.0, 0.0, 0.0}
 #define VEC3_X_UP (vec3){1.0, 0.0, 0.0}
@@ -120,14 +120,16 @@ void yaw(float angle, mat4 dest);
 int is_in_frustum_2d(mat4 projection_view, vec2 position);
 int is_behind_camera_2d(mat4 projection_view, vec2 pos);
 void get_rotation_matrix(float yaw, float pitch,  mat4 dest);
-void get_frustum_normals(mat4 projection_view, vec3 dest[4]);
-void get_frustum_corners(mat4 projection_view, vec3 dest[8]);
 
+int sphere_in_frustum(vec3 center, float radius, mat4 projection_view);
+
+void get_frustum_corners(mat4 projection_view, vec3 dest[8]);
 /* Checks which side of a plane location is on -- returns 0 if it is on the side opposite of the direction of the normal, 
  * and returns 1 if it's on the same side as the direction of the normal.
  * Normal is the normal of the plane. */
 int which_side(vec3 normal, vec3 point_on_plane, vec3 location);
 
+void get_frustum_normals(mat4 projection_view, vec3 camera_direction, vec3 dest[6]);
 
 /* This is called by the macro BG_FREE. The code has changed in a way where there's no longer any reason for it to be a macro,
  * I'm just too lazy to go back and change each call.
@@ -140,6 +142,9 @@ void print_vec4(vec4 vector);
 void print_vec3(vec3 vector);
 void print_vec2(vec2 vector);
 void print_mat4(mat4 mat);
+void print_radius(float vector);
+void print_center(vec3 vector);
+void print_plane(vec4 vector);
 void print_vec3_indented(vec3 vector, int num_tabs);
 /* Appends second to first and stores the resulting string in dest. Size is the size of dest. */
 void cat_to(char *first, char *second, char *dest, size_t size);
@@ -147,4 +152,4 @@ void *_bg_malloc(size_t size);
 int file_exists(const char *filename);
 char *get_directory_name(const char *file);
 float lerp(float a, float b, float f);
-#endif
+#endif	

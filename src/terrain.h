@@ -94,7 +94,7 @@ typedef struct TerrainChunk
 	B_Framebuffer	g_buffer;
 	B_Shader 	compute_shader;
 	B_Shader 	vertex_compute_shader;
-	float		*tex_coords[2];
+	//float		*tex_coords[2];
 } TerrainChunk;
 
 typedef struct T_Vertex
@@ -141,6 +141,13 @@ void B_update_terrain_chunk(TerrainChunk *block, uint64_t player_block_index);
 unsigned int B_compile_compute_shader(const char *comp_path);
 void draw_land_terrain_chunk(TerrainChunk *block, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
 void draw_water_terrain_chunk(TerrainChunk *block, B_Texture land_heightmap, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing);
+void draw_land_terrain_chunk_debug(TerrainChunk *chunk, 
+				   B_Shader shader, 
+				   mat4 projection_view, 
+				   uint64_t player_block_index, 
+				   vec3 player_facing,
+				   vec3 grass_patch_centers[9],
+				   float grass_patch_max_distance);
 
 /* sets the terrain_chunk's dimension (the width and breadth of the terrain_chunk in terrain_meshes).
  * If it's even, it wil be rounded up to the next odd number. It makes the math a little easier if

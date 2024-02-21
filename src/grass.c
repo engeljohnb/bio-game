@@ -6,6 +6,7 @@
 #include "noise.h"
 #include "utils.h"
 #include "camera.h"
+#include "debug.h"
 
 // DEBUG
 #include "input.h"
@@ -74,6 +75,7 @@ void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
 		vec3 *grass_blade = (vec3 *)vertices_single_blade;
 		vec3 *final_blades = (vec3 *)vertices;
 
+				//update_grass_patches(grass_patches, all_actors[i].actor_state.current_terrain_index);
 		for (int j = 0; j < 9; ++j)
 		{
 			int index = i*9+j;
@@ -173,6 +175,8 @@ void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9])
 }
 
 void B_draw_grass_patch(TerrainElementMesh mesh, 
+			vec3 camera_position,
+			TerrainChunk *chunk,
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
@@ -189,32 +193,64 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 		return;
 	}
 
-	vec2 offset;
-	glm_vec2_copy(base_offset, offset);
-	offset[0] += x_offset * (get_terrain_xz_scale()*4);
-	offset[1] += z_offset * (get_terrain_xz_scale()*4);
-
-	float view_distance = get_view_distance();
-
-	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
-
-
-	/* If the grass is too far away to see, don't draw. */
-	vec3 n_player_facing;
+	vec3 offset = GLM_VEC3_ZERO_INIT;
+	offset[0] = base_offset[0] + (x_offset * (get_terrain_xz_scale()*4));
+	offset[2] = base_offset[1] + (z_offset * (get_terrain_xz_scale()*4));
+	offset[1] = get_terrain_height(offset, chunk);
 	float max_distance = get_terrain_xz_scale() * 2.0f;
-	glm_vec3_negate_to(player_facing, n_player_facing);
-	float distance_from_player = glm_vec3_distance(player_position, VEC3(offset[0], 0.0f, offset[1]));
-	if (distance_from_player > (view_distance + (max_distance/2.0f)))
+	vec3 frustum_corners[8];
+	if (USE_ALT_CAMERA)
 	{
-		return;
+		mat4 alt_projv;
+		get_alt_projection_view(alt_projv);
+		get_frustum_corners(alt_projv, frustum_corners);
+	}
+	else
+	{
+		get_frustum_corners(projection_view, frustum_corners);
 	}
 
-	/* If the patch of grass is behind the player, don't draw */
-	if ((!which_side(n_player_facing, frustum_corners[1], VEC3(offset[0], 0, offset[1]))) &&
-	    (glm_vec2_distance(VEC2(player_position[0], player_position[2]), offset) > max_distance))
+	float view_distance = get_view_distance();
+	if ((x_offset == 0) && (z_offset == 0))
 	{
-		return;
+		if (should_print_debug())
+		{
+			fprintf(stderr, "Corners:\n");
+			for (int i = 0; i < 8; ++i)
+			{
+				vec3 d_vec;
+				glm_vec3_scale(frustum_corners[i], 0.01f, d_vec);
+				print_vec3(d_vec);
+			}
+			vec3 d_vec;
+			fprintf(stderr, "Facing:\n");
+			print_vec3(player_facing);
+			fprintf(stderr, "Center:\n");
+			glm_vec3_scale(offset, 0.01f, d_vec);
+			print_vec3(d_vec);
+			fprintf(stderr, "Radius: %f\n", max_distance/100.0f);
+			fprintf(stderr, "Camera pos:\n");
+			glm_vec3_scale(camera_position, 0.01f, d_vec);
+			print_vec3(d_vec);
+			fprintf(stderr, "==============================================\n\n");
+		}
+	}	
+
+	if (USE_ALT_CAMERA)
+	{
+		mat4 alt_projv;
+		get_alt_projection_view(alt_projv);
+		if (!sphere_in_frustum(offset, max_distance, alt_projv))
+		{
+			return;
+		}
+	}
+	else
+	{
+		if (!sphere_in_frustum(offset, max_distance, projection_view))
+		{
+			return;
+		}
 	}
 
 	float time = SDL_GetTicks64()/800.0f;
@@ -231,15 +267,16 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	B_set_uniform_float(mesh.shader, "terrain_chunk_size", get_terrain_xz_scale()*4.0f);
 	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
-	B_set_uniform_vec2(mesh.shader, "base_offset", offset);
+	B_set_uniform_vec2(mesh.shader, "base_offset", VEC2(offset[0], offset[2]));
 	B_set_uniform_float(mesh.shader, "time", time);
 	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
 	B_set_uniform_vec3(mesh.shader, "color", color);
 	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
-	B_set_uniform_float(mesh.shader, "max_distance", max_distance);;
+	B_set_uniform_float(mesh.shader, "max_distance", max_distance);
 	B_set_uniform_float(mesh.shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_int(mesh.shader, "terrain_chunk_dimension", get_terrain_chunk_dimension());
 	B_set_uniform_float(mesh.shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_int(mesh.shader, "draw_debug", DRAW_DEBUG);
 
 	for (int i = 0; i < 8; ++i)
 	{
@@ -254,6 +291,8 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 }
 
 void draw_grass_patches(Plant grass_patch,
+		vec3 camera_position,
+			TerrainChunk *chunk,
 			vec2 offsets[9],
 			mat4 projection_view,
 			vec3 player_position, 
@@ -284,7 +323,6 @@ void draw_grass_patches(Plant grass_patch,
 
 		if (draw)
 		{
-			
 			vec3 color;
 			vec3 ideal_color;
 			vec3 lo_temp_color;
@@ -310,6 +348,8 @@ void draw_grass_patches(Plant grass_patch,
 
 			int patch_size = get_grass_patch_size(environment_condition, grass_terrain_index);
 			B_draw_grass_patch(grass_patch.mesh, 
+					   camera_position,
+					   chunk,
 					   projection_view, 
 					   player_position, 
 					   player_facing, 

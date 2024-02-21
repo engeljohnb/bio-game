@@ -30,9 +30,13 @@ uniform float max_distance;
 uniform float sea_level;
 uniform int terrain_chunk_dimension;
 uniform float xz_scale;
+uniform int draw_debug;
 
 out vec3 f_position;
 out vec3 f_normal;
+out float f_max_distance;
+out vec3 f_center;
+out flat int f_draw_debug;
 
 vec3 get_frustum_normal(int i)
 {
@@ -41,22 +45,18 @@ vec3 get_frustum_normal(int i)
 		case 0:
 		{
 			return normalize(cross(frustum_corners[1] - frustum_corners[0], frustum_corners[2] - frustum_corners[0]));
-			break;
 		}
 		case 1:
 		{
 			return normalize(cross(frustum_corners[5] - frustum_corners[4], frustum_corners[1] - frustum_corners[4]));
-			break;
 		}
 		case 2:
 		{
 			return normalize(cross(frustum_corners[2] - frustum_corners[3], frustum_corners[6] - frustum_corners[3]));
-			break;
 		}
 		case 3:
 		{
 			return -normalize(cross(frustum_corners[5] - frustum_corners[7], frustum_corners[6] - frustum_corners[7]));
-			break;
 		}
 	}
 }
@@ -68,22 +68,18 @@ float get_d(int i)
 		case 0:
 		{
 			return dot(frustum_corners[1], -get_frustum_normal(i));
-			break;
 		}
 		case 1:
 		{
 			return dot(frustum_corners[1], -get_frustum_normal(i));
-			break;
 		}
 		case 2:
 		{
 			return dot(frustum_corners[6], -get_frustum_normal(i));
-			break;
 		}
 		case 3:
 		{
 			return dot(frustum_corners[6], -get_frustum_normal(i));
-			break;
 		}
 	}
 }
@@ -103,7 +99,6 @@ void main()
 
 	vec2 g_base_offset = gs_in[0].g_base_offset;
 	vec2 g_offset = gs_in[0].g_offset;
-	vec3 xz_location = vec3(g_offset.x, gs_in[0].g_player_pos.y, g_offset.y);
 
 	bool render = true;
 
@@ -113,30 +108,47 @@ void main()
 	min_xz -= 0.03;
 	max_xz -= 0.03;
 
+	/* Position of this grass. */
 	vec2 tex_coords = ((g_offset/xz_scale) - min_xz)/(max_xz-min_xz);
-
 	vec4 height_color = texture(heightmap, tex_coords);
 	float height = height_color.r * (height_color.g * 2500);
+	vec3 position = vec3(g_offset.x, height, g_offset.y);
+
+	/* Position of the center of the grass patch. */
+	vec2 base_tex_coords = ((g_base_offset/xz_scale) - min_xz)/(max_xz-min_xz);
+	vec4 base_height_color = texture(heightmap, base_tex_coords);
+	float base_height = base_height_color.r * (base_height_color.g * 2500);
+	vec3 base_position = vec3(g_base_offset.x, base_height, g_base_offset.y);
+
+	f_center = base_position;
+	f_max_distance = max_distance;
+	f_draw_debug = draw_debug;
+
 	height += 0.5;
 
 	if (height < sea_level)
 	{
 		render = false;
 	}
-	if (distance(g_base_offset, g_offset) > max_distance)
+	if (distance(base_position, position) > max_distance)
 	{
 		render = false;
 	}
 	for (int i = 0; i < 4; ++i)
 	{
 		vec3 normal = get_frustum_normal(i);
-		if ((dot(normal, xz_location) + get_d(i)) < -10)
+		if ((dot(normal, position) + get_d(i)) < -10)
 		{
 			render = false;
-		}
-		if (!render)
-		{
 			break;
+		}
+	}
+
+	if (draw_debug != 0)
+	{
+		if (distance(base_position, position) < 10.0)
+		{
+			render = true;
 		}
 	}
 

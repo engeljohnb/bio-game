@@ -190,21 +190,6 @@ float get_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	glm_vec3_copy(VEC3(1, heights[2], 0), q10);
 	glm_vec3_copy(VEC3(1, heights[3], 1), q11);
 
-	if (should_print_debug())
-	{
-		vec3 interpolation_samples[4];
-		glm_vec3_copy(VEC3(grid_x_min, heights[0], grid_z_min), interpolation_samples[0]);
-		glm_vec3_copy(VEC3(grid_x_min, heights[1], grid_z_max), interpolation_samples[1]);
-		glm_vec3_copy(VEC3(grid_x_max, heights[2], grid_z_min), interpolation_samples[2]);
-		glm_vec3_copy(VEC3(grid_x_max, heights[3], grid_z_max), interpolation_samples[3]);
-		fprintf(stderr, "corner samples:\n");
-		for (int i = 0; i < 4; ++i)
-		{
-			print_vec3(interpolation_samples[i]);
-		}
-		print_vec3(pos);
-	}
-
 	float player_grid_square_x = percent(grid_x_min, grid_x_max, pos[0]);
 	float player_grid_square_z = percent(grid_z_min, grid_z_max, pos[2]);
 

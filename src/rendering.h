@@ -36,6 +36,7 @@
 typedef struct Renderer
 {
 	Camera		camera;
+	Camera		alt_camera;
 	B_Window	window;
 	float		delta_t;
 	B_Texture	normal_texture;

@@ -22,6 +22,17 @@
 
 float g_view_distance = 0.0f;
 int g_terrain_xz_scale = 300;
+int g_print_debug = 0;
+
+int should_print_debug(void)
+{
+	return g_print_debug;
+}
+
+void set_should_print_debug(int i)
+{
+	g_print_debug = i;
+}
 
 int get_terrain_xz_scale(void)
 {

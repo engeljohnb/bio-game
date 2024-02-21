@@ -105,7 +105,7 @@ void main()
 
 	for (int i = 0; i < gl_in.length(); ++i)
 	{
-		if (gs_in[i].g_terrain_height > gs_in[i].g_sea_level+7.0)
+		if (gs_in[i].g_terrain_height > gs_in[i].g_sea_level+20.0)
 		{
 			continue;
 		}

@@ -20,7 +20,7 @@
 #define __TIME_H__
 
 #include <SDL2/SDL.h>
-#define BENCHMARK 1
+#include "common.h"
 
 #define MINUTES_PER_IN_GAME_DAY 5
 #define MINUTES_PER_IN_GAME_HOUR (MINUTES_PER_IN_GAME_DAY/24.0f)

@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "input.h"
 #include "terrain.h"
+#include "debug.h"
 
 int g_terrain_heightmap_width;
 int g_terrain_heightmap_height;
@@ -259,13 +260,30 @@ void B_draw_water_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "terrain_chunk_dimension", terrain_chunk_dimension);
 	B_set_uniform_int(shader, "temperature", cond.temperature);
 
-	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
-	for (int i = 0; i < 8; ++i)
+	if (USE_ALT_CAMERA)
 	{
-		char name[128] = {0};
-		snprintf(name, 128, "frustum_corners[%i]", i);
-		B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		mat4 alt_proj_view;
+		get_alt_projection_view(alt_proj_view);
+		vec3 frustum_corners[8];
+		get_frustum_corners(alt_proj_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
+
+	}
+	else
+	{
+		vec3 frustum_corners[8];
+		get_frustum_corners(projection_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
 	}
 	
 	glBindVertexArray(mesh.vao);
@@ -304,20 +322,115 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "precipitation", cond.precipitation);
 	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_float(shader, "terrain_chunk_dimension", (float)terrain_chunk_dimension);
-
-	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
-	for (int i = 0; i < 8; ++i)
+	B_set_uniform_int(shader, "draw_debug", 0);
+	B_set_uniform_float(shader, "db_grass_patch_max_distance", 0.0f);
+	for (int i = 0; i < 9; ++i)
 	{
 		char name[128] = {0};
-		snprintf(name, 128, "frustum_corners[%i]", i);
-		B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		snprintf(name, 128, "db_grass_patch_centers[%i]", i);
+		B_set_uniform_vec3(shader, name, VEC3_ZERO);
 	}
-	
+
+	if (USE_ALT_CAMERA)
+	{
+		vec3 frustum_corners[8];
+		mat4 alt_proj_view;
+		get_alt_projection_view(alt_proj_view);
+		get_frustum_corners(alt_proj_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
+
+	}
+	else
+	{
+		vec3 frustum_corners[8];
+		get_frustum_corners(projection_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
+	}
 	glBindVertexArray(mesh.vao);
 	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
 }
 
+void B_draw_terrain_mesh_debug(TerrainMesh mesh, 
+				B_Shader shader, 
+				mat4 projection_view,
+				uint64_t my_block_index, 
+				uint64_t player_block_index, 
+				float tessellation_level, 
+				B_Texture heightmap,
+				float terrain_chunk_dimension,
+				int heightmap_width,
+				int heightmap_height,
+				vec3 grass_patch_centers[9],
+				float grass_patch_max_distance)
+{
+	glUseProgram(shader);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, heightmap);
+	EnvironmentCondition cond = get_environment_condition(my_block_index);
+	B_set_uniform_int(shader, "heightmap", 0);
+	B_set_uniform_int(shader, "heightmap_width", heightmap_width);
+	B_set_uniform_int(shader, "heightmap_height", heightmap_height);
+	B_set_uniform_float(shader, "camera_height", get_camera_height());
+
+	B_set_uniform_mat4(shader, "projection_view_space", projection_view);
+	B_set_uniform_int(shader, "patches_per_column", mesh.num_rows);
+	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
+	B_set_uniform_int(shader, "my_block_index", my_block_index);
+	B_set_uniform_int(shader, "player_block_index", player_block_index);
+	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_float(shader, "height_factor", TERRAIN_HEIGHT_FACTOR);
+	B_set_uniform_int(shader, "temperature", cond.temperature);
+	B_set_uniform_float(shader, "precipitation", cond.precipitation);
+	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
+	B_set_uniform_float(shader, "terrain_chunk_dimension", (float)terrain_chunk_dimension);
+	B_set_uniform_int(shader, "draw_debug", 1);
+	B_set_uniform_float(shader, "db_grass_patch_max_distance", grass_patch_max_distance);
+	for (int i = 0; i < 9; ++i)
+	{
+		char name[128] = {0};
+		snprintf(name, 128, "db_grass_patch_centers[%i]", i);
+		B_set_uniform_vec3(shader, name, grass_patch_centers[i]);
+	}
+
+	if (USE_ALT_CAMERA)
+	{
+		vec3 frustum_corners[8];
+		mat4 alt_proj_view;
+		get_alt_projection_view(alt_proj_view);
+		get_frustum_corners(alt_proj_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
+
+	}
+	else
+	{
+		vec3 frustum_corners[8];
+		get_frustum_corners(projection_view, frustum_corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			char name[128] = {0};
+			snprintf(name, 128, "frustum_corners[%i]", i);
+			B_set_uniform_vec3(shader, name, frustum_corners[i]);
+		}
+	}
+	glBindVertexArray(mesh.vao);
+	glDrawArrays(GL_PATCHES, 0, mesh.num_vertices);
+}
 
 void get_block_corners(vec3 dest[4], int index)
 {
@@ -343,13 +456,29 @@ void get_block_corners(vec3 dest[4], int index)
 	dest[3][2] = (z_index+1) * (get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4.0f*half_dimension);
 }
 
-void draw_land_terrain_chunk(TerrainChunk *chunk, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing)
+void draw_land_terrain_chunk_debug(TerrainChunk *chunk, 
+				   B_Shader shader, 
+				   mat4 projection_view, 
+				   uint64_t player_block_index, 
+				   vec3 player_facing,
+				   vec3 grass_patch_centers[9],
+				   float grass_patch_max_distance)
 {
 	int x_max = chunk->dimension/2;
 	int x_offset = -(x_max);
 	int z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
 	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
+	if (USE_ALT_CAMERA)
+	{
+		mat4 alt_projv;
+		get_alt_projection_view(alt_projv);
+		get_frustum_corners(alt_projv, frustum_corners);
+	}
+	else
+	{
+		get_frustum_corners(projection_view, frustum_corners);
+	}
+
 	for (int i = 0; i < chunk->dimension*chunk->dimension; ++i)
 	{
 		uint64_t index = player_block_index + z_offset + x_offset;
@@ -388,7 +517,77 @@ void draw_land_terrain_chunk(TerrainChunk *chunk, B_Shader shader, mat4 projecti
 			fprintf(stderr, "B_draw_land_terrain_chunk error: invalid chunk type\n");
 			exit(-1);
 		}
+		B_draw_terrain_mesh_debug(chunk->terrain_mesh,
+					    shader,
+					    projection_view,
+					    index,
+					    player_block_index,
+					    chunk->tessellation_level,
+					    chunk->heightmap,
+					    chunk->dimension,
+					    chunk->heightmap_width,
+					    chunk->heightmap_height,
+					    grass_patch_centers,
+					    grass_patch_max_distance);
 
+	}
+
+}
+void draw_land_terrain_chunk(TerrainChunk *chunk, B_Shader shader, mat4 projection_view, uint64_t player_block_index, vec3 player_facing)
+{
+	int x_max = chunk->dimension/2;
+	int x_offset = -(x_max);
+	int z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
+	vec3 frustum_corners[8];
+	if (USE_ALT_CAMERA)
+	{
+		mat4 alt_projv;
+		get_alt_projection_view(alt_projv);
+		get_frustum_corners(alt_projv, frustum_corners);
+	}
+	else
+	{
+		get_frustum_corners(projection_view, frustum_corners);
+	}
+
+	for (int i = 0; i < chunk->dimension*chunk->dimension; ++i)
+	{
+		uint64_t index = player_block_index + z_offset + x_offset;
+		x_offset++;
+		if (x_offset > x_max)
+		{
+			z_offset += MAX_TERRAIN_BLOCKS;
+			x_offset = -x_max;
+		}
+
+		if (z_offset > MAX_TERRAIN_BLOCKS*x_max)
+		{
+			z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
+		}
+
+		/* If all four corners of the block are behind the player, don't draw. */
+		vec3 block_corners[4] = {0};
+		get_block_corners(block_corners, i);
+
+		int corner_count = 0;
+		for (int j = 0; j < 4; ++j)
+		{
+			block_corners[j][1] = get_raw_terrain_height_outside_bounds(block_corners[j], chunk);
+			if (which_side(player_facing, frustum_corners[0], block_corners[j]))
+			{
+				corner_count++;
+			}
+		}
+		if (corner_count >= 4)
+		{
+			continue;
+		}
+		
+		if (chunk->type != TERRAIN_CHUNK_LAND)
+		{
+			fprintf(stderr, "B_draw_land_terrain_chunk error: invalid chunk type\n");
+			exit(-1);
+		}
 		B_draw_terrain_mesh(chunk->terrain_mesh,
 					    shader,
 					    projection_view,
@@ -408,7 +607,17 @@ void draw_water_terrain_chunk(TerrainChunk *chunk, B_Texture land_heightmap, B_S
 	int x_offset = -(x_max);
 	int z_offset = -(MAX_TERRAIN_BLOCKS*(x_max));
 	vec3 frustum_corners[8];
-	get_frustum_corners(projection_view, frustum_corners);
+	if (USE_ALT_CAMERA)
+	{
+		mat4 alt_projv;
+		get_alt_projection_view(alt_projv);
+		get_frustum_corners(alt_projv, frustum_corners);
+	}
+	else
+	{
+		get_frustum_corners(projection_view, frustum_corners);
+	}
+
 	for (int i = 0; i < chunk->dimension*chunk->dimension; ++i)
 	{
 		uint64_t index = player_block_index + z_offset + x_offset;

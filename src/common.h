@@ -22,6 +22,11 @@
 #include <glad/glad.h>
 #include "utils.h"
 
+// Compilation flags
+#define DRAW_DEBUG 0
+#define USE_ALT_CAMERA 0
+#define BENCHMARK 0
+
 /* NOTE TO STRANGERS: The worlds are generated differently on different machines. These shortcuts are for me
  * during development, but won't work on your machine. Sorry :\ */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)9200029000)
@@ -54,7 +59,6 @@
  * total number of terrain blocks in either the x or z direction. So the total number
  * of terrain blocks would be MAX_TERRAIN_BLOCKS * MAX_TERRAIN_BLOCKS. */
 #define MAX_TERRAIN_BLOCKS 100000
-//#define get_terrain_xz_scale() (300*get_view_distance_factor())
 
 typedef unsigned int B_Shader;
 typedef unsigned int B_Framebuffer;
@@ -74,6 +78,7 @@ typedef struct DirectionLight
 	float	intensity;
 } DirectionLight;
 
+// TODO: turn this back into a constant
 int get_terrain_xz_scale(void);
 int set_terrain_xz_scale(int xz_scale);
 void set_view_distance(float distance);
@@ -93,4 +98,6 @@ void B_set_uniform_int(B_Shader shader, char *name, int value);
 void B_set_uniform_point_light(B_Shader shader, char *name, PointLight value);
 void B_set_uniform_direction_light(B_Shader shader, char *name, DirectionLight value);
 B_Shader B_compile_simple_shader_with_geo(const char *vert_path, const char *geo_path, const char *frag_path);
+int should_print_debug(void);
+void set_should_print_debug(int i);
 #endif
