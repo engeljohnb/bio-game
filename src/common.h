@@ -26,6 +26,7 @@
 #define DRAW_DEBUG 0
 #define USE_ALT_CAMERA 0
 #define BENCHMARK 0
+#define TERRAIN_XZ_SCALE 300
 
 /* NOTE TO STRANGERS: The worlds are generated differently on different machines. These shortcuts are for me
  * during development, but won't work on your machine. Sorry :\ */
@@ -79,8 +80,6 @@ typedef struct DirectionLight
 } DirectionLight;
 
 // TODO: turn this back into a constant
-int get_terrain_xz_scale(void);
-int set_terrain_xz_scale(int xz_scale);
 void set_view_distance(float distance);
 float get_view_distance(void);
 DirectionLight create_direction_light(vec3 direction, vec3 color, float intensity);

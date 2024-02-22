@@ -21,7 +21,6 @@
 #include "common.h"
 
 float g_view_distance = 0.0f;
-int g_terrain_xz_scale = 300;
 int g_print_debug = 0;
 
 int should_print_debug(void)
@@ -32,17 +31,6 @@ int should_print_debug(void)
 void set_should_print_debug(int i)
 {
 	g_print_debug = i;
-}
-
-int get_terrain_xz_scale(void)
-{
-	return g_terrain_xz_scale;
-}
-
-int set_terrain_xz_scale(int xz_scale)
-{
-	g_terrain_xz_scale = xz_scale;
-	return g_terrain_xz_scale;
 }
 
 void set_view_distance(float distance)

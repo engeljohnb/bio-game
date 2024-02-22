@@ -19,27 +19,40 @@
 #include "time.h"
 #include "glad/glad.h"
 
+uint64_t g_total_pause_time = 0;
+
+uint64_t get_pause_time(void)
+{
+	return g_total_pause_time;
+}
+
+uint64_t set_pause_time(uint64_t time)
+{
+	g_total_pause_time = time;
+	return g_total_pause_time;
+}
+
 double B_get_current_second(void)
 {
-	uint64_t current_time = SDL_GetTicks64();
+	uint64_t current_time = SDL_GetTicks64() - get_pause_time();
 	return (double)floor((current_time % 60000)/1000.0);
 }
 
 double B_get_current_minute(void)
 {
-	uint64_t current_time = SDL_GetTicks64();
+	uint64_t current_time = SDL_GetTicks64() - get_pause_time();
 	return (double)floor((current_time / 60000) % 60);
 }
 
 double B_get_current_playtime_hour(void)
 {
-	uint64_t current_time = SDL_GetTicks64();
+	uint64_t current_time = SDL_GetTicks64() - get_pause_time();
 	return (double)floor((current_time / (60000*60*24))%24);
 }
 
 double B_get_current_in_game_hour(void)
 {
-	uint64_t current_time = SDL_GetTicks64();
+	uint64_t current_time = SDL_GetTicks64() - get_pause_time();
 	return (double)floor(fmodf(current_time / (6000*MINUTES_PER_IN_GAME_DAY), MINUTES_PER_IN_GAME_DAY));
 }
 

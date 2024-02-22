@@ -55,6 +55,7 @@ typedef struct CommandState
 	int		increase_view_distance;
 	int		decrease_view_distance;
 	int		random_teleport;
+	int		pause;
 } CommandState;
 
 
@@ -68,6 +69,7 @@ typedef struct CommandConfig
 	int		forward;
 	int 		backward;
 	int		alt_quit;
+	int		pause;
 	int		increase_view_distance;
 	int		decrease_view_distance;
 } CommandConfig;

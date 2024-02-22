@@ -43,7 +43,7 @@ void B_init(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	set_terrain_chunk_dimension(3);
-	set_view_distance((float)(get_terrain_xz_scale()*4));
+	set_view_distance((float)(TERRAIN_XZ_SCALE*4));
 }
 
 B_Window B_create_window(void)

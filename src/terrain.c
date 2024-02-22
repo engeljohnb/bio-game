@@ -86,7 +86,7 @@ void B_update_terrain_chunk(TerrainChunk *chunk, uint64_t player_block_index)
 		B_set_uniform_int(chunk->compute_shader, "data", 0);
 		glBindImageTexture(0, chunk->heightmap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	}
-	B_set_uniform_float(chunk->compute_shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_float(chunk->compute_shader, "xz_scale", TERRAIN_XZ_SCALE);
 	for (int i = 0; i < chunk->dimension*chunk->dimension; ++i)
 	{
 		int index = player_block_index + z_offset + x_offset;
@@ -159,8 +159,8 @@ int get_terrain_heightmap_index_from_position(vec2 pos)
 	size_t section_heightmap_height = round(heightmap_width/get_terrain_chunk_dimension());
 	size_t section_heightmap_width = round(heightmap_height/get_terrain_chunk_dimension());
 	
-	float mesh_height = get_terrain_xz_scale()*4;
-	float mesh_width = get_terrain_xz_scale()*4;
+	float mesh_height = TERRAIN_XZ_SCALE*4;
+	float mesh_width = TERRAIN_XZ_SCALE*4;
 
 	float percent_x = glm_percent(0, mesh_width, pos[0]);
 	float percent_z = glm_percent(0, mesh_height, pos[1]);
@@ -253,7 +253,7 @@ void B_draw_water_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
 	B_set_uniform_float(shader, "height_factor", 22.0f);
 	B_set_uniform_float(shader, "sea_level", SEA_LEVEL);
 	B_set_uniform_float(shader, "camera_height", camera_height);
@@ -316,7 +316,7 @@ void B_draw_terrain_mesh(TerrainMesh mesh,
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
 	B_set_uniform_float(shader, "height_factor", TERRAIN_HEIGHT_FACTOR);
 	B_set_uniform_int(shader, "temperature", cond.temperature);
 	B_set_uniform_float(shader, "precipitation", cond.precipitation);
@@ -388,7 +388,7 @@ void B_draw_terrain_mesh_debug(TerrainMesh mesh,
 	B_set_uniform_float(shader, "tessellation_level", tessellation_level);
 	B_set_uniform_int(shader, "my_block_index", my_block_index);
 	B_set_uniform_int(shader, "player_block_index", player_block_index);
-	B_set_uniform_float(shader, "xz_scale", get_terrain_xz_scale());
+	B_set_uniform_float(shader, "xz_scale", TERRAIN_XZ_SCALE);
 	B_set_uniform_float(shader, "height_factor", TERRAIN_HEIGHT_FACTOR);
 	B_set_uniform_int(shader, "temperature", cond.temperature);
 	B_set_uniform_float(shader, "precipitation", cond.precipitation);
@@ -439,21 +439,21 @@ void get_block_corners(vec3 dest[4], int index)
 	int x_index = index % dimension;
 	int z_index = index / dimension;
 
-	dest[0][0] = (x_index * (get_terrain_xz_scale()*4)) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[0][0] = (x_index * (TERRAIN_XZ_SCALE*4)) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 	dest[0][1] = 0;
-	dest[0][2] = (z_index * (get_terrain_xz_scale()*4)) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[0][2] = (z_index * (TERRAIN_XZ_SCALE*4)) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 
-	dest[1][0] = (x_index+1) * (get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[1][0] = (x_index+1) * (TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 	dest[1][1] = 0;
-	dest[1][2] = (z_index * (get_terrain_xz_scale()*4)) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[1][2] = (z_index * (TERRAIN_XZ_SCALE*4)) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 
-	dest[2][0] = (x_index * (get_terrain_xz_scale()*4)) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[2][0] = (x_index * (TERRAIN_XZ_SCALE*4)) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 	dest[2][1] = 0;
-	dest[2][2] = (z_index+1) * (get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[2][2] = (z_index+1) * (TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 
-	dest[3][0] = (x_index+1) * (get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[3][0] = (x_index+1) * (TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 	dest[3][1] = 0;
-	dest[3][2] = (z_index+1) * (get_terrain_xz_scale()*4) - (get_terrain_xz_scale()*4.0f*half_dimension);
+	dest[3][2] = (z_index+1) * (TERRAIN_XZ_SCALE*4) - (TERRAIN_XZ_SCALE*4.0f*half_dimension);
 }
 
 void draw_land_terrain_chunk_debug(TerrainChunk *chunk, 

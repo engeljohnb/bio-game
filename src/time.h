@@ -50,6 +50,8 @@ enum TIME_OF_DAY
 	B_NIGHT,
 };
 
+uint64_t get_pause_time(void);
+uint64_t set_pause_time(uint64_t time);
 void B_keep_time(int target_period);
 void B_stopwatch(char *message);
 float B_get_frame_time(void);

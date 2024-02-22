@@ -68,9 +68,9 @@ void update_actor_state_direction(ActorState *actor_state, CommandState *command
 
 int actor_outside_terrain_boundaries(ActorState *actor_state)
 {
-	return ((actor_state->position[0] >= get_terrain_xz_scale()*4-3) ||
+	return ((actor_state->position[0] >= TERRAIN_XZ_SCALE*4-3) ||
 		(actor_state->position[0] <= 3) ||
-		(actor_state->position[2] >= get_terrain_xz_scale()*4-3) ||
+		(actor_state->position[2] >= TERRAIN_XZ_SCALE*4-3) ||
 		(actor_state->position[2] <= 3));
 
 }
@@ -106,25 +106,25 @@ void update_actor_state_position(ActorState *actor_state, CommandState command_s
 	glm_vec3_scale(move_direction_xz, actor_state->speed, velocity);
 	glm_vec3_add(actor_state->position, velocity, actor_state->position);
 
-	if (actor_state->position[0] > get_terrain_xz_scale()*4)
+	if (actor_state->position[0] > TERRAIN_XZ_SCALE*4)
 	{
 		actor_state->position[0] = 0;
 		actor_state->current_terrain_index += 1;
 	}
 	if (actor_state->position[0] < 0)
 	{
-		actor_state->position[0] = get_terrain_xz_scale()*4;
+		actor_state->position[0] = TERRAIN_XZ_SCALE*4;
 		actor_state->current_terrain_index -= 1;
 	}
 
-	if (actor_state->position[2] > get_terrain_xz_scale()*4)
+	if (actor_state->position[2] > TERRAIN_XZ_SCALE*4)
 	{
 		actor_state->position[2] = 0;
 		actor_state->current_terrain_index += MAX_TERRAIN_BLOCKS;
 	}
 	if (actor_state->position[2] < 0)
 	{
-		actor_state->position[2] = get_terrain_xz_scale()*4;
+		actor_state->position[2] = TERRAIN_XZ_SCALE*4;
 		actor_state->current_terrain_index -= MAX_TERRAIN_BLOCKS;
 	}
 }

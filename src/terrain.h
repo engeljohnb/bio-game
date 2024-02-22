@@ -73,7 +73,8 @@ typedef struct Plant
 
 } Plant;
 
-/* A TerrainChunk is a block of nine 4*get_terrain_xz_scale() x 4*get_terrain_xz_scale() terrain_meshes. You could think of them as like a tile map.
+/* A TerrainChunk is a block of 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. These are the ground -- they expand in the x and z
+ * dimensions and the height comes from a heightmap.
  * Whenever a "block" is referred to in the code, it's usally indicating one of these nine meshes, and a "chunk" usually indicates
  * all nine of them together. */
 typedef struct TerrainChunk

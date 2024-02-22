@@ -33,9 +33,9 @@ Actor create_player(unsigned int id)
 	Actor player;
 	memset(&player, 0, sizeof(Actor));
 	player.model = NULL;
-	// Each tile has width and height of get_terrain_xz_scale()*4, so player starts in the center of the current tile.
+	// Each tile has width and height of TERRAIN_XZ_SCALE*4, so player starts in the center of the current tile.
 	vec3 position;
-	glm_vec3_copy(VEC3(get_terrain_xz_scale()*2, 0, get_terrain_xz_scale()*2), position);
+	glm_vec3_copy(VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2), position);
 	player.actor_state = create_actor_state(id, position, VEC3_Z_UP);
 	player.model = B_load_model_from_file("assets/monkey/monkey.gltf");
 	player.animations = B_load_animations_from_file("assets/monkey/monkey.gltf", &player.num_animations);

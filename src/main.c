@@ -39,14 +39,12 @@
 #include "debug.h"
 #include "utils.h"
 
-#define PLAYER_START_POS VEC3(get_terrain_xz_scale()*2, 0, get_terrain_xz_scale()*2)
+#define PLAYER_START_POS VEC3(TERRAIN_XZ_SCALE*2, 0, TERRAIN_XZ_SCALE*2)
 
 
 // UP NEXT:
-// 	Continue optimizing. Is it time to learn about multithreading?
 // 	Add pause button
 // 	Implement trees
-
 
 void check_actor_collisions_ice(ActorState *actor_state, EnvironmentCondition environment_condition, float actor_height)
 {
@@ -129,18 +127,40 @@ void game_loop(void)
 
 	FILE *rain_log = fopen("rain_time_log.txt", "w");
 
+	int game_paused = 0;
+	uint64_t pause_start_time = 0;
+
 	B_stopwatch("INIT");
 	while (running)
 	{
 		// Input update
 		B_update_command_state_ui(&all_actors[player_id].actor_state.command_state, all_actors[player_id].command_config);
+		if (all_actors[player_id].actor_state.command_state.pause)
+		{
+			if (!pause_start_time)
+			{
+				pause_start_time = SDL_GetTicks64();
+			}
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			B_flip_window(renderer.window);
+			continue;
+		}
+		else
+		{
+			if (pause_start_time)
+			{
+				set_pause_time(SDL_GetTicks64() - pause_start_time);
+				pause_start_time = 0;
+			}
+		}
+
 		if (all_actors[player_id].actor_state.command_state.increase_view_distance)
 		{
 			all_actors[player_id].actor_state.command_state.increase_view_distance = 0;
 
 			set_terrain_chunk_dimension(get_terrain_chunk_dimension()+2);
 			int half_dimension = get_terrain_chunk_dimension()/2;
-			set_view_distance((get_terrain_xz_scale()*4)*half_dimension);
+			set_view_distance((TERRAIN_XZ_SCALE*4)*half_dimension);
 
 			free_renderer(renderer);
 			renderer = create_default_renderer(window);
@@ -161,7 +181,7 @@ void game_loop(void)
 			{
 				set_terrain_chunk_dimension(get_terrain_chunk_dimension()-2);
 				int half_dimension = get_terrain_chunk_dimension()/2;
-				set_view_distance((get_terrain_xz_scale()*4) * half_dimension);
+				set_view_distance((TERRAIN_XZ_SCALE*4) * half_dimension);
 
 				free_renderer(renderer);
 				renderer = create_default_renderer(window);
@@ -321,7 +341,7 @@ void game_loop(void)
 						all_actors[player_id].actor_state.current_terrain_index,
 						all_actors[player_id].actor_state.front,
 						grass_patch_centers,
-						get_terrain_xz_scale()*2);
+						TERRAIN_XZ_SCALE*2);
 
 		}
 		else

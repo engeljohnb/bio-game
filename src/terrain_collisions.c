@@ -31,8 +31,8 @@ int get_pixel_index_from_position(vec3 pos, TerrainChunk *terrain_chunk)
 	unsigned int section_heightmap_width = terrain_chunk->width;
 	unsigned int section_heightmap_height = terrain_chunk->height;
 
-	float mesh_height = get_terrain_xz_scale()*4;
-	float mesh_width = get_terrain_xz_scale()*4;
+	float mesh_height = TERRAIN_XZ_SCALE*4;
+	float mesh_width = TERRAIN_XZ_SCALE*4;
 
 	float percent_x = glm_percent(0, mesh_width, pos[0]);
 	float percent_z = glm_percent(0, mesh_height, pos[2]);
@@ -63,8 +63,8 @@ float get_raw_terrain_height_outside_bounds(vec3 pos, TerrainChunk *terrain_chun
 	unsigned int total_heightmap_height= terrain_chunk->heightmap_height;
 
 	int half_dimension = (int)terrain_chunk->dimension/2;
-	float mesh_height = (get_terrain_xz_scale()*4) * terrain_chunk->dimension;
-	float mesh_width = (get_terrain_xz_scale()*4) * terrain_chunk->dimension;
+	float mesh_height = (TERRAIN_XZ_SCALE*4) * terrain_chunk->dimension;
+	float mesh_width = (TERRAIN_XZ_SCALE*4) * terrain_chunk->dimension;
 
 	float percent_x = percent(-1200*half_dimension, mesh_width, pos[0]);
 	float percent_z = percent(-1200*half_dimension, mesh_height, pos[2]);
@@ -94,8 +94,8 @@ float get_raw_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	unsigned int section_heightmap_width = terrain_chunk->width;
 	unsigned int section_heightmap_height = terrain_chunk->height;
 
-	float mesh_height = get_terrain_xz_scale()*4;
-	float mesh_width = get_terrain_xz_scale()*4;
+	float mesh_height = TERRAIN_XZ_SCALE*4;
+	float mesh_width = TERRAIN_XZ_SCALE*4;
 
 	float percent_x = percent(0, mesh_width, pos[0]);
 	float percent_z = percent(0, mesh_height, pos[2]);
@@ -131,8 +131,8 @@ void snap_to_ground(vec3 pos, TerrainChunk *terrain_chunk)
 
 void get_four_nearest_heights(vec3 pos, TerrainChunk *terrain_chunk, vec4 dest)
 {
-	float grid_square_width = get_terrain_xz_scale() / terrain_chunk->tessellation_level;
-	float grid_square_height = get_terrain_xz_scale() / terrain_chunk->tessellation_level;
+	float grid_square_width = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
+	float grid_square_height = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
 
 	vec3 height0;
 	vec3 height1;
@@ -171,8 +171,8 @@ float get_terrain_height(vec3 pos, TerrainChunk *terrain_chunk)
 	vec4 heights;
 	get_four_nearest_heights(pos, terrain_chunk, heights);
 
-	float grid_square_width = get_terrain_xz_scale() / terrain_chunk->tessellation_level;
-	float grid_square_height = get_terrain_xz_scale() / terrain_chunk->tessellation_level;
+	float grid_square_width = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
+	float grid_square_height = TERRAIN_XZ_SCALE / terrain_chunk->tessellation_level;
 
 	vec3 q00;
 	vec3 q10;

@@ -28,6 +28,7 @@
 CommandConfig default_command_config(void)
 {
 	CommandConfig config = {0};
+	config.pause = SDLK_RETURN;
 	config.alt_quit = SDLK_ESCAPE;
 	config.left = SDLK_a;
 	config.right = SDLK_d;
@@ -114,6 +115,10 @@ int B_update_command_state_ui(CommandState *command_state, CommandConfig config)
 				else if (key == config.increase_view_distance)
 				{
 					command_state->increase_view_distance = 1;
+				}
+				else if (key == config.pause)
+				{
+					command_state->pause = !(command_state->pause);
 				}
 
 				//DEBUG
