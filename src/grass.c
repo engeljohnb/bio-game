@@ -15,10 +15,13 @@ Plant create_grass_patch(B_Framebuffer g_buffer, B_Texture heightmap)
 {
 	Plant grass;
 	memset(&grass, 0, sizeof(Plant));
-	TerrainElementMesh mesh = create_grass_blade(g_buffer, heightmap);
+	grass.num_meshes = 3;
+	create_grass_patch_meshes(grass.num_meshes, g_buffer, heightmap, grass.meshes);
 	
 	grass.type = PLANT_TYPE_GRASS;
-	grass.mesh = mesh;
+	grass.scale_coefficients[0] = 8.0f;
+	grass.scale_coefficients[1] = 20.0f;
+	grass.scale_coefficients[2] = 50.0f;
 	grass.min_temperature = 32;
 	grass.max_temperature = 140;
 	grass.ideal_min_temperature = 45;
@@ -29,7 +32,7 @@ Plant create_grass_patch(B_Framebuffer g_buffer, B_Texture heightmap)
 	
 }
 
-void B_send_grass_blade_to_gpu(TerrainElementMesh *mesh)
+void B_send_grass_patch_mesh_to_gpu(TerrainElementMesh *mesh)
 {
 	size_t stride = sizeof(GLfloat)*3;
 	int num_vertices = 9*36;
@@ -176,6 +179,7 @@ void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9])
 }
 
 void B_draw_grass_patch(TerrainElementMesh mesh, 
+			float scale_coefficient,
 			vec3 camera_position,
 			TerrainChunk *chunk,
 			mat4 projection_view,
@@ -263,7 +267,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	glBindTexture(GL_TEXTURE_2D, mesh.heightmap);
 	mat4 scale;
 	glm_mat4_identity(scale);
-	glm_scale(scale, VEC3(8,8,8));
+	glm_scale(scale, VEC3(scale_coefficient, scale_coefficient, scale_coefficient));
 	B_set_uniform_int(mesh.shader, "heightmap", 0);
 	B_set_uniform_float(mesh.shader, "patch_size", (float)patch_size);
 	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
@@ -293,7 +297,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void draw_grass_patches(Plant grass_patch,
+/*void draw_grass_patches(Plant grass_patch,
 			vec3 camera_position,
 			TerrainChunk *chunk,
 			vec2 offsets[9],
@@ -350,7 +354,7 @@ void draw_grass_patches(Plant grass_patch,
 			}
 
 			int patch_size = get_grass_patch_size(environment_condition, grass_terrain_index);
-			B_draw_grass_patch(grass_patch.mesh, 
+			B_draw_grass_patch(grass_patch.meshes[grass_terrain_index%grass_patch.num_meshes], 
 					   camera_position,
 					   chunk,
 					   projection_view, 
@@ -370,17 +374,17 @@ void draw_grass_patches(Plant grass_patch,
 			z_counter++;
 		}
 	}
-}
+}*/
 
-TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap)
+void create_grass_patch_meshes(int num_meshes, int g_buffer, B_Texture heightmap, TerrainElementMesh dest[MAX_TERRAIN_ELEMENT_MESHES])
 {
-	TerrainElementMesh mesh;
-	memset(&mesh, 0, sizeof(TerrainElementMesh));
-	mesh.g_buffer = g_buffer;
-	mesh.heightmap = heightmap;
-	B_send_grass_blade_to_gpu(&mesh);
-
-	return mesh;
+	for (int i = 0; i < num_meshes; ++i)
+	{
+		memset(&dest[i], 0, sizeof(TerrainElementMesh));
+		dest[i].g_buffer = g_buffer;
+		dest[i].heightmap = heightmap;
+		B_send_grass_patch_mesh_to_gpu(&dest[i]);
+	}
 }
 
 void B_free_terrain_element_mesh(TerrainElementMesh mesh)
@@ -391,6 +395,9 @@ void B_free_terrain_element_mesh(TerrainElementMesh mesh)
 
 void free_plant(Plant plant)
 {
-	B_free_terrain_element_mesh(plant.mesh);
+	for (int i = 0; i < plant.num_meshes; ++i)
+	{
+		B_free_terrain_element_mesh(plant.meshes[i]);
+	}
 }
 

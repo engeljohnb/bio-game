@@ -3,6 +3,6 @@
 #include "plant.h"
 
 Plant create_canopy(int g_buffer, B_Texture heightmap);
-void B_draw_canopy(Plant canopy, TerrainChunk *chunk, vec2 base_offset, int x_offset, int z_offset, mat4 projection_view);
+void B_draw_canopy(Plant canopy, int mesh_id, TerrainChunk *chunk, vec2 base_offset, int x_offset, int z_offset, mat4 projection_view);
 
 #endif

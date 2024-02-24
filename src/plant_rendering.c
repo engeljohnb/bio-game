@@ -72,7 +72,8 @@ void draw_plants(Plant plant,
 
 			if (plant.type == PLANT_TYPE_GRASS)
 			{
-				B_draw_grass_patch(plant.mesh, 
+				B_draw_grass_patch(plant.meshes[plant_terrain_index%plant.num_meshes], 
+						   plant.scale_coefficients[plant_terrain_index%plant.num_meshes],
 						   camera_position,
 						   chunk,
 						   projection_view, 
@@ -87,7 +88,7 @@ void draw_plants(Plant plant,
 
 			else if (plant.type == PLANT_TYPE_CANOPY)
 			{
-				B_draw_canopy(plant, chunk, offsets[i], x_counter, z_counter, projection_view);
+				B_draw_canopy(plant, plant_terrain_index%plant.num_meshes, chunk, offsets[i], x_counter, z_counter, projection_view);
 			}
 
 		

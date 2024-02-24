@@ -14,6 +14,7 @@ int get_grass_patch_size(EnvironmentCondition environment_condition, uint64_t te
 void get_grass_patch_offset(uint64_t terrain_index, vec2 offset);
 void get_grass_patch_offsets(uint64_t terrain_index, vec2 offsets[9]);
 void B_draw_grass_patch(TerrainElementMesh mesh, 
+			float scale_coefficient,
 			vec3 camera_position,
 			TerrainChunk *chunk,
 			mat4 projection_view,
@@ -25,16 +26,16 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			int patch_size, 
 			vec2 base_offset);
 
-void draw_grass_patches(Plant grass_patch,
+/*void draw_grass_patches(Plant grass_patch,
 			vec3 camera_position,
 			TerrainChunk *chunk,
 			vec2 offsets[9],
 			mat4 projection_view,
 			vec3 player_position, 
 			vec3 player_facing,
-			uint64_t terrain_index);
+			uint64_t terrain_index);*/
 
-TerrainElementMesh create_grass_blade(int g_buffer, B_Texture heightmap);
+void create_grass_patch_meshes(int num_meshes, int g_buffer, B_Texture heightmap, TerrainElementMesh dest[MAX_TERRAIN_ELEMENT_MESHES]);
 void B_free_terrain_element_mesh(TerrainElementMesh mesh);
 void free_plant(Plant plant);
 

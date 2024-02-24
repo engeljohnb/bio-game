@@ -2,15 +2,18 @@
 #define __PLANT_H__
 #include "terrain.h"
 
+#define MAX_TERRAIN_ELEMENT_MESHES 4
+
 enum PLANT_TYPES
 {
 	PLANT_TYPE_GRASS = 0,
 	PLANT_TYPE_CANOPY,
 };
+
 typedef struct Plant
 {	
 	int			type;
-	TerrainElementMesh 	*meshes;
+	TerrainElementMesh 	meshes[MAX_TERRAIN_ELEMENT_MESHES];
 	int			num_meshes;
 	int 			min_temperature;
 	int			max_temperature;
@@ -18,6 +21,6 @@ typedef struct Plant
 	int			ideal_max_temperature;
 	float 			min_precipitation;
 	float 			max_precipitation;
-
+	float			scale_coefficients[MAX_TERRAIN_ELEMENT_MESHES];
 } Plant;
 #endif

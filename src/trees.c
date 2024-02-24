@@ -90,6 +90,7 @@ void B_send_canopy_mesh_to_gpu(TerrainElementMesh *mesh)
 }
 
 void B_draw_canopy(Plant canopy, 
+		   int mesh_id,
 		   TerrainChunk *chunk,
 		   vec2 base_offset, 
 		   int x_offset,
@@ -108,34 +109,35 @@ void B_draw_canopy(Plant canopy,
 	offset[2] = base_offset[1] + (z_offset * (TERRAIN_XZ_SCALE*4));
 	offset[1] = get_terrain_height(offset, chunk) + 100.0;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, canopy.mesh.g_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, canopy.meshes[mesh_id].g_buffer);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, canopy.mesh.heightmap);
+	glBindTexture(GL_TEXTURE_2D, canopy.meshes[mesh_id].heightmap);
 
 	mat4 scale;
 	glm_mat4_identity(scale);
-	glm_scale(scale, VEC3(2,2,2));
+	float scale_coefficient = canopy.scale_coefficients[mesh_id];
+	glm_scale(scale, VEC3(scale_coefficient,scale_coefficient,scale_coefficient));
 
 	int patch_size = 1000;
-	B_set_uniform_mat4(canopy.mesh.shader, "scale", scale);
-	B_set_uniform_mat4(canopy.mesh.shader, "projection_view", projection_view);
-	B_set_uniform_vec3(canopy.mesh.shader, "base_position", offset);
-	B_set_uniform_int(canopy.mesh.shader, "num_subgroups", patch_size/10);
-	B_set_uniform_float(canopy.mesh.shader, "patch_size", (float)patch_size);
+	B_set_uniform_mat4(canopy.meshes[mesh_id].shader, "scale", scale);
+	B_set_uniform_mat4(canopy.meshes[mesh_id].shader, "projection_view", projection_view);
+	B_set_uniform_vec3(canopy.meshes[mesh_id].shader, "base_position", offset);
+	B_set_uniform_int(canopy.meshes[mesh_id].shader, "num_subgroups", patch_size/10);
+	B_set_uniform_float(canopy.meshes[mesh_id].shader, "patch_size", (float)patch_size);
 
-	glBindVertexArray(canopy.mesh.vao);
-	glDrawElementsInstanced(GL_TRIANGLES, canopy.mesh.num_elements, GL_UNSIGNED_INT, 0, patch_size);
+	glBindVertexArray(canopy.meshes[mesh_id].vao);
+	glDrawElementsInstanced(GL_TRIANGLES, canopy.meshes[mesh_id].num_elements, GL_UNSIGNED_INT, 0, patch_size);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-TerrainElementMesh create_canopy_mesh(int g_buffer, B_Texture heightmap)
+void create_canopy_meshes(int num_meshes, int g_buffer, B_Texture heightmap, TerrainElementMesh dest[MAX_TERRAIN_ELEMENT_MESHES])
 {
-	TerrainElementMesh mesh = {0};
-	mesh.g_buffer = g_buffer;
-	mesh.heightmap = heightmap;
-	B_send_canopy_mesh_to_gpu(&mesh);
-
-	return mesh;
+	for (int i = 0; i < num_meshes; ++i)
+	{
+		dest[i].g_buffer = g_buffer;
+		dest[i].heightmap = heightmap;
+		B_send_canopy_mesh_to_gpu(&dest[i]);
+	}
 }
 
 Plant create_canopy(int g_buffer, B_Texture heightmap)
@@ -148,6 +150,11 @@ Plant create_canopy(int g_buffer, B_Texture heightmap)
 	canopy.ideal_max_temperature = 95;
 	canopy.min_precipitation = 0.21f;
 	canopy.max_precipitation = 1.0f;
-	canopy.mesh = create_canopy_mesh(g_buffer, heightmap);
+	canopy.num_meshes = 4;
+	canopy.scale_coefficients[0] = 2.0f;
+	canopy.scale_coefficients[1] = 4.0f;
+	canopy.scale_coefficients[2] = 6.0f;
+	canopy.scale_coefficients[3] = 8.0f;
+	create_canopy_meshes(canopy.num_meshes, g_buffer, heightmap, canopy.meshes);
 	return canopy;
 }
