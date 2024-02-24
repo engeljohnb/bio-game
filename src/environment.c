@@ -147,12 +147,13 @@ ParticleMesh create_snowflake_mesh(int g_buffer)
 float get_current_rain_level(void)
 {	
 	uint64_t ticks = SDL_GetTicks64();
+//	ticks -= get_pause_time();
 	float in_game_milliseconds = (float)((ticks/(uint64_t)100)%(SECONDS_PER_IN_GAME_DAY*14));
 
 	float percent = 0.5f + (noise1(in_game_milliseconds/(SECONDS_PER_IN_GAME_DAY*14))/2.0f);
 	/* Logistic function -- so it's always either rainy (or snowy) or sunny, without too much in-between time*/
-	float final = 1.0f / (1.0f + pow(2.71828, -25.0f * (percent - 0.6f)));
-	//fprintf(stderr, "%f %f\n", percent, final);
+	float final = 1.0f / (1.0f + pow(2.71828, -25.0f * (percent - 0.8f)));
+//	fprintf(stderr, "%f %f\n", percent, final);
 	return final;
 }
 

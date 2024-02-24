@@ -195,14 +195,14 @@ void main()
 		{
 			if (camera_height > sea_level)
 			{
-				if (gl_in[i].gl_Position.y < sea_level-15.0)
+				if (gl_in[i].gl_Position.y < sea_level-20.0)
 				{
 					continue;
 				}
 			}
 			else
 			{
-				if (gl_in[i].gl_Position.y > sea_level+15.0)
+				if (gl_in[i].gl_Position.y > sea_level+20.0)
 				{
 					continue;
 				}

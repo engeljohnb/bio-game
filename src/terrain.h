@@ -61,17 +61,6 @@ typedef struct TerrainElementMesh
 	B_Shader		shader;
 } TerrainElementMesh;
 
-typedef struct Plant
-{	
-	TerrainElementMesh 	mesh;
-	int 			min_temperature;
-	int			max_temperature;
-	int			ideal_min_temperature;
-	int			ideal_max_temperature;
-	float 			min_precipitation;
-	float 			max_precipitation;
-
-} Plant;
 
 /* A TerrainChunk is a block of 4*TERRAIN_XZ_SCALE x 4*TERRAIN_XZ_SCALE terrain_meshes. These are the ground -- they expand in the x and z
  * dimensions and the height comes from a heightmap.

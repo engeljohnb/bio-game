@@ -35,7 +35,10 @@
 #include "terrain.h"
 #include "asset_loading.h"
 #include "terrain_collisions.h"
+#include "plant_rendering.h"
 #include "grass.h"
+#include "trees.h"
+#include "plant.h"
 #include "debug.h"
 #include "utils.h"
 
@@ -43,8 +46,17 @@
 
 
 // UP NEXT:
-// 	Add pause button
 // 	Implement trees
+// 	Before you get too far in, make it so one plant can have several meshes.
+// 	I think I'm going to only have a few meshes for the base tree that are interchanged randomly.
+// 	The real disginguishing factor for the trees will be the canopy shape and color.
+// 	The canopy shape could be decided exactly like the grass patches. Then the base mesh is just rendered in the center.
+// 	TODO: Make the shaders use the actually good frustum culling method
+// 	TODO: Make your own GetTicks function to subtract pause-time
+// 	TODO: Frustum culling on rain?
+// 	TODO: Fix the goddamned rain already. It rains every day.
+// 	TODO: Implement game saves.
+// 	TODO: Fix grass pop-in.
 
 void check_actor_collisions_ice(ActorState *actor_state, EnvironmentCondition environment_condition, float actor_height)
 {
@@ -79,9 +91,12 @@ void game_loop(void)
 
 	// Environment init
 	TerrainChunk terrain_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_LAND, PLAYER_TERRAIN_INDEX_START);
+
 	Plant grass_patch = create_grass_patch(renderer.g_buffer, terrain_chunk.heightmap);
 	vec2 grass_patch_offsets[9];
 	get_grass_patch_offsets(PLAYER_TERRAIN_INDEX_START, grass_patch_offsets);
+
+	Plant canopy = create_canopy(renderer.g_buffer, terrain_chunk.heightmap);
 
 	TerrainChunk water_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_WATER, PLAYER_TERRAIN_INDEX_START);
 
@@ -360,15 +375,28 @@ void game_loop(void)
 
 		B_stopwatch("Draw Actors");
 
-		draw_grass_patches(grass_patch,
-				   renderer.camera.position,
-				   &terrain_chunk,
-				   grass_patch_offsets,
-				   projection_view,
-				   all_actors[player_id].actor_state.position, 
-				   renderer.camera.front,
-				   all_actors[player_id].actor_state.current_terrain_index);
+		draw_plants(grass_patch,
+			   renderer.camera.position,
+			   &terrain_chunk,
+			   grass_patch_offsets,
+			   9,
+			   projection_view,
+			   all_actors[player_id].actor_state.position, 
+			   renderer.camera.front,
+			   all_actors[player_id].actor_state.current_terrain_index);
 		B_stopwatch("Draw Grass");
+
+		draw_plants(canopy,
+			   renderer.camera.position,
+			   &terrain_chunk,
+			   grass_patch_offsets,
+			   9,
+			   projection_view,
+			   all_actors[player_id].actor_state.position, 
+			   renderer.camera.front,
+			   all_actors[player_id].actor_state.current_terrain_index);
+
+		B_stopwatch("Draw Canopy");
 
 		static float prev_cloudy = 0.0f;	
 		if (environment_condition.percent_cloudy > 0.5f)

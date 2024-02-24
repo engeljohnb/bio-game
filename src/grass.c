@@ -17,6 +17,7 @@ Plant create_grass_patch(B_Framebuffer g_buffer, B_Texture heightmap)
 	memset(&grass, 0, sizeof(Plant));
 	TerrainElementMesh mesh = create_grass_blade(g_buffer, heightmap);
 	
+	grass.type = PLANT_TYPE_GRASS;
 	grass.mesh = mesh;
 	grass.min_temperature = 32;
 	grass.max_temperature = 140;
@@ -210,6 +211,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 		get_frustum_corners(projection_view, frustum_corners);
 	}
 
+	//DEBUG
 	float view_distance = get_view_distance();
 	if ((x_offset == 0) && (z_offset == 0))
 	{
@@ -245,6 +247,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 			return;
 		}
 	}
+
 	else
 	{
 		if (!sphere_in_frustum(offset, max_distance, projection_view))
@@ -291,7 +294,7 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 }
 
 void draw_grass_patches(Plant grass_patch,
-		vec3 camera_position,
+			vec3 camera_position,
 			TerrainChunk *chunk,
 			vec2 offsets[9],
 			mat4 projection_view,

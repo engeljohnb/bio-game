@@ -3,6 +3,7 @@
 
 #include <cglm/cglm.h>
 #include "common.h"
+#include "plant.h"
 #include "terrain.h"
 
 void update_grass_patches(Plant grass_patches[9], uint64_t player_terrain_index);
