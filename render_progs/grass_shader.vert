@@ -6,6 +6,7 @@ uniform vec2 base_offset;
 uniform vec3 player_facing;
 uniform vec3 player_position;
 uniform float time;
+uniform float scale_factor;
 
 out VS_OUT
 {
@@ -23,6 +24,16 @@ mat4 translate(vec3 delta)
         vec4(0.0, 0.0, 1.0, 0.0),
         vec4(delta, 1.0));
 }
+
+mat4 scale(vec3 axis)
+{
+	return mat4(
+		vec4(axis.x, 0.0, 0.0, 0.0),
+		vec4(0.0, axis.y, 0.0, 0.0),
+		vec4(0.0, 0.0, axis.z, 0.0),
+		vec4(0.0, 0.0, 0.0, 1.0));
+}
+
 
 mat4 rotate(vec3 axis, float angle)
 {
@@ -47,11 +58,13 @@ void main()
 	float offz = (z_index-patch_size/2)*patch_size*patch_size_factor*(rand_num*rand_num/2);
 	vec2 final_xz_offset = vec2(base_offset.x + offx, base_offset.y + offz);
 
+	mat4 scale = scale(vec3(scale_factor*rand_num));
 	mat4 rotation = rotate(vec3(0, 1, 0), rand_num);
 	mat4 displacement = mat4(1.0);
 	mat4 recenter = translate(vec3(-0.5, -0.5, -0.5));
 	mat4 inv_recenter = inverse(recenter);
 	float player_distance = distance(player_position.xz, final_xz_offset);
+
 	if (player_distance < 8)
 	{
 		if (player_distance == 0)
@@ -76,5 +89,5 @@ void main()
 	vs_out.g_player_pos = player_position;
 	vs_out.instance_id = gl_InstanceID;
 	vs_out.g_base_offset = base_offset;
-	gl_Position = wind_displacement * rotation * displacement * vec4(v_pos, 1.0);
+	gl_Position = wind_displacement * scale * rotation * displacement * vec4(v_pos, 1.0);
 }

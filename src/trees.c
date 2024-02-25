@@ -89,8 +89,32 @@ void B_send_canopy_mesh_to_gpu(TerrainElementMesh *mesh)
 	mesh->shader = B_compile_simple_shader_with_geo("render_progs/canopy_shader.vert", "render_progs/canopy_shader.geo", "render_progs/canopy_shader.frag");
 }
 
+unsigned int get_canopy_size(EnvironmentCondition environment_condition, uint64_t terrain_index)
+{
+	int x_index = terrain_index % MAX_TERRAIN_BLOCKS;
+	int z_index = terrain_index / MAX_TERRAIN_BLOCKS;
+
+	float x = (float)x_index / MAX_TERRAIN_BLOCKS;
+	float z = (float)z_index / MAX_TERRAIN_BLOCKS;
+
+	float size_factor = 400.0f;
+
+	if (environment_condition.temperature < 45)
+	{
+		size_factor *= glm_percent(0, 13, environment_condition.temperature-32);
+	}
+	if (environment_condition.precipitation < 0.2)
+	{
+		size_factor *= glm_percent(0, 0.2, environment_condition.precipitation);
+	}
+	return (unsigned int)(round(noise2(x, z) * size_factor));
+}
+
 void B_draw_canopy(Plant canopy, 
+		   uint64_t terrain_index,
 		   int mesh_id,
+		   float scale_factor,
+		   unsigned int size,
 		   TerrainChunk *chunk,
 		   vec2 base_offset, 
 		   int x_offset,
@@ -113,20 +137,16 @@ void B_draw_canopy(Plant canopy,
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, canopy.meshes[mesh_id].heightmap);
 
-	mat4 scale;
-	glm_mat4_identity(scale);
-	float scale_coefficient = canopy.scale_coefficients[mesh_id];
-	glm_scale(scale, VEC3(scale_coefficient,scale_coefficient,scale_coefficient));
-
-	int patch_size = 1000;
-	B_set_uniform_mat4(canopy.meshes[mesh_id].shader, "scale", scale);
+	B_set_uniform_uint(canopy.meshes[mesh_id].shader, "total", (unsigned int)size);
+	B_set_uniform_float(canopy.meshes[mesh_id].shader, "scale_factor", scale_factor);
+	B_set_uniform_uint(canopy.meshes[mesh_id].shader, "terrain_index", terrain_index);
 	B_set_uniform_mat4(canopy.meshes[mesh_id].shader, "projection_view", projection_view);
 	B_set_uniform_vec3(canopy.meshes[mesh_id].shader, "base_position", offset);
-	B_set_uniform_int(canopy.meshes[mesh_id].shader, "num_subgroups", patch_size/10);
-	B_set_uniform_float(canopy.meshes[mesh_id].shader, "patch_size", (float)patch_size);
+	B_set_uniform_int(canopy.meshes[mesh_id].shader, "num_subgroups", size/10);
+	B_set_uniform_float(canopy.meshes[mesh_id].shader, "patch_size", (float)size);
 
 	glBindVertexArray(canopy.meshes[mesh_id].vao);
-	glDrawElementsInstanced(GL_TRIANGLES, canopy.meshes[mesh_id].num_elements, GL_UNSIGNED_INT, 0, patch_size);
+	glDrawElementsInstanced(GL_TRIANGLES, canopy.meshes[mesh_id].num_elements, GL_UNSIGNED_INT, 0, size);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

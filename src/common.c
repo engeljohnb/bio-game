@@ -278,6 +278,12 @@ void B_set_uniform_int(B_Shader shader, char *name, int value)
 	glUseProgram(shader);
 	glUniform1i(glGetUniformLocation(shader, name), value);
 }
+
+void B_set_uniform_uint(B_Shader shader, char *name, uint value)
+{
+	glUseProgram(shader);
+	glUniform1ui(glGetUniformLocation(shader, name), value);
+}
 void B_set_uniform_direction_light(B_Shader shader, char *name, DirectionLight value)
 {
 	glUseProgram(shader);

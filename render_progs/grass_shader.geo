@@ -20,7 +20,8 @@ mat4 translate(vec3 delta)
         vec4(delta, 1.0));
 }
 
-uniform mat4 scale;
+//uniform mat4 scale;
+//uniform float scale_factor;
 uniform mat4 projection_view;
 uniform sampler2D heightmap;
 uniform float terrain_chunk_size;
@@ -156,7 +157,7 @@ void main()
 	{
 		for (int i = 0; i < gl_in.length(); i++)
 		{ 
-			vec3 trans = vec3(scale * gl_in[i].gl_Position);
+			vec3 trans = vec3(gl_in[i].gl_Position);
 			trans += vec3(g_offset.x, height, g_offset.y);
 
 			vec4 pos = projection_view * vec4(trans, 1.0);

@@ -19,8 +19,12 @@
 
 
 #version 430 core
+#define MAX_TERRAIN_BLOCKS 100000
 
 layout (location = 0) in vec3 v_position;
+uniform uint total;
+uniform float scale_factor;
+uniform uint terrain_index;
 uniform int num_subgroups;
 uniform vec3 base_position;
 uniform float patch_size;
@@ -54,37 +58,54 @@ mat4 rotate(vec3 axis, float angle)
                 0.0,                                0.0,                                0.0,                                1.0);
 }
 
+mat4 scale(vec3 axis)
+{
+	return mat4(
+		vec4(axis.x, 0.0, 0.0, 0.0),
+		vec4(0.0, axis.y, 0.0, 0.0),
+		vec4(0.0, 0.0, axis.z, 0.0),
+		vec4(0.0, 0.0, 0.0, 1.0));
+}
+
+#define NOISE fbm
+#define NUM_NOISE_OCTAVES 5
+#define MAX_TERRAIN_BLOCKS 100000
+
+#define NUM_OCTAVES 5
+
+float rand(vec2 n) 
+{ 
+	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+}
+
 void main()
 {
-	int x_index = gl_InstanceID % int(patch_size);
-	int z_index = gl_InstanceID / int(patch_size);
-	float rand_num0 = fract(1000000*sin(gl_InstanceID));
-	float rand_num1 = fract(1000000*cos(gl_InstanceID));
-	float rand_num2 = fract(10000*sin(rand_num0*rand_num1/2.0));
-	float patch_size_factor = 0.4;
+	float x_id = float(gl_InstanceID % total);
+	float z_id = float(gl_InstanceID / total);
 
-	float coefficient = 150.0;
-	float sub_coefficient = 20.0;
+	int block_x = int((terrain_index % MAX_TERRAIN_BLOCKS) & 0xff);
+	int block_z = int((terrain_index / MAX_TERRAIN_BLOCKS) & 0xff);
+	int block = (block_x + block_z);
 
-	float offx = rand_num0 - 0.5;
-	float offy = rand_num1 - 0.5;
-	float offz = rand_num2 - 0.5;
+	int sub_id = gl_InstanceID % (block/20);
+	float sub_x_id = float(sub_id % total);
+	float sub_z_id = float(sub_id / total);
 
-	float subgroup_randnum = fract(10000*sin(gl_InstanceID/num_subgroups));
-	vec3 subgroup_base_offset = vec3(offx+subgroup_randnum, offy+subgroup_randnum, offz+subgroup_randnum) * coefficient;
+	float rand_num0 = rand(vec2(x_id, z_id));
+	float rand_num1 = rand(vec2(z_id, x_id));
+	float rand_num_sub0 = rand(vec2(sub_x_id, sub_z_id));
+	float rand_num_sub1 = rand(vec2(sub_z_id, sub_x_id));
 
-	float _offx = offx * sub_coefficient;
-	float _offy = offx * sub_coefficient;
-	float _offz = offx * sub_coefficient;
+	float sub_coefficient = float(block)*2.0f;
+	float individual_coefficient = float(block)/2.0f;
 
-	vec3 final_position = subgroup_base_offset + vec3(base_position.x + _offx, base_position.y + _offy, base_position.z + _offz);
+	vec3 subgroup_offset = (rotate(vec3(rand_num_sub0, 1.0, rand_num_sub1), 10.0/rand_num_sub0) * normalize(vec4(rand_num_sub0, rand_num_sub1, rand_num_sub0*rand_num_sub1, 1.0))).xyz * sub_coefficient;
+	vec3 individual_offset = (rotate(vec3(rand_num0, 1.0, rand_num1), 10000.0/rand_num0) * normalize(vec4(rand_num0, rand_num1, rand_num0*rand_num1, 1.0))).xyz * individual_coefficient;
 
-	mat4 rotation = rotate(vec3(offx, 1, offz), rand_num0);
-	mat4 displacement = mat4(1.0);
-	mat4 recenter = translate(vec3(-0.5, -0.5, -0.5));
-	mat4 inv_recenter = inverse(recenter);
+	mat4 scale = scale(vec3(1.5+(rand_num_sub0*5.0)));
 
+	vec3 final_position = base_position + subgroup_offset + individual_offset;
 	vs_out.g_position = final_position;
 	vs_out.g_base_position = base_position;
-	gl_Position = rotation * displacement * vec4(v_position, 1.0);
+	gl_Position = scale * vec4(v_position, 1.0);
 }

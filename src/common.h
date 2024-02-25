@@ -89,6 +89,7 @@ B_Shader B_compile_compute_shader(const char *comp_path);
 void B_free_shader(B_Shader shader);
 int B_check_shader(unsigned int id, const char *name, int status);
 void B_set_uniform_float(B_Shader shader, char *name, float value);
+void B_set_uniform_uint(B_Shader shader, char *name, uint value);
 void B_set_uniform_vec2(B_Shader shader, char *name, vec2 value);
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value);
 void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value);

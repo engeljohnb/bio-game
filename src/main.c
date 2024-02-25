@@ -46,11 +46,8 @@
 
 
 // UP NEXT:
-// 	Implement trees
-// 	Before you get too far in, make it so one plant can have several meshes.
-// 	I think I'm going to only have a few meshes for the base tree that are interchanged randomly.
-// 	The real disginguishing factor for the trees will be the canopy shape and color.
-// 	The canopy shape could be decided exactly like the grass patches. Then the base mesh is just rendered in the center.
+// 	Make it so different meshes and scale coefficients can be used on the same terrain block
+// 		Maybe use fbm for the canopies instead of random numbers?
 // 	TODO: Make the shaders use the actually good frustum culling method
 // 	TODO: Make your own GetTicks function to subtract pause-time
 // 	TODO: Frustum culling on rain?

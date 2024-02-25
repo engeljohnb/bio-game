@@ -4,7 +4,7 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
 uniform mat4 projection_view;
-uniform mat4 scale;
+//uniform mat4 scale;
 
 in VS_OUT
 {
@@ -16,22 +16,36 @@ in VS_OUT
 out vec3 f_normal;
 out vec3 f_position;
 
+vec3 get_leaf_normal(vec3 position)
+{
+	float offset_x = 0.1;
+	float offset_y = 0.1;
+	float offset_z = 0.1;
+	vec3 pos_dx = vec3(position.x + offset_x, position.y, position.z);
+	vec3 pos_dz = vec3(position.x, position.y, position.z+ offset_z);
+	vec3 pos_dxdz = vec3(position.x+offset_x, position.y, position.z + offset_z);
+
+	return normalize(cross(pos_dz - pos_dx, pos_dxdz - pos_dx));
+}
+
+
 void main()
 {
 	vec3 a = vec3(gl_in[0].gl_Position);
 	vec3 b = vec3(gl_in[1].gl_Position);
 	vec3 c = vec3(gl_in[2].gl_Position);
 
-	f_normal = normalize(cross((b-a), (c-a)));
+	//f_normal = normalize(cross((b-a), (c-a)));
+	f_normal = get_leaf_normal(gs_in[0].g_position);
 
 
 	for (int i = 0; i < gl_in.length(); i++)
 	{
-		if (distance(gs_in[i].g_position, gs_in[i].g_base_position) > 50.0)
+		if (distance(gs_in[i].g_position, gs_in[i].g_base_position) > 1000.0)
 		{
 			continue;
 		}
-		vec3 trans = vec3(scale * gl_in[i].gl_Position);
+		vec3 trans = vec3(gl_in[i].gl_Position);
 		trans += gs_in[i].g_position;
 
 		vec4 pos = projection_view * vec4(trans, 1.0);

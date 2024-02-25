@@ -6,6 +6,7 @@
 #include "environment.h"
 #include "trees.h"
 #include "grass.h"
+#include "noise.h"
 #include "plant_rendering.h"
 #include "utils.h"
 
@@ -72,8 +73,16 @@ void draw_plants(Plant plant,
 
 			if (plant.type == PLANT_TYPE_GRASS)
 			{
+				unsigned int int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
+				unsigned int int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
+
+				float x = ((float)int_x / (float)MAX_TERRAIN_BLOCKS);
+				float z = ((float)int_z / (float)MAX_TERRAIN_BLOCKS);
+
+				float scale_factor = (1.0f + fbm2d((float)x*100, (float)z*100, 6, 0.60))/2.0f;
+				scale_factor *= 20.0f;
 				B_draw_grass_patch(plant.meshes[plant_terrain_index%plant.num_meshes], 
-						   plant.scale_coefficients[plant_terrain_index%plant.num_meshes],
+						   scale_factor,
 						   camera_position,
 						   chunk,
 						   projection_view, 
@@ -88,7 +97,22 @@ void draw_plants(Plant plant,
 
 			else if (plant.type == PLANT_TYPE_CANOPY)
 			{
-				B_draw_canopy(plant, plant_terrain_index%plant.num_meshes, chunk, offsets[i], x_counter, z_counter, projection_view);
+				unsigned int int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
+				unsigned int int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
+				float x = ((float)int_x / (float)MAX_TERRAIN_BLOCKS);
+				float z = ((float)int_z / (float)MAX_TERRAIN_BLOCKS);
+				float scale_factor = (1.0f + fbm2d((float)x*100, (float)z*100, 6, 0.60))/2.0f;
+				scale_factor *= 10.0f;
+				unsigned int canopy_size = get_canopy_size(environment_condition, plant_terrain_index);
+				B_draw_canopy(plant, 
+						plant_terrain_index,
+						plant_terrain_index%plant.num_meshes, 
+						scale_factor, 
+						chunk, 
+						offsets[i], 
+						x_counter, 
+						z_counter, 
+						projection_view);
 			}
 
 		

@@ -265,14 +265,11 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh.heightmap);
-	mat4 scale;
-	glm_mat4_identity(scale);
-	glm_scale(scale, VEC3(scale_coefficient, scale_coefficient, scale_coefficient));
+	B_set_uniform_float(mesh.shader, "scale_factor", scale_coefficient);
 	B_set_uniform_int(mesh.shader, "heightmap", 0);
 	B_set_uniform_float(mesh.shader, "patch_size", (float)patch_size);
 	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
 	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4.0f);
-	B_set_uniform_mat4(mesh.shader, "scale", scale);
 	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
 	B_set_uniform_vec2(mesh.shader, "base_offset", VEC2(offset[0], offset[2]));
 	B_set_uniform_float(mesh.shader, "time", time);
