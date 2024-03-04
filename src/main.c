@@ -46,12 +46,12 @@
 
 
 // UP NEXT:
-// 	Make it so different meshes and scale coefficients can be used on the same terrain block
-// 		Maybe use fbm for the canopies instead of random numbers?
+// 	Trying to get tree generation to work.
+// 		I think it's time to go over it all on paper one more time.
 // 	TODO: Make the shaders use the actually good frustum culling method
 // 	TODO: Make your own GetTicks function to subtract pause-time
 // 	TODO: Frustum culling on rain?
-// 	TODO: Fix the goddamned rain already. It rains every day.
+// 	TODO: Make sure the rain schedule is satisfactory
 // 	TODO: Implement game saves.
 // 	TODO: Fix grass pop-in.
 
@@ -94,6 +94,8 @@ void game_loop(void)
 	get_grass_patch_offsets(PLAYER_TERRAIN_INDEX_START, grass_patch_offsets);
 
 	Plant canopy = create_canopy(renderer.g_buffer, terrain_chunk.heightmap);
+//	Plant tree_trunk = B_create_generated_tree_trunk(renderer.g_buffer, terrain_chunk.heightmap);
+//	Plant tree_trunk = create_tree_trunk(renderer.g_buffer, terrain_chunk.heightmap);
 
 	TerrainChunk water_chunk = create_terrain_chunk(renderer.g_buffer, TERRAIN_CHUNK_WATER, PLAYER_TERRAIN_INDEX_START);
 
@@ -394,6 +396,16 @@ void game_loop(void)
 			   all_actors[player_id].actor_state.current_terrain_index);
 
 		B_stopwatch("Draw Canopy");
+
+		/*draw_plants(tree_trunk,
+			    renderer.camera.position,
+			    &terrain_chunk,
+			    grass_patch_offsets,
+			    9,
+			    projection_view,
+			    all_actors[player_id].actor_state.position,
+			    renderer.camera.front,
+			    all_actors[player_id].actor_state.current_terrain_index);*/
 
 		static float prev_cloudy = 0.0f;	
 		if (environment_condition.percent_cloudy > 0.5f)

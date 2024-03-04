@@ -4,6 +4,7 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
 uniform mat4 projection_view;
+uniform float max_distance;
 //uniform mat4 scale;
 
 in VS_OUT
@@ -31,17 +32,11 @@ vec3 get_leaf_normal(vec3 position)
 
 void main()
 {
-	vec3 a = vec3(gl_in[0].gl_Position);
-	vec3 b = vec3(gl_in[1].gl_Position);
-	vec3 c = vec3(gl_in[2].gl_Position);
-
-	//f_normal = normalize(cross((b-a), (c-a)));
 	f_normal = get_leaf_normal(gs_in[0].g_position);
-
 
 	for (int i = 0; i < gl_in.length(); i++)
 	{
-		if (distance(gs_in[i].g_position, gs_in[i].g_base_position) > 1000.0)
+		if (distance(gs_in[i].g_position, gs_in[i].g_base_position) > max_distance)
 		{
 			continue;
 		}

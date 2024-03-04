@@ -70,19 +70,28 @@ void draw_plants(Plant plant,
 			}
 
 			int patch_size = get_grass_patch_size(environment_condition, plant_terrain_index);
+			unsigned int canopy_size = get_canopy_size(environment_condition, plant_terrain_index);
+			unsigned int int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
+			unsigned int int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
+			float x = ((float)int_x / (float)MAX_TERRAIN_BLOCKS);
+			float z = ((float)int_z / (float)MAX_TERRAIN_BLOCKS);
+			float scale_factor = (1.0f + fbm2d((float)x*100, (float)z*100, 6, 0.60))/2.0f;
+			scale_factor *= 10.0f;
+			//float trunk_scale_factor = (1.0f + powf(2.71828, -0.5f*(scale_factor-50.0f)));
+			float trunk_scale_factor = 2.5f*scale_factor;
 
 			if (plant.type == PLANT_TYPE_GRASS)
 			{
-				unsigned int int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
-				unsigned int int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
+				unsigned int _int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
+				unsigned int _int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
 
-				float x = ((float)int_x / (float)MAX_TERRAIN_BLOCKS);
-				float z = ((float)int_z / (float)MAX_TERRAIN_BLOCKS);
+				float _x = ((float)_int_x / (float)MAX_TERRAIN_BLOCKS);
+				float _z = ((float)_int_z / (float)MAX_TERRAIN_BLOCKS);
 
-				float scale_factor = (1.0f + fbm2d((float)x*100, (float)z*100, 6, 0.60))/2.0f;
-				scale_factor *= 20.0f;
+				float _scale_factor = (1.0f + fbm2d((float)_x*100, (float)_z*100, 6, 0.60))/2.0f;
+				_scale_factor *= 20.0f;
 				B_draw_grass_patch(plant.meshes[plant_terrain_index%plant.num_meshes], 
-						   scale_factor,
+						   _scale_factor,
 						   camera_position,
 						   chunk,
 						   projection_view, 
@@ -97,22 +106,43 @@ void draw_plants(Plant plant,
 
 			else if (plant.type == PLANT_TYPE_CANOPY)
 			{
-				unsigned int int_x = (plant_terrain_index % MAX_TERRAIN_BLOCKS);
-				unsigned int int_z = (plant_terrain_index / MAX_TERRAIN_BLOCKS);
-				float x = ((float)int_x / (float)MAX_TERRAIN_BLOCKS);
-				float z = ((float)int_z / (float)MAX_TERRAIN_BLOCKS);
-				float scale_factor = (1.0f + fbm2d((float)x*100, (float)z*100, 6, 0.60))/2.0f;
-				scale_factor *= 10.0f;
-				unsigned int canopy_size = get_canopy_size(environment_condition, plant_terrain_index);
-				B_draw_canopy(plant, 
+					B_draw_canopy(plant, 
 						plant_terrain_index,
 						plant_terrain_index%plant.num_meshes, 
 						scale_factor, 
+						canopy_size,
 						chunk, 
 						offsets[i], 
 						x_counter, 
 						z_counter, 
 						projection_view);
+			}
+
+			 
+			else if (plant.type == PLANT_TYPE_TREE_TRUNK)
+			{
+				B_draw_tree_trunk(plant, 
+						0, 
+						trunk_scale_factor,
+						chunk, 
+						offsets[i], 
+						x_counter, 
+						z_counter, 
+						projection_view);
+
+			}
+
+			else if (plant.type == PLANT_TYPE_GENERATED_TREE_TRUNK)
+			{
+				B_draw_generated_tree_trunk(plant, 
+								plant_terrain_index,
+								0,
+								trunk_scale_factor,
+								chunk, 
+								offsets[i], 
+								x_counter, 
+								z_counter, 
+								projection_view);
 			}
 
 		

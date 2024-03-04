@@ -88,15 +88,16 @@ void main()
 	int block = (block_x + block_z);
 
 	int sub_id = gl_InstanceID % (block/20);
-	float sub_x_id = float(sub_id % total);
-	float sub_z_id = float(sub_id / total);
+
+	float sub_x_id = float(sub_id % (block/20));
+	float sub_z_id = float(sub_id / (block/20));
 
 	float rand_num0 = rand(vec2(x_id, z_id));
 	float rand_num1 = rand(vec2(z_id, x_id));
 	float rand_num_sub0 = rand(vec2(sub_x_id, sub_z_id));
 	float rand_num_sub1 = rand(vec2(sub_z_id, sub_x_id));
 
-	float sub_coefficient = float(block)*2.0f;
+	float sub_coefficient = float(block)*1.50f;
 	float individual_coefficient = float(block)/2.0f;
 
 	vec3 subgroup_offset = (rotate(vec3(rand_num_sub0, 1.0, rand_num_sub1), 10.0/rand_num_sub0) * normalize(vec4(rand_num_sub0, rand_num_sub1, rand_num_sub0*rand_num_sub1, 1.0))).xyz * sub_coefficient;
@@ -107,5 +108,6 @@ void main()
 	vec3 final_position = base_position + subgroup_offset + individual_offset;
 	vs_out.g_position = final_position;
 	vs_out.g_base_position = base_position;
+	//vs_out.g_branch_plane = vec4(normalize(base_position - g_subgroup_position), distance(base_position, g_subgroup_position));
 	gl_Position = scale * vec4(v_position, 1.0);
 }

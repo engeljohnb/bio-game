@@ -243,7 +243,7 @@ void B_set_uniform_mat4(B_Shader shader, char *name, mat4 value)
 	int uniform_location = glGetUniformLocation(shader, name);
 	if (uniform_location == -1)
 	{
-		fprintf(stderr, "Uniform location for %s returned error: %i\n", name,  glGetError());
+		fprintf(stderr, "Uniform location for mat4 %s returned error: %i\n", name,  glGetError());
 		exit(-1);
 	}
 	glUniformMatrix4fv(uniform_location, 1, GL_FALSE, matrix);
@@ -258,7 +258,14 @@ void B_set_uniform_vec4(B_Shader shader, char *name, vec4 value)
 void B_set_uniform_vec3(B_Shader shader, char *name, vec3 value)
 {
 	glUseProgram(shader);
-	glUniform3f(glGetUniformLocation(shader, name), value[0], value[1], value[2]);
+
+	int uniform_location = glGetUniformLocation(shader, name);
+	if (uniform_location == -1)
+	{
+		fprintf(stderr, "Uniform location for vec3 %s returned error: %i\n", name,  glGetError());
+		exit(-1);
+	}
+	glUniform3f(uniform_location, value[0], value[1], value[2]);
 }
 
 void B_set_uniform_vec2(B_Shader shader, char *name, vec2 value)

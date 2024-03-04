@@ -149,6 +149,7 @@ void assimp_to_cglm_mat4(C_STRUCT aiMatrix4x4 source, mat4 dest)
 	glm_mat4_copy(mat, dest);
 }
 
+
 void B_load_ai_mesh_iter(const C_STRUCT aiScene *scene, C_STRUCT aiNode *node, ActorModel *model)
 {
 	VertexData vertex_data;
@@ -351,6 +352,7 @@ void B_apply_node_transformations(C_STRUCT aiNode *node, ActorModel *model, mat4
 
 }
 
+
 void B_load_ai_scene(const C_STRUCT aiScene *scene, ActorModel *model, const char *parent_directory)
 {
 	C_STRUCT aiNode *root_model = B_get_root_model(scene->mRootNode);
@@ -359,6 +361,7 @@ void B_load_ai_scene(const C_STRUCT aiScene *scene, ActorModel *model, const cha
 	assimp_to_cglm_mat4(scene->mRootNode->mTransformation, root_transform);
 	B_apply_node_transformations(scene->mRootNode, model, GLM_MAT4_IDENTITY);	
 }
+
 
 ActorModel *B_load_model_from_file(const char *filename)
 {
@@ -717,6 +720,85 @@ Animation **B_load_animations_from_file(const char *filename, int *num_animation
 
 	aiReleaseImport(scene);
 	return animations;
+}
+
+TerrainElementMesh load_plant_mesh_from_file(const char filename[], B_Framebuffer g_buffer, B_Texture heightmap)
+{
+	TerrainElementMesh mesh = {0};
+	mesh.g_buffer = g_buffer;
+	mesh.heightmap = heightmap;
+	mesh.shader = B_compile_simple_shader_with_geo("render_progs/tree_shader.vert",
+							"render_progs/tree_shader.geo",
+							"render_progs/tree_shader.frag");
+	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+	if (scene == NULL)
+	{
+		fprintf(stderr, "Error loading file %s\n.", filename);
+		exit(-1);
+	}
+
+	C_STRUCT aiNode *node = B_get_root_model(scene->mRootNode);
+	C_STRUCT aiMesh *a_mesh = scene->mMeshes[node->mMeshes[0]];
+	int num_vertices = a_mesh->mNumVertices;
+	GLfloat vertices[num_vertices*3];
+
+	int i_count = 0;
+	for (int i = 0; i < num_vertices; ++i)
+	{
+		vertices[i_count++] = a_mesh->mVertices[i].x;
+		vertices[i_count++] = a_mesh->mVertices[i].y;
+		vertices[i_count++] = a_mesh->mVertices[i].z;
+	}
+
+	int num_faces = a_mesh->mNumFaces;
+	unsigned int *faces = NULL;
+	int num_elements = 0;
+
+	if (num_faces)
+	{
+		for (unsigned int j = 0; j < a_mesh->mNumFaces; ++j)
+		{
+			C_STRUCT aiFace face = a_mesh->mFaces[j];
+			for (unsigned int k = 0; k < face.mNumIndices; ++k)
+			{
+				num_elements++;
+			}
+		} 
+		faces = BG_MALLOC(unsigned int, num_elements);
+		int i_counter = 0;
+		for (unsigned int j = 0; j < a_mesh->mNumFaces; ++j)
+		{
+			C_STRUCT aiFace face = a_mesh->mFaces[j];
+			for (unsigned int k = 0; k < face.mNumIndices; ++k)
+			{
+				faces[i_counter++] = face.mIndices[k];
+			}
+		}
+	}
+
+	mesh.num_elements = num_elements;
+	mesh.num_vertices = num_vertices;
+
+	glGenVertexArrays(1, &mesh.vao);
+	glBindVertexArray(mesh.vao);
+
+	size_t stride = sizeof(GLfloat)*3;
+	glGenBuffers(1, &mesh.vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_DYNAMIC_DRAW);
+
+	if (faces != NULL)
+	{
+		glGenBuffers(1, &mesh.ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_elements*sizeof(unsigned int), faces, GL_DYNAMIC_DRAW);
+	}
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	BG_FREE(faces);
+	return mesh;
 }
 
 void B_send_mesh_to_gpu(ActorMesh *mesh, VertexData *vertex_data)
