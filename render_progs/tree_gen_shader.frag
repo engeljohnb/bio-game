@@ -11,5 +11,5 @@ void main()
 {
 	frag_normal = f_normal;
 	frag_position = f_position * 0.01;
-	frag_color = vec3(0.3, 0.4, 0.1);
+	frag_color = vec3(1.0, 0.0, 0.0);
 }

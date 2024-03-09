@@ -7,10 +7,8 @@ uniform uint block;
 
 out VS_OUT
 {
-	float scale_factor;
-	vec3 g_base_offset;
 	vec3 g_group_offset;
-//	vec4 g_branch_plane;
+	vec4 g_branch_plane;
 } vs_out;
 
 
@@ -50,8 +48,9 @@ float rand(vec2 n)
 	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
 
-vec3 get_group_offset(uint id)
+void main()
 {
+	uint id = gl_InstanceID;
 	float x_id = float(id % block);
 	float z_id = float(id / block);
 
@@ -59,16 +58,14 @@ vec3 get_group_offset(uint id)
 	float rand_num1 = rand(vec2(z_id, x_id));
 
 	float coefficient = float(block*20)*1.50f;
-	return vec3(rotate(vec3(rand_num0, 1.0, rand_num1), 10.0/rand_num0) * normalize(vec4(rand_num0, rand_num1, rand_num0*rand_num1, 1.0)) * coefficient);
-}
+	vec3 group_offset = vec3(rotate(vec3(rand_num0, 1.0, rand_num1), 10.0/rand_num0) * normalize(vec4(rand_num0, rand_num1, rand_num0*rand_num1, 1.0)) * coefficient);
 
-void main()
-{
-	uint id = gl_InstanceID;
+	vs_out.g_branch_plane = vec4(normalize(-(base_offset - group_offset)), length(base_offset + group_offset));
+	//vs_out.g_branch_plane = vec4(normalize(base_offset+group_offset), distance(vec3(0.0), base_offset+group_offset));
+	vs_out.g_group_offset = group_offset;
 
-	vs_out.g_group_offset = get_group_offset(id);
-	vs_out.g_base_offset = base_offset;
 
-	vs_out.scale_factor = 3.5;
-	gl_Position = vec4(v_position, 1.0);
+	vec3 branch_normal = vs_out.g_branch_plane.xyz;
+	mat4 rotated = rotate(vec3(cross(branch_normal, vec3(0.0, 1.0, 0.0))), acos(dot(vec3(0.0, 1.0, 0.0), branch_normal)));
+	gl_Position = rotated * vec4(v_position, 1.0);
 }

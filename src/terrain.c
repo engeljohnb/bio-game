@@ -676,7 +676,7 @@ void draw_water_terrain_chunk(TerrainChunk *chunk, B_Texture land_heightmap, B_S
 TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices, int num_vertices, int num_rows)
 {
 	TerrainMesh mesh = {0};
-	size_t stride = sizeof(GLfloat)*3 + sizeof(GLfloat)*2;
+	size_t stride = sizeof(GLfloat)*3;// + sizeof(GLfloat)*2;
 
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -686,10 +686,8 @@ TerrainMesh B_send_terrain_mesh_to_gpu(unsigned int g_buffer, T_Vertex *vertices
 	glBufferData(GL_ARRAY_BUFFER, num_vertices*stride, vertices, GL_DYNAMIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(GLfloat)*3));
 
 	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
 
 	glPatchParameteri(GL_PATCH_VERTICES, 4);
 	mesh.num_vertices = num_vertices;

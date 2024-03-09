@@ -23,7 +23,7 @@
 #include "utils.h"
 
 // Compilation flags
-#define DRAW_DEBUG 0
+#define DRAW_DEBUG 1
 #define USE_ALT_CAMERA 0
 #define BENCHMARK 0
 #define TERRAIN_XZ_SCALE 300

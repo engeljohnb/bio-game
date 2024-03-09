@@ -10,7 +10,8 @@ uniform float max_distance;
 in VS_OUT
 {
 	vec3 g_base_position;
-	vec3 g_position;
+	vec3 g_group_offset;
+	vec3 g_individual_offset;
 } gs_in[];
 
 
@@ -29,19 +30,18 @@ vec3 get_leaf_normal(vec3 position)
 	return normalize(cross(pos_dz - pos_dx, pos_dxdz - pos_dx));
 }
 
-
 void main()
 {
-	f_normal = get_leaf_normal(gs_in[0].g_position);
 
 	for (int i = 0; i < gl_in.length(); i++)
 	{
-		if (distance(gs_in[i].g_position, gs_in[i].g_base_position) > max_distance)
+		vec3 trans = vec3(gl_in[i].gl_Position);
+		trans += gs_in[i].g_base_position + gs_in[i].g_group_offset + gs_in[i].g_individual_offset;
+		f_normal = get_leaf_normal(trans);
+		if (distance(trans, gs_in[i].g_base_position) > max_distance)
 		{
 			continue;
 		}
-		vec3 trans = vec3(gl_in[i].gl_Position);
-		trans += gs_in[i].g_position;
 
 		vec4 pos = projection_view * vec4(trans, 1.0);
 		gl_Position = pos;

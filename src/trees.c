@@ -276,7 +276,7 @@ void B_draw_generated_tree_trunk(Plant tree,
 	vec3 offset = GLM_VEC3_ZERO_INIT;
 	offset[0] = base_offset[0] + (x_offset * (TERRAIN_XZ_SCALE*4));
 	offset[2] = base_offset[1] + (z_offset * (TERRAIN_XZ_SCALE*4));
-	offset[1] = get_terrain_height(offset, chunk) + scale_factor;
+	offset[1] = get_terrain_height(offset, chunk) + 100.0f;
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, tree.meshes[mesh_id].g_buffer);
 	glActiveTexture(GL_TEXTURE0);

@@ -32,7 +32,9 @@ uniform float patch_size;
 out VS_OUT
 {
 	vec3 	g_base_position;
-	vec3 	g_position;
+//	vec3 	g_position;
+	vec3 	g_group_offset;
+	vec3	g_individual_offset;
 } vs_out;
 
 
@@ -106,8 +108,9 @@ void main()
 	mat4 scale = scale(vec3(1.5+(rand_num_sub0*5.0)));
 
 	vec3 final_position = base_position + subgroup_offset + individual_offset;
-	vs_out.g_position = final_position;
+//	vs_out.g_position = final_position;
+	vs_out.g_group_offset = subgroup_offset;
+	vs_out.g_individual_offset = individual_offset;
 	vs_out.g_base_position = base_position;
-	//vs_out.g_branch_plane = vec4(normalize(base_position - g_subgroup_position), distance(base_position, g_subgroup_position));
 	gl_Position = scale * vec4(v_position, 1.0);
 }
