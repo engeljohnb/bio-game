@@ -7,10 +7,8 @@ uniform uint block;
 
 out VS_OUT
 {
-	float scale_factor;
 	vec3 g_base_offset;
 	vec3 g_group_offset;
-//	vec4 g_branch_plane;
 } vs_out;
 
 
@@ -69,6 +67,5 @@ void main()
 	vs_out.g_group_offset = get_group_offset(id);
 	vs_out.g_base_offset = base_offset;
 
-	vs_out.scale_factor = 3.5;
 	gl_Position = vec4(v_position, 1.0);
 }

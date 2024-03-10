@@ -98,7 +98,7 @@ void set_camera(Camera *camera, vec3 position, vec3 direction)
 
 void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 rotation)
 {
-	static int camera_scroll = 120;
+	static int camera_scroll = 420;
 	camera_scroll += player.command_state.wheel_increment;
 	glm_vec3_copy(player.position, camera->position);
 

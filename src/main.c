@@ -46,7 +46,9 @@
 
 
 // UP NEXT:
-// 	Continue working on tree generation
+// 	Tree generation works more or less how I expected... It just doesn't look as good as I thougth it would.
+// 		-- Maybe adding intermediate meeting points in the branches will help the meshes not look so jagged?
+// 		-- Interpolation?
 // 	TODO: Make the shaders use the actually good frustum culling method
 // 	TODO: Make your own GetTicks function to subtract pause-time
 // 	TODO: Frustum culling on rain?
@@ -405,6 +407,8 @@ void game_loop(void)
 			    all_actors[player_id].actor_state.position,
 			    renderer.camera.front,
 			    all_actors[player_id].actor_state.current_terrain_index);
+
+		B_stopwatch("Draw tree trunks");
 
 		static float prev_cloudy = 0.0f;	
 		if (environment_condition.percent_cloudy > 0.5f)

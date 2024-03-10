@@ -95,8 +95,8 @@ B_Shader B_compile_simple_shader_with_geo(const char *vert_path, const char *geo
 	B_load_file(vert_path, vertex_buffer, 4096);
 	char fragment_buffer[4096] = {0};
 	B_load_file(frag_path, fragment_buffer, 4096);
-	char geo_buffer[4096] = {0};
-	B_load_file(geo_path, geo_buffer, 4096);
+	char geo_buffer[8192] = {0};
+	B_load_file(geo_path, geo_buffer, 8192);
 
 	const char *vertex_source = vertex_buffer;
 	const char *fragment_source = fragment_buffer;

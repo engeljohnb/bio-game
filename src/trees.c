@@ -27,7 +27,7 @@ void B_send_canopy_mesh_to_gpu(TerrainElementMesh *mesh)
 
 	unsigned int indices_single_leaf[] = 
 	{
-		0, 1, 3,
+		0, 1, 2,
 		1, 2, 3	
 	};
 
@@ -205,13 +205,13 @@ Plant create_canopy(B_Framebuffer g_buffer, B_Texture heightmap)
 void B_send_generated_tree_trunk_mesh_to_gpu(TerrainElementMesh *mesh)
 {
 	size_t stride = sizeof(GLfloat)*3;
-	int num_vertices = 4;
+	int num_vertices = 3;
 
 	GLfloat vertices[12] = { -1.0f, 0.0f,  1.0f,
        				 -1.0f, 0.0f, -1.0f,
-				  1.0f, 0.0f, -1.0f,
-				  1.0f, 0.0f,  1.0f };
-	unsigned int indices[6] = { 0, 1, 2, 0, 2, 3 };
+				  1.0f, 0.0f, -1.0f};
+				  //1.0f, 0.0f,  1.0f };
+	unsigned int indices[] = { 0, 1, 2};//, 0, 2, 3 };
 
 	glGenVertexArrays(1, &(mesh->vao));
 	glBindVertexArray(mesh->vao);
@@ -286,6 +286,7 @@ void B_draw_generated_tree_trunk(Plant tree,
 	unsigned int block_z = (int)(terrain_index / MAX_TERRAIN_BLOCKS) & 0xff;
 	unsigned int block = (block_x + block_z);
 
+	B_set_uniform_float(tree.meshes[mesh_id].shader, "scale_factor", scale_factor);
 	B_set_uniform_uint(tree.meshes[mesh_id].shader, "block", (unsigned int)block/20);
 	B_set_uniform_vec3(tree.meshes[mesh_id].shader, "base_offset", offset);
 	B_set_uniform_mat4(tree.meshes[mesh_id].shader, "projection_view", projection_view);
