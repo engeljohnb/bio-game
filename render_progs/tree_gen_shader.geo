@@ -5,6 +5,7 @@ layout (triangle_strip, max_vertices = 102) out;
 
 uniform mat4 projection_view;
 uniform float scale_factor;
+uniform vec4 frustum_planes[6];
 
 in VS_OUT
 {
@@ -64,6 +65,29 @@ mat4 translate(vec3 delta)
 vec3 get_normal(vec3 a, vec3 b, vec3 c)
 {
 	return normalize(cross((b-a), (c-a)));
+}
+
+float signed_distance_to_plane(vec3 p, vec4 plane)
+{
+        vec3 point_on_plane = plane.xyz * -plane.w;
+        return dot(plane.xyz, p-point_on_plane);
+}
+
+bool on_or_beyond_plane(vec3 p, vec4 plane)
+{
+        return (signed_distance_to_plane(p, plane) > 0.0);
+}
+
+bool in_frustum(vec3 pos)
+{
+        for (int i = 0; i < 6; ++i)
+        {
+                if (!on_or_beyond_plane(pos, frustum_planes[i]))
+                {
+                        return true;
+                }
+        }
+        return false;
 }
 
 void emit_position(vec3 pos)

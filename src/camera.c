@@ -98,7 +98,7 @@ void set_camera(Camera *camera, vec3 position, vec3 direction)
 
 void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chunk, mat4 rotation)
 {
-	static int camera_scroll = 420;
+	static int camera_scroll = 80;
 	camera_scroll += player.command_state.wheel_increment;
 	glm_vec3_copy(player.position, camera->position);
 
@@ -126,7 +126,7 @@ void update_camera(Camera *camera, ActorState player, TerrainChunk *terrain_chun
 	//camera->position[1] = 100.0f;
 
 	vec3 target;
-	glm_vec3_add(player.position, VEC3(0, 10.0f + ((float)camera_scroll-55.0f)/3.0f, 0), target);
+	glm_vec3_add(player.position, VEC3(0, 20.0f + ((float)camera_scroll-55.0f)/3.0f, 0), target);
 	glm_lookat(camera->position, target, up, camera->view_space);
 
 	g_camera_height = camera->position[1];

@@ -277,6 +277,28 @@ void B_draw_generated_tree_trunk(Plant tree,
 	offset[0] = base_offset[0] + (x_offset * (TERRAIN_XZ_SCALE*4));
 	offset[2] = base_offset[1] + (z_offset * (TERRAIN_XZ_SCALE*4));
 	offset[1] = get_terrain_height(offset, chunk) + 100.0f;
+
+        float max_distance = 700.0f;
+        vec4 frustum_planes[6];
+        if (USE_ALT_CAMERA)
+        {
+                mat4 alt_projv;
+                get_alt_projection_view(alt_projv);
+                glm_frustum_planes(alt_projv, frustum_planes);
+                if (!sphere_in_frustum(offset, max_distance, alt_projv))
+                {
+                        return;
+                }
+        }          
+        else
+        {
+                if (!sphere_in_frustum(offset, max_distance, projection_view))
+                {  
+                        return;
+
+                }
+                glm_frustum_planes(projection_view, frustum_planes);
+        }
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, tree.meshes[mesh_id].g_buffer);
 	glActiveTexture(GL_TEXTURE0);
@@ -286,10 +308,17 @@ void B_draw_generated_tree_trunk(Plant tree,
 	unsigned int block_z = (int)(terrain_index / MAX_TERRAIN_BLOCKS) & 0xff;
 	unsigned int block = (block_x + block_z);
 
+	B_set_uniform_float(tree.meshes[mesh_id].shader, "max_distance", max_distance);
 	B_set_uniform_float(tree.meshes[mesh_id].shader, "scale_factor", scale_factor);
 	B_set_uniform_uint(tree.meshes[mesh_id].shader, "block", (unsigned int)block/20);
 	B_set_uniform_vec3(tree.meshes[mesh_id].shader, "base_offset", offset);
 	B_set_uniform_mat4(tree.meshes[mesh_id].shader, "projection_view", projection_view);
+        for (int i = 0; i < 6; ++i)
+        {
+                char name[128] = {0}; 
+                snprintf(name, 128, "frustum_planes[%i]", i);
+                B_set_uniform_vec4(tree.meshes[mesh_id].shader, name, frustum_planes[i]);
+        }
 
 	glBindVertexArray(tree.meshes[mesh_id].vao);
 
