@@ -89,7 +89,7 @@ void B_send_canopy_mesh_to_gpu(TerrainElementMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("render_progs/canopy_shader.vert", "render_progs/canopy_shader.geo", "render_progs/canopy_shader.frag");
+	mesh->shaders[0] = B_compile_simple_shader_with_geo("render_progs/canopy_shader.vert", "render_progs/canopy_shader.geo", "render_progs/canopy_shader.frag");
 }
 
 unsigned int get_canopy_size(EnvironmentCondition environment_condition, uint64_t terrain_index)
@@ -159,14 +159,14 @@ void B_draw_canopy(Plant canopy,
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, canopy.meshes[mesh_id].heightmap);
 
-	B_set_uniform_float(canopy.meshes[mesh_id].shader, "max_distance", max_distance);
-	B_set_uniform_uint(canopy.meshes[mesh_id].shader, "total", (unsigned int)size);
-	B_set_uniform_float(canopy.meshes[mesh_id].shader, "scale_factor", scale_factor);
-	B_set_uniform_uint(canopy.meshes[mesh_id].shader, "terrain_index", terrain_index);
-	B_set_uniform_mat4(canopy.meshes[mesh_id].shader, "projection_view", projection_view);
-	B_set_uniform_vec3(canopy.meshes[mesh_id].shader, "base_position", offset);
-	B_set_uniform_int(canopy.meshes[mesh_id].shader, "num_subgroups", size/10);
-	B_set_uniform_float(canopy.meshes[mesh_id].shader, "patch_size", (float)size);
+	B_set_uniform_float(canopy.meshes[mesh_id].shaders[0], "max_distance", max_distance);
+	B_set_uniform_uint(canopy.meshes[mesh_id].shaders[0], "total", (unsigned int)size);
+	B_set_uniform_float(canopy.meshes[mesh_id].shaders[0], "scale_factor", scale_factor);
+	B_set_uniform_uint(canopy.meshes[mesh_id].shaders[0], "terrain_index", terrain_index);
+	B_set_uniform_mat4(canopy.meshes[mesh_id].shaders[0], "projection_view", projection_view);
+	B_set_uniform_vec3(canopy.meshes[mesh_id].shaders[0], "base_position", offset);
+	B_set_uniform_int(canopy.meshes[mesh_id].shaders[0], "num_subgroups", size/10);
+	B_set_uniform_float(canopy.meshes[mesh_id].shaders[0], "patch_size", (float)size);
 
 	glBindVertexArray(canopy.meshes[mesh_id].vao);
 	glDrawElementsInstanced(GL_TRIANGLES, canopy.meshes[mesh_id].num_elements, GL_UNSIGNED_INT, 0, size);
@@ -229,7 +229,8 @@ void B_send_generated_tree_trunk_mesh_to_gpu(TerrainElementMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*mesh->num_elements, indices, GL_DYNAMIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("render_progs/tree_gen_shader.vert", "render_progs/tree_gen_shader.geo", "render_progs/tree_gen_shader.frag");
+	mesh->shaders[TRUNK_SHADER] = B_compile_simple_shader_with_geo("render_progs/tree_gen_shader.vert", "render_progs/trunk_gen_shader.geo", "render_progs/tree_gen_shader.frag");
+	mesh->shaders[BRANCHES_SHADER] = B_compile_simple_shader_with_geo("render_progs/tree_gen_shader.vert", "render_progs/branches_gen_shader.geo", "render_progs/tree_gen_shader.frag");
 }
 
 TerrainElementMesh create_generated_tree_trunk_mesh(B_Framebuffer g_buffer, B_Texture heightmap)
@@ -276,7 +277,7 @@ void B_draw_generated_tree_trunk(Plant tree,
 	vec3 offset = GLM_VEC3_ZERO_INIT;
 	offset[0] = base_offset[0] + (x_offset * (TERRAIN_XZ_SCALE*4));
 	offset[2] = base_offset[1] + (z_offset * (TERRAIN_XZ_SCALE*4));
-	offset[1] = get_terrain_height(offset, chunk) + 100.0f;
+	offset[1] = get_terrain_height(offset, chunk);
 
         float max_distance = 700.0f;
         vec4 frustum_planes[6];
@@ -308,16 +309,16 @@ void B_draw_generated_tree_trunk(Plant tree,
 	unsigned int block_z = (int)(terrain_index / MAX_TERRAIN_BLOCKS) & 0xff;
 	unsigned int block = (block_x + block_z);
 
-	B_set_uniform_float(tree.meshes[mesh_id].shader, "max_distance", max_distance);
-	B_set_uniform_float(tree.meshes[mesh_id].shader, "scale_factor", scale_factor);
-	B_set_uniform_uint(tree.meshes[mesh_id].shader, "block", (unsigned int)block/20);
-	B_set_uniform_vec3(tree.meshes[mesh_id].shader, "base_offset", offset);
-	B_set_uniform_mat4(tree.meshes[mesh_id].shader, "projection_view", projection_view);
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[0], "max_distance", max_distance);
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[0], "scale_factor", scale_factor);
+	B_set_uniform_uint(tree.meshes[mesh_id].shaders[0], "block", (unsigned int)block/20);
+	B_set_uniform_vec3(tree.meshes[mesh_id].shaders[0], "base_offset", offset);
+	B_set_uniform_mat4(tree.meshes[mesh_id].shaders[0], "projection_view", projection_view);
         for (int i = 0; i < 6; ++i)
         {
                 char name[128] = {0}; 
                 snprintf(name, 128, "frustum_planes[%i]", i);
-                B_set_uniform_vec4(tree.meshes[mesh_id].shader, name, frustum_planes[i]);
+                B_set_uniform_vec4(tree.meshes[mesh_id].shaders[0], name, frustum_planes[i]);
         }
 
 	glBindVertexArray(tree.meshes[mesh_id].vao);
@@ -331,7 +332,29 @@ void B_draw_generated_tree_trunk(Plant tree,
 		glDrawArraysInstanced(GL_TRIANGLES, 0, tree.meshes[mesh_id].num_vertices, block/20);
 	}
 
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[1], "max_distance", max_distance);
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[1], "scale_factor", scale_factor);
+	B_set_uniform_uint(tree.meshes[mesh_id].shaders[1], "block", (unsigned int)block/20);
+	B_set_uniform_vec3(tree.meshes[mesh_id].shaders[1], "base_offset", offset);
+	B_set_uniform_mat4(tree.meshes[mesh_id].shaders[1], "projection_view", projection_view);
 
+        for (int i = 0; i < 6; ++i)
+        {
+                char name[128] = {0}; 
+                snprintf(name, 128, "frustum_planes[%i]", i);
+                B_set_uniform_vec4(tree.meshes[mesh_id].shaders[1], name, frustum_planes[i]);
+        }
+
+	if (tree.meshes[mesh_id].num_elements)
+	{
+		glDrawElementsInstanced(GL_TRIANGLES, tree.meshes[mesh_id].num_elements, GL_UNSIGNED_INT, 0, block/20);
+	}
+	else
+	{
+		glDrawArraysInstanced(GL_TRIANGLES, 0, tree.meshes[mesh_id].num_vertices, block/20);
+	}
+
+	glBindVertexArray(tree.meshes[mesh_id].vao);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -360,9 +383,9 @@ void B_draw_tree_trunk(Plant tree,
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, tree.meshes[mesh_id].heightmap);
 
-	B_set_uniform_vec3(tree.meshes[mesh_id].shader, "base_offset", offset);
-	B_set_uniform_float(tree.meshes[mesh_id].shader, "scale_factor", scale_factor);
-	B_set_uniform_mat4(tree.meshes[mesh_id].shader, "projection_view", projection_view);
+	B_set_uniform_vec3(tree.meshes[mesh_id].shaders[0], "base_offset", offset);
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[0], "scale_factor", scale_factor);
+	B_set_uniform_mat4(tree.meshes[mesh_id].shaders[0], "projection_view", projection_view);
 
 	glBindVertexArray(tree.meshes[mesh_id].vao);
 

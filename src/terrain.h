@@ -58,7 +58,8 @@ typedef struct TerrainElementMesh
 	unsigned int		num_vertices;
 	B_Framebuffer		g_buffer;
 	B_Texture		heightmap;
-	B_Shader		shader;
+	B_Shader		shaders[4];
+	int			num_shaders;
 } TerrainElementMesh;
 
 

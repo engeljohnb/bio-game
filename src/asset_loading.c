@@ -727,7 +727,7 @@ TerrainElementMesh load_plant_mesh_from_file(const char filename[], B_Framebuffe
 	TerrainElementMesh mesh = {0};
 	mesh.g_buffer = g_buffer;
 	mesh.heightmap = heightmap;
-	mesh.shader = B_compile_simple_shader_with_geo("render_progs/tree_shader.vert",
+	mesh.shaders[0] = B_compile_simple_shader_with_geo("render_progs/tree_shader.vert",
 							"render_progs/tree_shader.geo",
 							"render_progs/tree_shader.frag");
 	const C_STRUCT aiScene *scene = aiImportFile(filename, aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_CalcTangentSpace);

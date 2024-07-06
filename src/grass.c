@@ -110,7 +110,7 @@ void B_send_grass_patch_mesh_to_gpu(TerrainElementMesh *mesh)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*mesh->num_elements, indices, GL_STATIC_DRAW);
 
 	mesh->num_vertices = num_vertices;
-	mesh->shader = B_compile_simple_shader_with_geo("render_progs/grass_shader.vert", "render_progs/grass_shader.geo", "render_progs/grass_shader.frag");
+	mesh->shaders[0] = B_compile_simple_shader_with_geo("render_progs/grass_shader.vert", "render_progs/grass_shader.geo", "render_progs/grass_shader.frag");
 }
 
 void update_grass_patch_offset(vec2 offset, int index_diff)
@@ -265,28 +265,28 @@ void B_draw_grass_patch(TerrainElementMesh mesh,
 	glBindFramebuffer(GL_FRAMEBUFFER, mesh.g_buffer);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh.heightmap);
-	B_set_uniform_float(mesh.shader, "scale_factor", scale_coefficient);
-	B_set_uniform_int(mesh.shader, "heightmap", 0);
-	B_set_uniform_float(mesh.shader, "patch_size", (float)patch_size);
-	B_set_uniform_mat4(mesh.shader, "projection_view", projection_view);
-	B_set_uniform_float(mesh.shader, "terrain_chunk_size", TERRAIN_XZ_SCALE*4.0f);
-	B_set_uniform_vec3(mesh.shader, "player_position", player_position);
-	B_set_uniform_vec2(mesh.shader, "base_offset", VEC2(offset[0], offset[2]));
-	B_set_uniform_float(mesh.shader, "time", time);
-	B_set_uniform_vec3(mesh.shader, "player_facing", player_facing);
-	B_set_uniform_vec3(mesh.shader, "color", color);
-	B_set_uniform_float(mesh.shader, "view_distance", view_distance);
-	B_set_uniform_float(mesh.shader, "max_distance", max_distance);
-	B_set_uniform_float(mesh.shader, "sea_level", SEA_LEVEL);
-	B_set_uniform_int(mesh.shader, "terrain_chunk_dimension", get_terrain_chunk_dimension());
-	B_set_uniform_float(mesh.shader, "xz_scale", TERRAIN_XZ_SCALE);
-	B_set_uniform_int(mesh.shader, "draw_debug", DRAW_DEBUG);
+	B_set_uniform_float(mesh.shaders[0], "scale_factor", scale_coefficient);
+	B_set_uniform_int(mesh.shaders[0], "heightmap", 0);
+	B_set_uniform_float(mesh.shaders[0], "patch_size", (float)patch_size);
+	B_set_uniform_mat4(mesh.shaders[0], "projection_view", projection_view);
+	B_set_uniform_float(mesh.shaders[0], "terrain_chunk_size", TERRAIN_XZ_SCALE*4.0f);
+	B_set_uniform_vec3(mesh.shaders[0], "player_position", player_position);
+	B_set_uniform_vec2(mesh.shaders[0], "base_offset", VEC2(offset[0], offset[2]));
+	B_set_uniform_float(mesh.shaders[0], "time", time);
+	B_set_uniform_vec3(mesh.shaders[0], "player_facing", player_facing);
+	B_set_uniform_vec3(mesh.shaders[0], "color", color);
+	B_set_uniform_float(mesh.shaders[0], "view_distance", view_distance);
+	B_set_uniform_float(mesh.shaders[0], "max_distance", max_distance);
+	B_set_uniform_float(mesh.shaders[0], "sea_level", SEA_LEVEL);
+	B_set_uniform_int(mesh.shaders[0], "terrain_chunk_dimension", get_terrain_chunk_dimension());
+	B_set_uniform_float(mesh.shaders[0], "xz_scale", TERRAIN_XZ_SCALE);
+	B_set_uniform_int(mesh.shaders[0], "draw_debug", DRAW_DEBUG);
 
 	for (int i = 0; i < 8; ++i)
 	{
 		char name[128] = {0};
 		snprintf(name, 128, "frustum_corners[%i]", i);
-		B_set_uniform_vec3(mesh.shader, name, frustum_corners[i]);
+		B_set_uniform_vec3(mesh.shaders[0], name, frustum_corners[i]);
 	}
 	
 	glBindVertexArray(mesh.vao);

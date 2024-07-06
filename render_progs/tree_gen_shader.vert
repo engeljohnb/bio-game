@@ -9,6 +9,9 @@ out VS_OUT
 {
 	vec3 g_base_offset;
 	vec3 g_group_offset;
+	// Height from origin, not from ground
+	float g_trunk_height;
+	uint g_block;
 } vs_out;
 
 
@@ -66,6 +69,10 @@ void main()
 
 	vs_out.g_group_offset = get_group_offset(id);
 	vs_out.g_base_offset = base_offset;
+
+	vs_out.g_trunk_height = get_group_offset(block/2).y;
+	vs_out.g_base_offset.y += get_group_offset(block/2).y;
+	vs_out.g_block = block;
 
 	gl_Position = vec4(v_position, 1.0);
 }

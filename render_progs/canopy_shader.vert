@@ -108,7 +108,6 @@ void main()
 	mat4 scale = scale(vec3(1.5+(rand_num_sub0*5.0)));
 
 	vec3 final_position = base_position + subgroup_offset + individual_offset;
-//	vs_out.g_position = final_position;
 	vs_out.g_group_offset = subgroup_offset;
 	vs_out.g_individual_offset = individual_offset;
 	vs_out.g_base_position = base_position;

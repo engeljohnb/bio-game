@@ -2,6 +2,12 @@
 #define __TREES_H__
 #include "plant.h"
 
+
+enum TREE_TRUNK_SHADERS
+{
+	TRUNK_SHADER,
+	BRANCHES_SHADER,
+};
 Plant create_canopy(B_Framebuffer g_buffer, B_Texture heightmap);
 unsigned int get_canopy_size(EnvironmentCondition environment_condition, uint64_t terrain_index);
 void B_draw_canopy(Plant canopy, 
