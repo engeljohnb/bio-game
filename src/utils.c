@@ -384,6 +384,11 @@ int sphere_on_or_beyond_plane(vec3 center, float radius, vec4 plane)
 	return signed_distance_to_plane(center, plane) > -radius;
 }
 
+float rand_range_float(int min, int max)
+{
+	return (float)(rand() % (max + 1 - min) + min);
+}
+
 int sphere_in_frustum(vec3 center, float radius, mat4 projection_view)
 {
 	vec4 frustum_planes[6];

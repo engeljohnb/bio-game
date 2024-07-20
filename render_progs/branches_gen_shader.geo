@@ -7,6 +7,8 @@ layout (triangle_strip, max_vertices = 102) out;
 
 uniform mat4 projection_view;
 uniform float scale_factor;
+uniform float trunk_size;
+uniform float branch_size;
 uniform vec4 frustum_planes[6];
 
 in VS_OUT
@@ -15,6 +17,7 @@ in VS_OUT
 	vec3 g_group_offset;
 	float g_trunk_height;
 	uint g_block;
+	uint g_id;
 } gs_in[];
 
 out vec3 f_normal;
@@ -153,10 +156,11 @@ void connect_squares(vec3 p0, vec3 p1, vec3 p2, vec3 p3,
 
 void bend_branch(float num_joints,
 		 float branch_size,
+		 vec3 base_position,
 		 vec3 e0, vec3 e1, vec3 e2, vec3 e3,
 		 vec3 b0, vec3 b1, vec3 b2, vec3 b3)
 {
-	vec3 base_position = gs_in[0].g_base_offset;
+	//vec3 base_position = gs_in[0].g_base_offset;
 	vec3 group_position = gs_in[0].g_group_offset;
 
 	vec3 h0 = e0;
@@ -165,8 +169,7 @@ void bend_branch(float num_joints,
 	vec3 h3 = e3;
 	for (int i = int(num_joints)-1; i > 0; --i)
 	{
-
-		vec3 i0 = base_position+group_position * (1.0/num_joints);
+		vec3 i0 = base_position+group_position * ((1.0/num_joints) * i);
 		i0.xz -= branch_size/2.0;
 		vec3 i1 = i0;
 		vec3 i2 = i0;
@@ -175,12 +178,12 @@ void bend_branch(float num_joints,
 		i2.xz += branch_size;
 		i3.x += branch_size;
 
-		vec3 perp = normalize(cross(base_position, base_position+group_position));
+		vec3 perp = normalize(cross(vec3(0,1,0), group_position));
 
-		i0 += 0.2*perp;
-		i1 += 0.2*perp;
-		i2 += 0.2*perp;
-		i3 += 0.2*perp;
+		i0 += 25.0*perp;
+		i1 += 25.0*perp;
+		i2 += 25.0*perp;
+		i3 += 25.0*perp;
 
 		connect_squares(h0, h1, i0, i1,
 				h2, i2, h3, i3);
@@ -204,6 +207,16 @@ void main()
 	float trunk_size = 40.0;
 	float branch_size = 8.0;
 
+	/* Intermediate bend point on the trunk */
+	vec3 t = base_position;
+	float x_block_fraction = float(block%MAX_TERRAIN_BLOCKS);
+	float z_block_fraction = float(block/MAX_TERRAIN_BLOCKS);
+	t.y -= rand(vec2(x_block_fraction, z_block_fraction)) * gs_in[0].g_trunk_height;
+	t.xz -= trunk_size/2.0;
+	t.xz -= (trunk_size*0.2);
+	vec3 trunk_direction = t-base_position;
+	vec3 trunk_intermed = base_position + (trunk_direction*0.6);
+
 	/* Corners of the distal end of the branch. */
 	vec3 e0 = base_position + group_position;
 	e0.xz -= branch_size/2.0;
@@ -213,8 +226,16 @@ void main()
 	e1.z += branch_size;
 	e2.xz += branch_size;
 	e3.x += branch_size;
+
 	/* Corners of the proximal base of the branch. */
-	vec3 b0 = base_position;
+	/* Every third branch branches off from lower on the trunk than odd branch instances-- which branch off the
+	 * tip of the trunk. */
+	vec3 b0 = trunk_intermed;
+	if (gs_in[0].g_id % 3 != 0)
+	{
+		b0 = base_position;
+	}
+
 	b0.xz -= trunk_size/2.0;
 	vec3 b1 = b0;
 	vec3 b2 = b0;
@@ -223,10 +244,22 @@ void main()
 	b2.xz += trunk_size;
 	b3.x += trunk_size;
 
-	bend_branch(2.0,
-		    20.0,
-		    e0, e1, e2, e3,
-		    b0, b1, b2, b3);
+	if (gs_in[0].g_id % 3 != 0)
+	{
+		bend_branch(3.0,
+			    20.0,
+			    base_position,
+			    e0, e1, e2, e3,
+			    b0, b1, b2, b3);
+	}
+	else
+	{
+		bend_branch(3.0,
+			    20.0,
+			    trunk_intermed,
+			    e0, e1, e2, e3,
+			    b0, b1, b2, b3);
+	}
 
 }
 

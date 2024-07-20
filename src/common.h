@@ -32,11 +32,14 @@
  * during development, but won't work on your machine. Sorry :\ */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)9200029000)
 
+/* Actually good trees */
+#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1635668804)
+
 /* Center of map */
 //#define PLAYER_TERRAIN_INDEX_START (MAX_TERRAIN_BLOCKS/4 * (MAX_TERRAIN_BLOCKS/2)) - (MAX_TERRAIN_BLOCKS/2)
 
 /* Super duper grassy area */
-#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1745060245)
+//#define PLAYER_TERRAIN_INDEX_START ((uint64_t)1745060245)
 
 /* Warm/cold area border */
 //#define PLAYER_TERRAIN_INDEX_START ((uint64_t)506192528)

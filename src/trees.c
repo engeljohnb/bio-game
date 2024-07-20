@@ -100,7 +100,7 @@ unsigned int get_canopy_size(EnvironmentCondition environment_condition, uint64_
 	float x = (float)x_index / MAX_TERRAIN_BLOCKS;
 	float z = (float)z_index / MAX_TERRAIN_BLOCKS;
 
-	float size_factor = 1000.0f;
+	float size_factor = 10000.0f;
 
 	if (environment_condition.temperature < 45)
 	{
@@ -210,8 +210,7 @@ void B_send_generated_tree_trunk_mesh_to_gpu(TerrainElementMesh *mesh)
 	GLfloat vertices[12] = { -1.0f, 0.0f,  1.0f,
        				 -1.0f, 0.0f, -1.0f,
 				  1.0f, 0.0f, -1.0f};
-				  //1.0f, 0.0f,  1.0f };
-	unsigned int indices[] = { 0, 1, 2};//, 0, 2, 3 };
+	unsigned int indices[] = { 0, 1, 2};
 
 	glGenVertexArrays(1, &(mesh->vao));
 	glBindVertexArray(mesh->vao);
@@ -337,6 +336,8 @@ void B_draw_generated_tree_trunk(Plant tree,
 	B_set_uniform_uint(tree.meshes[mesh_id].shaders[1], "block", (unsigned int)block/20);
 	B_set_uniform_vec3(tree.meshes[mesh_id].shaders[1], "base_offset", offset);
 	B_set_uniform_mat4(tree.meshes[mesh_id].shaders[1], "projection_view", projection_view);
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[1], "branch_size", (float)((block % 60) + 40));
+	B_set_uniform_float(tree.meshes[mesh_id].shaders[1], "trunk_size", (float)((block % 10) + 6));
 
         for (int i = 0; i < 6; ++i)
         {

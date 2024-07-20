@@ -12,6 +12,7 @@ out VS_OUT
 	// Height from origin, not from ground
 	float g_trunk_height;
 	uint g_block;
+	uint g_id;
 } vs_out;
 
 
@@ -67,12 +68,13 @@ void main()
 {
 	uint id = gl_InstanceID;
 
-	vs_out.g_group_offset = get_group_offset(id);
+	vs_out.g_group_offset = get_group_offset(id)*0.8;
 	vs_out.g_base_offset = base_offset;
 
 	vs_out.g_trunk_height = get_group_offset(block/2).y;
 	vs_out.g_base_offset.y += get_group_offset(block/2).y;
 	vs_out.g_block = block;
+	vs_out.g_id = id;
 
 	gl_Position = vec4(v_position, 1.0);
 }

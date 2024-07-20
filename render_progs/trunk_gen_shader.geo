@@ -1,7 +1,6 @@
 #version 430 core
 
 #define MAX_TERRAIN_BLOCKS 100000
-
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 102) out;
 
@@ -15,6 +14,7 @@ in VS_OUT
 	vec3 g_group_offset;
 	float g_trunk_height;
 	uint g_block;
+	uint g_id;
 } gs_in[];
 
 out vec3 f_normal;
@@ -179,7 +179,7 @@ void make_trunk(vec3 base_pos, uint block)
 	vec3 ibl = tbl;
 	float x_block_fraction = float(block%MAX_TERRAIN_BLOCKS);
 	float z_block_fraction = float(block/MAX_TERRAIN_BLOCKS);
-	ibl.y -= rand(vec2(x_block_fraction, z_block_fraction)) * height;
+	ibl.y -= min(rand(vec2(x_block_fraction, z_block_fraction)) * height, height*0.75);
 	ibl.xz -= trunk_size/2.0;
 	ibl.xz -= (trunk_size*0.2);
 	vec3 ifl = ibl;

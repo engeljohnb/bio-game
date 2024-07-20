@@ -46,8 +46,6 @@
 
 
 // UP NEXT:
-// 	Variable branch and trunk sizes
-// 	Branches shouldn't all extend from the same point.
 // 	TODO: Make the shaders use the actually good frustum culling method
 // 	TODO: Make your own GetTicks function to subtract pause-time
 // 	TODO: Frustum culling on rain?
